@@ -32,7 +32,10 @@
                 <input id="startup-force-lm" type="checkbox" style="width:16px;height:16px;"> <label for="startup-force-lm" style="color:#cfe">LMStudio 接続チェックをスキップ（強制接続）</label>
             </div>
             <div id="connection-status" style="font-size:13px;opacity:0.85">サーバー状態: 未接続</div>
-            <div id="lobby-status" style="margin-top:12px;font-size:13px;opacity:0.9;display:none;"></div>
+            <div id="lobby-status-container" class="lobby-status" style="margin-top:12px;font-size:13px;opacity:0.9;display:none;">
+                <div id="lobby-status"></div>
+                <div id="lobby-details"></div>
+            </div>
             <div id="lobby-minigame" style="display:none;margin-top:12px;">
                 <div style="margin-bottom:8px;">ロビー待機中：ミニゲームで遊んで待とう！</div>
                 <div id="minigame-area" style="width:100%;height:120px;background:#071018;border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
@@ -54,7 +57,7 @@
                 <button class="menu-btn" id="solo-mode-btn">
                     <span class="btn-icon">🎯</span>
                     <span class="btn-text">ソロモード</span>
-                    <span class="btn-desc">AIと1対1で勝負 (10問 / 5分)</span>
+                    <span class="btn-desc">時間無制限でじっくり挑戦</span>
                 </button>
                 <button class="menu-btn" id="vs-mode-btn">
                     <span class="btn-icon">⚔️</span>
@@ -64,7 +67,7 @@
                 <button class="menu-btn" id="rta-mode-btn">
                     <span class="btn-icon">⏱️</span>
                     <span class="btn-text">RTAモード</span>
-                    <span class="btn-desc">タイムアタック (10問 / 5分)</span>
+                    <span class="btn-desc">10問 / 3分のタイムアタック</span>
                 </button>
                 <button class="menu-btn" id="practice-mode-btn">
                     <span class="btn-icon">📚</span>
@@ -76,6 +79,9 @@
                 <button class="menu-footer-btn" id="leaderboard-btn">🏆 ランキング</button>
                 <button class="menu-footer-btn" id="achievements-btn">🎖️ 実績</button>
                 <button class="menu-footer-btn" id="settings-main-btn">⚙️ 設定</button>
+            </div>
+            <div id="server-stats-container" class="server-stats">
+                <span id="server-stats">サーバー情報: 取得中...</span>
             </div>
         </div>
     </div>
@@ -92,7 +98,7 @@
                     </div>
                 </div>
             </div>
-            <div class="header-center">
+            <div class="header-center timer-wrapper">
                 <div class="timer-container" id="timer-container">
                     <div class="timer-label">残り時間</div>
                     <div class="timer-display" id="timer-display">05:00</div>
@@ -413,13 +419,6 @@
                 </div>
             </div>
             <div id="room-status" class="room-status"></div>
-        </div>
-    </div>
-
-    <div id="diagnostics" style="position:fixed;left:10px;bottom:10px;z-index:2000;display:none;">
-        <button id="dump-logs-btn" class="btn btn-secondary">診断ログを表示</button>
-        <div id="diagnostics-log" style="display:none;max-width:480px;max-height:240px;overflow:auto;background:rgba(0,0,0,0.7);color:#fff;padding:8px;border-radius:6px;margin-top:8px;font-size:12px;"></div>
-    </div>
 
     <script src="js/config.js"></script>
     <script src="js/main.js?v=2.0"></script>

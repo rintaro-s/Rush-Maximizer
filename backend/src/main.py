@@ -270,34 +270,52 @@ def room_join(req: RoomJoinRequest):
     if room.get('password'):
         if not req.password or req.password != room.get('password'):
             return {'error': 'bad_password'}
-    if req.player_id in room['players']:
-        return {'room_id': req.room_id, 'waiting': True, 'position': room['players'].index(req.player_id) + 1}
-    room['players'].append(req.player_id)
-    print(f"player {req.player_id} joined room {req.room_id} ({len(room['players'])}/{room['max_players']})")
-    # if room full, create game with room settings
+    # Return current room state if player is already in it or just successfully joined
+    if req.player_id not in room['players']:
+        if len(room['players']) >= room['max_players']:
+            return {'error': 'room_full'}
+        room['players'].append(req.player_id)
+    
+    print(f"player {req.player_id} is in room {req.room_id} ({len(room['players'])}/{room['max_players']})")
+
+    # Check if the room is now full and should start a game
     if len(room['players']) >= room['max_players']:
         players_for_game = room['players'][:room['max_players']]
         gid = str(uuid.uuid4())
-        # decide question count by rule
         rule = room.get('rule', 'classic')
+        qcount = DEFAULT_QUESTIONS_PER_GAME
         if rule == 'speed':
-            qcount = min(len(ALL_QUESTIONS), 5)
+            qcount = 5
         elif rule == 'challenge':
-            qcount = min(len(ALL_QUESTIONS), max(10, DEFAULT_QUESTIONS_PER_GAME + 5))
-        else:
-            qcount = min(len(ALL_QUESTIONS), DEFAULT_QUESTIONS_PER_GAME)
+            qcount = 15
+        
+        qcount = min(len(ALL_QUESTIONS), qcount)
         sampled = random.sample(ALL_QUESTIONS, qcount) if qcount > 0 else []
         random.shuffle(sampled)
-        sanitized = []
-        for q in sampled:
-            prompt = q.get('question') or q.get('prompt') or q.get('q') or q.get('text') or str(q.get('id'))
-            sanitized.append({'id': q.get('id'), 'prompt': prompt})
+        sanitized = [{'id': q.get('id'), 'prompt': (q.get('question') or q.get('prompt') or q.get('q') or q.get('text') or str(q.get('id')))} for q in sampled]
+        
         GAMES[gid] = {'players': players_for_game, 'questions': sanitized, 'pointer': 0, 'room': req.room_id, 'rule': rule}
         print(f"created game {gid} from room {req.room_id} for players {players_for_game}")
-        # optionally delete room
-        ROOMS.pop(req.room_id, None)
+        ROOMS.pop(req.room_id, None) # Clean up room
         return {'game_id': gid, 'players': players_for_game, 'questions': sanitized}
-    return {'room_id': req.room_id, 'waiting': True, 'position': len(room['players'])}
+
+    # Not full yet, return waiting status
+    return {
+        'waiting': True, 
+        'room_id': req.room_id,
+        'current_players': len(room['players']),
+        'max_players': room['max_players']
+    }
+
+
+@app.get('/server/stats')
+def server_stats():
+    return {
+        'active_players': len(PLAYERS),
+        'players_waiting_random': len(WAITING_LIST),
+        'active_games': len(GAMES),
+        'active_rooms': len(ROOMS)
+    }
 
 
 class ScoreSubmit(BaseModel):
