@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rush-Maximizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+                <div class="background-texture"></div>
+
+                <!-- Startup overlay: blocks the UI until the user connects to a game server and LMStudio -->
+                <!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rush-Maximizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="background-texture"></div>
+
+    <!-- Startup overlay: blocks the UI until the user connects to a game server and LMStudio -->
+    <div id="startup-overlay" class="modal active">
+        <div class="modal-content" style="width:520px;background:#0f1720;border-radius:12px;padding:20px;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,0.6);font-family:inherit;">
+            <h2 style="margin:0 0 8px 0;font-family: 'Orbitron', sans-serif;letter-spacing:1px">Rush-Maximizer — 接続</h2>
+            <p style="margin:0 0 16px 0;opacity:0.9">ゲームサーバーとLMStudioサーバーに接続してください。接続後にゲームを開始できます。</p>
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+                <input id="startup-server" type="text" placeholder="ゲームサーバー (例: http://localhost:8000)" style="flex:1;padding:8px;border-radius:6px;border:1px solid #223;">
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+                <input id="startup-lmserver" type="text" placeholder="LMStudio サーバー (例: http://192.168.0.64:1234)" style="flex:1;padding:8px;border-radius:6px;border:1px solid #223;">
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <input id="startup-nickname" type="text" placeholder="ニックネーム" style="flex:1;padding:8px;border-radius:6px;border:1px solid #223;">
+                <button id="connect-server-btn" class="btn btn-primary" style="padding:8px 12px;">接続して開始</button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                <input id="startup-force-lm" type="checkbox" style="width:16px;height:16px;"> <label for="startup-force-lm" style="color:#cfe">LMStudio 接続チェックをスキップ（強制接続）</label>
+            </div>
+            <div id="connection-status" style="font-size:13px;opacity:0.85">サーバー状態: 未接続</div>
+            <div id="lobby-status" style="margin-top:12px;font-size:13px;opacity:0.9;display:none;"></div>
+            <div id="lobby-minigame" style="display:none;margin-top:12px;">
+                <div style="margin-bottom:8px;">ロビー待機中：ミニゲームで遊んで待とう！</div>
+                <div id="minigame-area" style="width:100%;height:120px;background:#071018;border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+                    <button id="minigame-btn" style="position:absolute;width:48px;height:48px;border-radius:50%;background:#0ea5a4;border:none;">⚪</button>
+                    <div id="minigame-score" style="position:absolute;top:8px;right:12px;color:#fff;font-size:13px;">得点: 0</div>
+                </div>
+            </div>
+            <div style="margin-top:12px;font-size:12px;opacity:0.8">注意: ブラウザで開く場合は http(s) 経由で開いてください（file:// は一部機能が制限されます）。</div>
+        </div>
+    </div>
+
+    <div id="main-menu" class="screen">
+        <div class="menu-container">
+            <div class="game-title">
+                <h1>RUSH MAXIMIZER</h1>
+                <p class="subtitle">AIを知識で誘導してモノにする新感覚クイズ</p>
+            </div>
+            <div class="menu-buttons">
+                <button class="menu-btn" id="solo-mode-btn">
+                    <span class="btn-icon">🎯</span>
+                    <span class="btn-text">ソロモード</span>
+                    <span class="btn-desc">AIと1対1で勝負 (10問 / 5分)</span>
+                </button>
+                <button class="menu-btn" id="vs-mode-btn">
+                    <span class="btn-icon">⚔️</span>
+                    <span class="btn-text">対戦モード</span>
+                    <span class="btn-desc">オンラインで対戦</span>
+                </button>
+                <button class="menu-btn" id="rta-mode-btn">
+                    <span class="btn-icon">⏱️</span>
+                    <span class="btn-text">RTAモード</span>
+                    <span class="btn-desc">タイムアタック (10問 / 5分)</span>
+                </button>
+                <button class="menu-btn" id="practice-mode-btn">
+                    <span class="btn-icon">📚</span>
+                    <span class="btn-text">練習モード</span>
+                    <span class="btn-desc">自由に問題を練習</span>
+                </button>
+            </div>
+            <div class="menu-footer">
+                <button class="menu-footer-btn" id="leaderboard-btn">🏆 ランキング</button>
+                <button class="menu-footer-btn" id="achievements-btn">🎖️ 実績</button>
+                <button class="menu-footer-btn" id="settings-main-btn">⚙️ 設定</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <header class="game-header">
+            <div class="header-left">
+                <button id="back-to-menu-btn" class="back-btn">←</button>
+                <div class="game-mode-info">
+                    <span id="current-mode">ソロモード</span>
+                    <div class="game-stats">
+                        <span class="stat">問題 <span id="question-number">1</span>/<span id="total-questions">10</span></span>
+                        <span class="stat">スコア <span id="current-score">0</span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-center">
+                <div class="timer-container" id="timer-container">
+                    <div class="timer-label">残り時間</div>
+                    <div class="timer-display" id="timer-display">05:00</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="target-panel">
+                    <h2>TARGET</h2>
+                    <div id="target-answer-container">
+                        <p id="target-answer">江戸城無血開城</p>
+                    </div>
+                    <div class="target-actions">
+                        <button id="hint-btn" class="btn btn-small">💡 ヒント</button>
+                        <button id="next-question-btn" class="btn btn-small">次の問題</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="game-content">
+            <div class="game-grid">
+                <div class="panel ai-panel">
+                    <div class="panel-header">
+                        <h2>AI RESPONSE</h2>
+                        <div class="ai-status">
+                            <span class="status-indicator" id="ai-status">待機中</span>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div id="ai-output">AIが回答を待っています...</div>
+                        <div class="ai-analysis" id="ai-analysis"></div>
+                    </div>
+                </div>
+
+                <div class="panel player-panel">
+                    <div class="panel-header">
+                        <h2>YOUR QUESTION</h2>
+                        <div class="question-counter">
+                            <span id="question-count">質問回数: 0</span>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="question-history" id="question-history"></div>
+                        <textarea id="player-question" placeholder="AIを正解に導く質問を考えよう..."></textarea>
+                        <div class="submit-controls">
+                            <button id="clear-question-btn" class="btn btn-secondary">クリア</button>
+                            <button id="submit-question-btn" class="btn btn-primary">質問する</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="side-panels">
+                <div class="panel score-panel">
+                    <div class="panel-header">
+                        <h2>SCORE & PROGRESS</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div class="score-display">
+                            <div class="score-item">
+                                <span class="score-label">総スコア</span>
+                                <span class="score-value" id="total-score">0</span>
+                            </div>
+                            <div class="score-item">
+                                <span class="score-label">正解数</span>
+                                <span class="score-value" id="correct-count">0</span>
+                            </div>
+                            <div class="score-item">
+                                <span class="score-label">精度</span>
+                                <span class="score-value" id="accuracy">0%</span>
+                            </div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <div class="achievements-mini">
+                            <h3>最近の実績</h3>
+                            <div id="recent-achievements"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel players-panel" id="players-panel">
+                    <div class="panel-header">
+                        <h2>PLAYERS</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div id="players-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="result-modal" class="modal">
+        <div class="modal-content result-content">
+            <div class="result-header">
+                <h2 id="result-title">ゲーム終了</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="result-body">
+                <div class="final-score">
+                    <span class="score-label">最終スコア</span>
+                    <span class="score-number" id="final-score">0</span>
+                </div>
+                <div class="result-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">正解数</span>
+                        <span class="stat-value" id="result-correct">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">質問数</span>
+                        <span class="stat-value" id="result-questions">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">精度</span>
+                        <span class="stat-value" id="result-accuracy">0%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">所要時間</span>
+                        <span class="stat-value" id="result-time">00:00</span>
+                    </div>
+                </div>
+                <div class="new-achievements" id="new-achievements"></div>
+                <div class="result-actions">
+                    <button class="btn btn-primary" id="play-again-btn">もう一度プレイ</button>
+                    <button class="btn btn-secondary" id="back-to-menu-result-btn">メニューに戻る</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>設定</h2>
+            <div class="settings-tabs">
+                <button class="tab-btn active" data-tab="display">表示</button>
+                <button class="tab-btn" data-tab="server">サーバー</button>
+            </div>
+            <div class="tab-content active" id="display-tab">
+                <div class="form-group">
+                    <label for="theme">テーマ:</label>
+                    <select id="theme">
+                        <option value="dark">ダーク</option>
+                        <option value="light">ライト</option>
+                        <option value="cyberpunk">サイバーパンク</option>
+                    </select>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="sound-effects" checked>
+                    <label for="sound-effects">効果音</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="animations" checked>
+                    <label for="animations">アニメーション</label>
+                </div>
+            </div>
+            <div class="tab-content" id="server-tab">
+                <div class="form-group">
+                    <label for="game-server-address">ゲームサーバーアドレス:</label>
+                    <input type="text" id="game-server-address" placeholder="http://localhost:8000">
+                </div>
+                <div class="form-group">
+                    <label for="lm-server-address">LMStudioサーバーアドレス:</label>
+                    <input type="text" id="lm-server-address" placeholder="http://localhost:1234">
+                </div>
+            </div>
+            <button id="save-settings-btn" class="btn btn-primary">設定を保存</button>
+        </div>
+    </div>
+
+    <div id="leaderboard-modal" class="modal">
+        <div class="modal-content leaderboard-content">
+            <div class="modal-header">
+                <h2>ランキング</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="leaderboard-tabs">
+                <button class="tab-btn active" data-board="solo">ソロ</button>
+                <button class="tab-btn" data-board="rta">RTA</button>
+            </div>
+            <div class="leaderboard-content">
+                <div id="leaderboard-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="achievements-modal" class="modal">
+        <div class="modal-content achievements-content">
+            <div class="modal-header">
+                <h2>実績</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="achievements-content">
+                <div id="achievements-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="controls-overlay" class="modal">
+        <div class="modal-content" id="controls-content">
+            <h2>操作方法</h2>
+            <div class="form-group">
+                <p>テキストでAIに質問して、AIが「TARGET」を回答するまで誘導してください。</p>
+                <p>主な操作: テキスト入力 → Ctrl+Enter（または「質問する」ボタン）で送信</p>
+                <p>ヒントが必要なら「💡 ヒント」, 問題を飛ばすなら「次の問題」</p>
+            </div>
+            <div class="result-actions">
+                <button class="btn btn-primary" id="controls-start-btn">始める</button>
+                <button class="btn btn-secondary" id="controls-back-btn">メニューに戻る</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Practice setup modal -->
+    <div id="practice-setup-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>練習モード設定</h2>
+            <div class="form-group">
+                <label for="practice-questions">問題数:</label>
+                <input type="number" id="practice-questions" min="1" max="100" value="10">
+            </div>
+            <div class="form-group">
+                <label for="practice-time">制限時間（分）:</label>
+                <input type="number" id="practice-time" min="1" max="60" value="5">
+            </div>
+            <div class="result-actions">
+                <button class="btn btn-primary" id="practice-start-btn">練習を開始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Match type selection modal -->
+    <div id="match-select-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>対戦モードを選択</h2>
+            <div class="menu-buttons" style="flex-direction: column;">
+                <button class="menu-btn" id="match-random-btn">
+                    <span class="btn-icon">🎲</span>
+                    <span class="btn-text">ランダムマッチ</span>
+                    <span class="btn-desc">世界中のプレイヤーと自動で対戦</span>
+                </button>
+                <button class="menu-btn" id="match-custom-btn">
+                    <span class="btn-icon">🤝</span>
+                    <span class="btn-text">カスタムルーム</span>
+                    <span class="btn-desc">友達と合言葉を決めて対戦</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Random match rule selection modal -->
+    <div id="random-match-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>ランダムマッチ ルール選択</h2>
+            <div class="form-group">
+                <label for="random-rule-select">ルールを選択してください:</label>
+                <select id="random-rule-select">
+                    <option value="classic">クラシック</option>
+                    <option value="speed">スピード</option>
+                    <option value="challenge">チャレンジ</option>
+                </select>
+            </div>
+            <div id="rule-description" class="rule-description">
+                <p><b>クラシック:</b> 標準的なルールです。10問の問題に挑戦し、スコアを競います。</p>
+            </div>
+            <div class="result-actions">
+                <button class="btn btn-primary" id="random-join-btn">このルールでマッチング開始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room modal for creating/joining custom rooms -->
+    <div id="room-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>カスタムルーム</h2>
+            <div class="room-container">
+                <div class="room-section">
+                    <h3>ルームを作成</h3>
+                    <div class="form-group">
+                        <label>ルーム名</label>
+                        <input type="text" id="room-name" placeholder="任意のルーム名">
+                    </div>
+                    <div class="form-group">
+                        <label>パスワード（任意）</label>
+                        <input type="password" id="room-password" placeholder="パスワード">
+                    </div>
+                    <div class="form-group">
+                        <label>最大プレイヤー数</label>
+                        <input type="number" id="room-max" min="2" max="50" value="3">
+                    </div>
+                    <div class="form-group">
+                        <label>ルール</label>
+                        <select id="room-rule">
+                            <option value="classic">クラシック (標準)</option>
+                            <option value="speed">スピード (短め)</option>
+                            <option value="challenge">チャレンジ (問題多め)</option>
+                        </select>
+                    </div>
+                    <div><button class="btn btn-primary" id="create-room-btn">ルームを作成</button></div>
+                </div>
+                <div class="room-section">
+                    <h3>ルームに参加</h3>
+                    <div class="form-group">
+                        <label>ルームID</label>
+                        <input type="text" id="join-room-id" placeholder="ルームIDを入力">
+                    </div>
+                    <div class="form-group">
+                        <label>パスワード（必要なら）</label>
+                        <input type="password" id="join-room-password" placeholder="パスワード">
+                    </div>
+                    <div><button class="btn btn-primary" id="join-room-btn">参加する</button></div>
+                </div>
+            </div>
+            <div id="room-status" class="room-status"></div>
+        </div>
+    </div>
+
+    <div id="diagnostics" style="position:fixed;left:10px;bottom:10px;z-index:2000;display:none;">
+        <button id="dump-logs-btn" class="btn btn-secondary">診断ログを表示</button>
+        <div id="diagnostics-log" style="display:none;max-width:480px;max-height:240px;overflow:auto;background:rgba(0,0,0,0.7);color:#fff;padding:8px;border-radius:6px;margin-top:8px;font-size:12px;"></div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/main.js"></script>
+
+</body>
+</html>
+
+
+                <div id="main-menu" class="screen active">
+                    <div class="menu-container">
+                            <!-- connection handled by startup overlay -->
+                        <div class="game-title">
+                            <h1>RUSH MAXIMIZER</h1>
+                            <p class="subtitle">AIを知識で誘導してモノにする新感覚クイズ</p>
+                        </div>
+                        <div class="menu-buttons">
+                            <button class="menu-btn" id="solo-mode-btn">
+                                <span class="btn-icon">🎯</span>
+                                <span class="btn-text">ソロモード</span>
+                                <span class="btn-desc">AIと1対1で勝負</span>
+                            </button>
+                            <button class="menu-btn" id="vs-mode-btn">
+                                <span class="btn-icon">⚔️</span>
+                                <span class="btn-text">対戦モード</span>
+                                <span class="btn-desc">3人でオンライン対戦</span>
+                            </button>
+                            <button class="menu-btn" id="rta-mode-btn">
+                                <span class="btn-icon">⏱️</span>
+                                <span class="btn-text">RTAモード</span>
+                                <span class="btn-desc">タイムアタック</span>
+                            </button>
+                            <button class="menu-btn" id="practice-mode-btn">
+                                <span class="btn-icon">📚</span>
+                                <span class="btn-text">練習モード</span>
+                                <span class="btn-desc">自由に問題を練習</span>
+                            </button>
+                        </div>
+                        <div class="menu-footer">
+                            <button class="menu-footer-btn" id="leaderboard-btn">🏆 ランキング</button>
+                            <button class="menu-footer-btn" id="achievements-btn">🎖️ 実績</button>
+                            <button class="menu-footer-btn" id="settings-main-btn">⚙️ 設定</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="game-screen" class="screen">
+                    <header class="game-header">
+                        <div class="header-left">
+                            <button id="back-to-menu-btn" class="back-btn">←</button>
+                            <div class="game-mode-info">
+                                <span id="current-mode">ソロモード</span>
+                                <div class="game-stats">
+                                    <span class="stat">問題 <span id="question-number">1</span>/<span id="total-questions">10</span></span>
+                                    <span class="stat">スコア <span id="current-score">0</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="header-center">
+                            <div class="timer-container" id="timer-container">
+                                <div class="timer-label">残り時間</div>
+                                <div class="timer-display" id="timer-display">03:00</div>
+                            </div>
+                        </div>
+                        <div class="header-right">
+                            <div class="target-panel">
+                                <h2>TARGET</h2>
+                                <div id="target-answer-container">
+                                    <p id="target-answer">江戸城無血開城</p>
+                                </div>
+                                <div class="target-actions">
+                                    <button id="hint-btn" class="btn btn-small">💡 ヒント</button>
+                                    <button id="next-question-btn" class="btn btn-small">次の問題</button>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div class="game-content">
+                        <div class="game-grid">
+                            <div class="panel ai-panel">
+                                <div class="panel-header">
+                                    <h2>AI RESPONSE</h2>
+                                    <div class="ai-status">
+                                        <span class="status-indicator" id="ai-status">待機中</span>
+                                    </div>
+                                </div>
+                                <div class="panel-body">
+                                    <div id="ai-output">AIが回答を待っています...</div>
+                                    <div class="ai-analysis" id="ai-analysis"></div>
+                                </div>
+                            </div>
+
+                            <div class="panel player-panel">
+                                <div class="panel-header">
+                                    <h2>YOUR QUESTION</h2>
+                                    <div class="question-counter">
+                                        <span id="question-count">質問回数: 0</span>
+                                    </div>
+                                </div>
+                                <div class="panel-body">
+                                    <div class="question-history" id="question-history"></div>
+                                    <textarea id="player-question" placeholder="AIを正解に導く質問を考えよう..."></textarea>
+                                    <div class="submit-controls">
+                                        <button id="clear-question-btn" class="btn btn-secondary">クリア</button>
+                                        <button id="submit-question-btn" class="btn btn-primary">質問する</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="side-panels">
+                            <div class="panel score-panel">
+                                <div class="panel-header">
+                                    <h2>SCORE & PROGRESS</h2>
+                                </div>
+                                <div class="panel-body">
+                                    <div class="score-display">
+                                        <div class="score-item">
+                                            <span class="score-label">総スコア</span>
+                                            <span class="score-value" id="total-score">0</span>
+                                        </div>
+                                        <div class="score-item">
+                                            <span class="score-label">正解数</span>
+                                            <span class="score-value" id="correct-count">0</span>
+                                        </div>
+                                        <div class="score-item">
+                                            <span class="score-label">精度</span>
+                                            <span class="score-value" id="accuracy">0%</span>
+                                        </div>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="progress-fill"></div>
+                                    </div>
+                                    <div class="achievements-mini">
+                                        <h3>最近の実績</h3>
+                                        <div id="recent-achievements"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="panel players-panel" id="players-panel">
+                                <div class="panel-header">
+                                    <h2>PLAYERS</h2>
+                                </div>
+                                <div class="panel-body">
+                                    <div id="players-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="result-modal" class="modal">
+                    <div class="modal-content result-content">
+                        <div class="result-header">
+                            <h2 id="result-title">ゲーム終了</h2>
+                            <span class="close-btn">&times;</span>
+                        </div>
+                        <div class="result-body">
+                            <div class="final-score">
+                                <span class="score-label">最終スコア</span>
+                                <span class="score-number" id="final-score">0</span>
+                            </div>
+                            <div class="result-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">正解数</span>
+                                    <span class="stat-value" id="result-correct">0</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">質問数</span>
+                                    <span class="stat-value" id="result-questions">0</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">精度</span>
+                                    <span class="stat-value" id="result-accuracy">0%</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">所要時間</span>
+                                    <span class="stat-value" id="result-time">00:00</span>
+                                </div>
+                            </div>
+                            <div class="new-achievements" id="new-achievements"></div>
+                            <div class="result-actions">
+                                <button class="btn btn-primary" id="play-again-btn">もう一度プレイ</button>
+                                <button class="btn btn-secondary" id="back-to-menu-result-btn">メニューに戻る</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="settings-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-btn">&times;</span>
+                        <h2>設定</h2>
+                        <div class="settings-tabs">
+                            <button class="tab-btn active" data-tab="game">ゲーム</button>
+                            <button class="tab-btn" data-tab="display">表示</button>
+                            <button class="tab-btn" data-tab="server">サーバー</button>
+                        </div>
+                        <div class="tab-content active" id="game-tab">
+                            <div class="form-group">
+                                <p>ゲームの詳細設定は削除しました。練習モードを開始するときに個別に設定できます。</p>
+                            </div>
+                        </div>
+                        <div class="tab-content" id="display-tab">
+                            <div class="form-group">
+                                <label for="theme">テーマ:</label>
+                                <select id="theme">
+                                    <option value="dark">ダーク</option>
+                                    <option value="light">ライト</option>
+                                    <option value="cyberpunk">サイバーパンク</option>
+                                </select>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" id="sound-effects" checked>
+                                <label for="sound-effects">効果音</label>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" id="animations" checked>
+                                <label for="animations">アニメーション</label>
+                            </div>
+                        </div>
+                        <div class="tab-content" id="server-tab">
+                            <div class="form-group">
+                                <label for="game-server-address">ゲームサーバーアドレス:</label>
+                                <input type="text" id="game-server-address" placeholder="http://localhost:8000">
+                            </div>
+                            <div class="form-group">
+                                <label for="lm-server-address">LMStudioサーバーアドレス:</label>
+                                <input type="text" id="lm-server-address" placeholder="http://localhost:1234">
+                            </div>
+                        </div>
+                        <button id="save-settings-btn" class="btn btn-primary">設定を保存</button>
+                    </div>
+                </div>
+
+                <div id="leaderboard-modal" class="modal">
+                    <div class="modal-content leaderboard-content">
+                        <div class="modal-header">
+                            <h2>ランキング</h2>
+                            <span class="close-btn">&times;</span>
+                        </div>
+                        <div class="leaderboard-tabs">
+                            <button class="tab-btn active" data-board="daily">日間</button>
+                            <button class="tab-btn" data-board="weekly">週間</button>
+                            <button class="tab-btn" data-board="all-time">総合</button>
+                        </div>
+                        <div class="leaderboard-content">
+                            <div id="leaderboard-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="achievements-modal" class="modal">
+                    <div class="modal-content achievements-content">
+                        <div class="modal-header">
+                            <h2>実績</h2>
+                            <span class="close-btn">&times;</span>
+                        </div>
+                        <div class="achievements-content">
+                            <div id="achievements-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="controls-overlay" class="modal screen">
+                    <div class="modal-content" id="controls-content">
+                        <h2>操作方法</h2>
+                        <div class="form-group">
+                            <p>テキストでAIに質問して、AIが「TARGET」を回答するまで誘導してください。</p>
+                            <p>主な操作: テキスト入力 → Ctrl+Enter（または「質問する」ボタン）で送信</p>
+                            <p>ヒントが必要なら「💡 ヒント」, 問題を飛ばすなら「次の問題」</p>
+                        </div>
+                        <div class="result-actions">
+                            <button class="btn btn-primary" id="controls-start-btn">始める</button>
+                            <button class="btn btn-secondary" id="controls-back-btn">メニューに戻る</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Practice setup modal -->
+                <div id="practice-setup-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-btn">&times;</span>
+                        <h2>練習モード設定</h2>
+                        <div class="form-group">
+                            <label for="practice-questions">問題数:</label>
+                            <input type="number" id="practice-questions" min="1" max="100" value="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="practice-time">制限時間（分）:</label>
+                            <input type="number" id="practice-time" min="1" max="60" value="5">
+                        </div>
+                        <div class="result-actions">
+                            <button class="btn btn-primary" id="practice-start-btn">練習を開始</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Room modal for creating/joining custom rooms -->
+                <div id="room-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-btn">&times;</span>
+                        <h2>ルーム</h2>
+                        <div style="display:flex;gap:12px;">
+                            <div style="flex:1;min-width:240px;">
+                                <h3>ルームを作成</h3>
+                                <div class="form-group">
+                                    <label>ルーム名</label>
+                                    <input type="text" id="room-name" placeholder="任意のルーム名">
+                                </div>
+                                <div class="form-group">
+                                    <label>パスワード（任意）</label>
+                                    <input type="text" id="room-password" placeholder="パスワード">
+                                </div>
+                                <div class="form-group">
+                                    <label>最大プレイヤー数</label>
+                                    <input type="number" id="room-max" min="2" max="50" value="3">
+                                </div>
+                                <div class="form-group">
+                                    <label>ルール</label>
+                                    <select id="room-rule">
+                                        <option value="classic">クラシック (標準)</option>
+                                        <option value="speed">スピード (短め)</option>
+                                        <option value="challenge">チャレンジ (問題多め)</option>
+                                    </select>
+                                </div>
+                                <div><button class="btn btn-primary" id="create-room-btn">ルームを作成</button></div>
+                            </div>
+                            <div style="flex:1;min-width:240px;">
+                                <h3>ルームに参加</h3>
+                                <div class="form-group">
+                                    <label>ルームID</label>
+                                    <input type="text" id="join-room-id" placeholder="room id">
+                                </div>
+                                <div class="form-group">
+                                    <label>パスワード（必要なら）</label>
+                                    <input type="text" id="join-room-password" placeholder="password">
+                                </div>
+                                <div><button class="btn btn-primary" id="join-room-btn">参加する</button></div>
+                                <div style="margin-top:8px;font-size:13px;opacity:0.9">ルームに参加すると、指定された最大人数に達した時点でゲームが自動開始します。</div>
+                            </div>
+                        </div>
+                        <div id="room-status" style="margin-top:12px;color:#ddd;font-size:13px;display:none"></div>
+                    </div>
+                </div>
+
+                <!-- Match type selection modal -->
+                <div id="match-select-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-btn">&times;</span>
+                        <h2>対戦モードを選択</h2>
+                        <div class="form-group">
+                            <button class="btn btn-primary" id="match-random-btn">ランダムマッチ</button>
+                            <button class="btn btn-secondary" id="match-custom-btn">カスタムルーム</button>
+                        </div>
+                        <div id="random-options" style="margin-top:12px;display:none;">
+                            <label>ルールを選択:</label>
+                            <select id="random-rule-select">
+                                <option value="classic">クラシック</option>
+                                <option value="speed">スピード</option>
+                                <option value="challenge">チャレンジ</option>
+                            </select>
+                            <div style="margin-top:8px;"><button class="btn btn-primary" id="random-join-btn">マッチング開始</button></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="diagnostics" style="position:fixed;left:10px;bottom:10px;z-index:2000;">
+                    <button id="dump-logs-btn" class="btn btn-secondary">診断ログを表示</button>
+                    <div id="diagnostics-log" style="display:none;max-width:480px;max-height:240px;overflow:auto;background:rgba(0,0,0,0.7);color:#fff;padding:8px;border-radius:6px;margin-top:8px;font-size:12px;"></div>
+                </div>
+
+                <script src="js/config.js"></script>
+                <script src="js/main.js"></script>
+
+            </body>
+            </html>
