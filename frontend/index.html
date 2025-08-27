@@ -457,9 +457,13 @@
 
     <!-- Persistent Status Indicators -->
     <div id="persistent-status-container" style="display:none;">
-        <div id="matchmaking-status"></div>
-        <button id="cancel-matchmaking-btn" class="btn btn-secondary">キャンセル</button>
+    <div id="matchmaking-status"></div>
+    <span class="waiting-badge" style="display:inline-block;">-</span>
+    <button id="cancel-matchmaking-btn" class="btn btn-secondary">キャンセル</button>
     </div>
+
+    <!-- Quick floating cancel button for matchmaking (shown when matchmaking active) -->
+    <button id="quick-cancel-btn" class="btn-quick-cancel" style="display:none;">キャンセル</button>
 
     <div id="match-found-modal" class="modal">
         <div class="modal-content">

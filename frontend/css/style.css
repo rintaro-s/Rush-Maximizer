@@ -387,6 +387,48 @@ body {
     text-shadow: 0 0 10px var(--primary-glow);
 }
 
+/* Emergency: ensure gameplay container is visible on top when beginGame manipulates the DOM */
+
+#game-screen, #game-screen-reparent {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    z-index: 1000 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: none !important;
+    clip-path: none !important;
+    background: transparent !important;
+}
+
+/* Ensure interactive elements inside game-screen remain clickable */
+#game-screen button, #game-screen a, #game-screen input, #game-screen textarea,
+.screen button, .screen a, .screen input, .screen textarea {
+    pointer-events: auto !important;
+}
+
+/* make important inner areas visible */
+#game-screen * { color: var(--text-primary) !important; }
+
+/* Ensure target-answer remains visible even if parent styles change during gameplay */
+#target-answer {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    /* avoid extremely large z-index that can overlay other UI */
+    z-index: 1200 !important;
+    font-size: clamp(1.4rem, 4vw, 2.4rem) !important;
+    line-height: 1.1 !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
 .target-actions {
     display: flex;
     gap: 0.5rem;
@@ -734,6 +776,32 @@ textarea#player-question:focus {
     display: flex;
     align-items: center;
     gap: 1rem;
+}
+
+/* Quick floating cancel button */
+.btn-quick-cancel {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 24px;
+    z-index: 12000;
+    background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+    color: #000;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-weight: 800;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+}
+
+/* Waiting count badge inside persistent status */
+.waiting-badge {
+    background: var(--primary-color);
+    color: #000;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-weight: 700;
+    margin-left: 8px;
 }
 
 /* Keep page content from being hidden under the fixed HUD */

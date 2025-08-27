@@ -416,13 +416,27 @@ class GameManager {
         this.serverStatsInterval = setInterval(updateStats, 5000);
     }
 
+    // Ensure any leftover matchmaking state is cleared before starting local modes
+    cleanupMatchmakingBeforeLocalStart() {
+        try {
+            if (this.isMatchmaking) {
+                console.log('[GameManager] cleaning up leftover matchmaking state before local start');
+            }
+        } catch(e){}
+        this.isMatchmaking = false;
+        try { this.stopLobbyPolling(); } catch(e){}
+        try { this.hidePersistentStatusUI(); } catch(e){}
+        try { this.disableMatchButtons(false); } catch(e){}
+    }
+
     disableMatchButtons(disabled) {
         const ids = ['matchRandomBtn','matchCustomBtn','randomJoinBtn','createRoomBtn','joinRoomBtn'];
         ids.forEach(id => { const b = this.el[id]; if (b) b.disabled = disabled; });
     }
 
     async startSoloMode() {
-        if (this.isMatchmaking) return this.showNotification('マッチング中は他のモードを開始できません。', 'warning');
+    // clear any leftover matchmaking to ensure solo starts clean
+    this.cleanupMatchmakingBeforeLocalStart();
         this.currentMode = 'solo';
         this.timeLimit = 0;
         this.questionsPerGame = 10;
@@ -431,7 +445,7 @@ class GameManager {
     }
 
     async startRtaMode() {
-        if (this.isMatchmaking) return this.showNotification('マッチング中は他のモードを開始できません。', 'warning');
+    this.cleanupMatchmakingBeforeLocalStart();
         this.currentMode = 'rta';
         this.timeLimit = 180;
         this.questionsPerGame = 10;
@@ -440,7 +454,7 @@ class GameManager {
     }
 
     startPracticeMode() {
-        if (this.isMatchmaking) return this.showNotification('マッチング中は他のモードを開始できません。', 'warning');
+    this.cleanupMatchmakingBeforeLocalStart();
         this.currentMode = 'practice';
         this.questionsPerGame = this.el.practiceQuestions ? parseInt(this.el.practiceQuestions.value, 10) : 10;
         this.timeLimit = (this.el.practiceTime ? parseInt(this.el.practiceTime.value, 10) : 5) * 60;
@@ -454,12 +468,21 @@ class GameManager {
         try {
             let questions = null;
             try {
-                const localRes = await fetch('data/questions.json');
-                if (localRes.ok) {
-                    questions = await localRes.json();
+                // Try several likely locations for the local question file depending on how the frontend is served.
+                const tryPaths = ['data/questions.json', '/data/questions.json', '../data/questions.json'];
+                for (const p of tryPaths) {
+                    try {
+                        const localRes = await fetch(p);
+                        if (localRes && localRes.ok) {
+                            questions = await localRes.json();
+                            console.log('[GameManager] loaded local questions from', p, 'count=', (questions && questions.length) || (questions && questions.questions && questions.questions.length) || 0);
+                            break;
+                        }
+                    } catch (e) {
+                        // ignore this path and try next
+                    }
                 }
             } catch (e) {
-                // ignore local load error
                 questions = null;
             }
 
@@ -574,43 +597,51 @@ class GameManager {
                 try { gs.scrollIntoView({ behavior: 'auto' }); } catch(e){}
             }
 
-            // Fallback: if the game-screen subtree appears to have collapsed (all descendants 0x0),
-            // clone the content into a new fixed container and append to body so it renders.
+            // Fallback: if the game-screen subtree appears collapsed (all descendants 0x0),
+            // avoid moving DOM nodes (which can break styles or event listeners). Instead,
+            // apply robust inline styles to the game-screen and several levels of descendants
+            // to force them visible and interactive. This reduces side-effects compared to
+            // reparenting/cloning nodes.
             try {
                 const all = gs ? Array.from(gs.querySelectorAll('*')) : [];
                 const anyVisible = all.some(el => {
-                    const r = el.getBoundingClientRect();
-                    return (r.width > 0 || r.height > 0);
+                    try {
+                        const r = el.getBoundingClientRect();
+                        return (r.width > 0 || r.height > 0);
+                    } catch (err) { return false; }
                 });
                 if (!anyVisible && gs) {
-                    // move original children into a new fixed container so event listeners remain
-                    const existing = document.getElementById('game-screen-reparent');
-                    if (existing) existing.remove();
-                    const wrapper = document.createElement('div');
-                    wrapper.id = 'game-screen-reparent';
-                    wrapper.className = 'screen active';
-                    // style it like full-screen gameplay
-                    wrapper.style.position = 'fixed';
-                    wrapper.style.top = '0';
-                    wrapper.style.left = '0';
-                    wrapper.style.width = '100%';
-                    wrapper.style.height = '100vh';
-                    wrapper.style.zIndex = 100000;
-                    wrapper.style.background = 'transparent';
-                    wrapper.style.pointerEvents = 'auto';
-                    // move children from gs into wrapper, preserving nodes and listeners
-                    const moved = [];
-                    while (gs.firstChild) {
-                        const child = gs.firstChild;
-                        moved.push(child);
-                        wrapper.appendChild(child);
-                    }
-                    document.body.appendChild(wrapper);
-                    this._reparented = true;
-                    this._reparentId = 'game-screen-reparent';
-                    this._reparentedNodes = moved;
+                    console.warn('[GameManager] detected collapsed game-screen subtree; applying ensureVisible styles');
+                    const ensureVisible = (el, depth = 0, maxDepth = 6) => {
+                        if (!el || depth > maxDepth) return;
+                        try {
+                            el.style.setProperty('display', 'block', 'important');
+                            el.style.setProperty('visibility', 'visible', 'important');
+                            el.style.setProperty('opacity', '1', 'important');
+                            // do not globally change pointer-events here to avoid capturing all clicks
+                            // avoid forcing huge z-index to prevent overlaying other UI
+                            el.style.setProperty('transform', 'none', 'important');
+                            el.style.setProperty('clip-path', 'none', 'important');
+                        } catch (err) {
+                            try { el.style.display = 'block'; el.style.visibility = 'visible'; } catch(e){}
+                        }
+                        // recurse into a few children to ensure inner content shows
+                        const children = Array.from(el.children || []).slice(0, 50);
+                        for (let i = 0; i < children.length; i++) {
+                            ensureVisible(children[i], depth + 1, maxDepth);
+                        }
+                    };
+                    // apply to the game-screen itself and its ancestors (to ensure no parent clipping)
+                    let cur = gs;
+                    let anti = 0;
+                    while (cur && anti < 6) { ensureVisible(cur, 0, 4); cur = cur.parentElement; anti++; }
+                    // nudge scroll and layout to encourage repaint
+                    try { gs.offsetHeight; document.body.offsetHeight; } catch(e){}
+                    this._reparented = false;
+                    this._reparentId = null;
+                    this._reparentedNodes = null;
                 }
-            } catch (e) { console.warn('reparent fallback failed', e); }
+            } catch (e) { console.warn('ensureVisible fallback failed', e); }
         } catch (e) { console.warn('beginGame overlay cleanup failed', e); }
     console.log('[GameManager] beginGame called, mode=', mode, 'questions count=', this.questions ? this.questions.length : 0);
         this.updateGameHUD();
@@ -829,11 +860,16 @@ class GameManager {
     // ensure cancel button is enabled when showing
     const cancel = document.getElementById('cancel-matchmaking-btn');
     if (cancel) { cancel.disabled = false; cancel.textContent = 'キャンセル'; }
+    // show quick floating cancel as well
+    const quick = document.getElementById('quick-cancel-btn');
+    if (quick) { quick.style.display = 'block'; quick.disabled = false; }
     this.updatePersistentStatusUI();
     }
 
     hidePersistentStatusUI() {
-        if (this.el.persistentStatusContainer) this.el.persistentStatusContainer.style.display = 'none';
+    if (this.el.persistentStatusContainer) this.el.persistentStatusContainer.style.display = 'none';
+    const quick = document.getElementById('quick-cancel-btn');
+    if (quick) quick.style.display = 'none';
     }
 
     updatePersistentStatusUI() {
@@ -845,7 +881,7 @@ class GameManager {
         const { type, rule, current_players, max_players, position, total_waiting } = this.matchmakingStatus;
         let statusText = '';
         if (type === 'random') {
-            statusText = `マッチング中 (${this.getModeName(rule)}) — 順位: ${position || '?'} / 待機人数: ${total_waiting || '?'}」`;
+            statusText = `マッチング中 (${this.getModeName(rule)}) — 順位: ${position || '?'} / 待機人数: ${total_waiting || '?'} `;
         } else if (type === 'room') {
             statusText = `ルーム待機中: ${current_players || '?'} / ${max_players || '?'} `;
         }
@@ -856,6 +892,9 @@ class GameManager {
             if (position === 1) cancel.textContent = 'キャンセル（あなたが先頭）';
             else cancel.textContent = 'キャンセル';
         }
+        // update waiting badge
+        const badge = document.querySelector('#persistent-status-container .waiting-badge');
+        if (badge) badge.textContent = String(total_waiting || '?');
     }
 
     async handleMatchFound(gameData) {
@@ -913,7 +952,17 @@ class GameManager {
 
         console.log('[GameManager] showQuestion index=', this.currentQuestionIndex, 'question=', q);
         if (this.el.targetAnswer) {
-            this.el.targetAnswer.textContent = this.currentMode === 'vs' ? '???' : (q.answers || []).join(' / ');
+            // Prefer explicit answers array (solo mode). If missing, fall back to common prompt/title fields
+            const answers = q.answers || q.answers === null ? q.answers : null;
+            if (this.currentMode === 'vs') {
+                this.el.targetAnswer.textContent = '???';
+            } else if (answers && answers.length) {
+                this.el.targetAnswer.textContent = answers.join(' / ');
+            } else {
+                // Fallback: show prompt or question text so the player at least sees something
+                const fallback = q.prompt || q.question || q.text || q.id || '';
+                this.el.targetAnswer.textContent = fallback || '';
+            }
         }
         // ensure AI output and analysis are visible/cleared
         if (this.el.aiOutput) this.el.aiOutput.textContent = 'AIが回答を待っています...';

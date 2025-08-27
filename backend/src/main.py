@@ -277,6 +277,7 @@ def heartbeat(req: HeartbeatRequest):
 class JoinLobbyRequest(BaseModel):
     player_id: str
     rule: Optional[str] = None
+    session_token: Optional[str] = None
 
 
 @app.post('/lobby/join')
