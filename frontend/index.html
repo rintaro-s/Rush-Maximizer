@@ -50,6 +50,44 @@
         </div>
     </div>
 
+    <!-- Tutorial selection modal -->
+    <div id="tutorial-select-modal" class="modal">
+        <div class="modal-content" style="max-width:500px;text-align:center;">
+            <h2 style="margin-bottom:20px;color:var(--primary-color);">Welcome to Rush-Maximizer!</h2>
+            <p style="margin-bottom:30px;line-height:1.6;">
+                初回プレイですか？<br>
+                チュートリアルでゲームの遊び方を学ぶことをお勧めします。
+            </p>
+            <div style="display:flex;gap:15px;justify-content:center;">
+                <button id="tutorial-yes-btn" class="btn btn-primary" style="padding:12px 24px;">
+                    📚 チュートリアルを開始
+                </button>
+                <button id="tutorial-no-btn" class="btn btn-secondary" style="padding:12px 24px;">
+                    ⏭️ スキップしてメニューへ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tutorial overlay (hidden by default; shown when tutorial active) -->
+    <div id="tutorial-overlay" class="tutorial-overlay">
+        <div class="tutorial-content">
+            <div style="position:relative;">
+                <div id="tutorial-counter" class="tutorial-step-counter"></div>
+            </div>
+            <div class="tutorial-step" id="tutorial-step">
+                <h3 id="tutorial-title">チュートリアル</h3>
+                <p id="tutorial-description">チュートリアルを開始します...</p>
+                <div class="tutorial-actions">
+                    <button id="tutorial-prev-btn" class="btn btn-secondary" style="display:none;">← 前へ</button>
+                    <button id="tutorial-next-btn" class="btn btn-primary">次へ →</button>
+                    <button id="tutorial-skip-btn" class="btn btn-secondary">スキップ</button>
+                </div>
+            </div>
+        </div>
+        <div class="tutorial-highlight" id="tutorial-highlight"></div>
+    </div>
+
     <div id="main-menu" class="screen">
         <div class="menu-container">
             <div class="game-title">
@@ -74,122 +112,105 @@
                 </button>
                 <button class="menu-btn" id="practice-mode-btn">
                     <span class="btn-icon">📚</span>
-                    <span class="btn-text">練習モード</span>
-                    <span class="btn-desc">自由に問題を練習</span>
-                </button>
-            </div>
-            <div class="menu-footer">
-                <button class="menu-footer-btn" id="leaderboard-btn">🏆 ランキング</button>
-                <button class="menu-footer-btn" id="achievements-btn">🎖️ 実績</button>
-                <button class="menu-footer-btn" id="settings-main-btn">⚙️ 設定</button>
-            </div>
-            <div id="server-stats-container" class="server-stats">
+                <div class="tab-content" id="server-tab" style="display:none;">
+                    <div class="form-group">
+                        <label for="game-server-address">ゲームサーバーアドレス:</label>
+                        <!-- hidden duplicate removed -->
+                    </div>
+                    <div class="form-group">
+                        <label for="lm-server-address">LMStudioサーバーアドレス:</label>
+                        <!-- hidden duplicate removed -->
+                    </div>
                 <span id="server-stats">サーバー情報: 取得中...</span>
             </div>
         </div>
     </div>
 
     <div id="game-screen" class="screen">
-        <header class="game-header">
-            <div class="header-left">
-                <button id="back-to-menu-btn" class="back-btn">←</button>
-                <div class="game-mode-info">
-                    <span id="current-mode">ソロモード</span>
-                    <div class="game-stats">
-                        <span class="stat">問題 <span id="question-number">1</span>/<span id="total-questions">10</span></span>
-                        <span class="stat">スコア <span id="current-score">0</span></span>
+        <!-- Futuristic HUD-style header -->
+    <div class="game-hud">
+            <div class="hud-top">
+                <button id="back-to-menu-btn" class="hud-btn exit-btn">✕</button>
+                <div class="hud-center">
+                    <div class="target-display">
+                        <div class="target-label">TARGET</div>
+                        <div id="target-answer" class="target-value">江戸城無血開城</div>
                     </div>
                 </div>
-            </div>
-            <div class="header-center timer-wrapper">
-                <div class="timer-container" id="timer-container">
-                    <div class="timer-label">残り時間</div>
-                    <div class="timer-display" id="timer-display">05:00</div>
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="target-panel">
-                    <h2>TARGET</h2>
-                    <div id="target-answer-container">
-                        <p id="target-answer">江戸城無血開城</p>
-                    </div>
-                    <div class="target-actions">
-                        <button id="hint-btn" class="btn btn-small">💡 ヒント</button>
-                        <button id="next-question-btn" class="btn btn-small">次の問題</button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <div class="game-content">
-            <div class="game-grid">
-                <div class="panel ai-panel">
-                    <div class="panel-header">
-                        <h2>AI RESPONSE</h2>
-                        <div class="ai-status">
-                            <span class="status-indicator" id="ai-status">待機中</span>
+                <div class="hud-right">
+                    <div class="progress-ring" id="progress-ring">
+                        <svg width="60" height="60">
+                            <circle cx="30" cy="30" r="25" fill="none" stroke="#333" stroke-width="4"/>
+                            <circle cx="30" cy="30" r="25" fill="none" stroke="#00d4ff" stroke-width="4" 
+                                    stroke-dasharray="157" stroke-dashoffset="157" id="progress-circle"/>
+                        </svg>
+                        <div class="progress-text">
+                            <span id="question-number">1</span>/<span id="total-questions">10</span>
                         </div>
                     </div>
-                    <div class="panel-body">
-                        <div id="ai-output">AIが回答を待っています...</div>
-                        <div class="ai-analysis" id="ai-analysis"></div>
+                </div>
+            </div>
+            <div class="hud-bottom">
+                <div class="hud-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">MODE</span>
+                        <span class="stat-value" id="current-mode">SOLO</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">SCORE</span>
+                        <span class="stat-value" id="current-score">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">ACCURACY</span>
+                        <span class="stat-value" id="accuracy">0%</span>
+                    </div>
+                    <div class="stat-item timer-wrapper">
+                        <span class="stat-label">TIME</span>
+                        <span class="stat-value" id="timer-display">05:00</span>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="panel player-panel">
-                    <div class="panel-header">
-                        <h2>YOUR QUESTION</h2>
+        <!-- Main game area -->
+            <div class="game-arena">
+            <!-- Left: Player input / history -->
+            <div class="arena-left">
+                <div class="input-zone">
+                    <div class="zone-header">
+                        <h3>YOUR STRATEGY</h3>
                         <div class="question-counter">
-                            <span id="question-count">質問回数: 0</span>
+                            <span id="question-count">QUESTIONS: 0</span>
                         </div>
                     </div>
-                    <div class="panel-body">
+                    <div class="input-area">
                         <div class="question-history" id="question-history"></div>
-                        <textarea id="player-question" placeholder="AIを正解に導く質問を考えよう..."></textarea>
-                        <div class="submit-controls">
-                            <button id="clear-question-btn" class="btn btn-secondary">クリア</button>
-                            <button id="submit-question-btn" class="btn btn-primary">質問する</button>
+                        <div class="input-controls">
+                            <textarea id="player-question" class="question-input player-textarea" 
+                                      placeholder="AIを正解に導く戦略的な質問を入力..."></textarea>
+                            <div class="control-buttons">
+                                <button id="clear-question-btn" class="control-btn clear-btn">CLEAR</button>
+                                <button id="pass-btn" class="control-btn pass-btn">PASS</button>
+                                <button id="submit-question-btn" class="control-btn submit-btn">SEND</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="side-panels">
-                <div class="panel score-panel">
-                    <div class="panel-header">
-                        <h2>SCORE & PROGRESS</h2>
-                    </div>
-                    <div class="panel-body">
-                        <div class="score-display">
-                            <div class="score-item">
-                                <span class="score-label">総スコア</span>
-                                <span class="score-value" id="total-score">0</span>
-                            </div>
-                            <div class="score-item">
-                                <span class="score-label">正解数</span>
-                                <span class="score-value" id="correct-count">0</span>
-                            </div>
-                            <div class="score-item">
-                                <span class="score-label">精度</span>
-                                <span class="score-value" id="accuracy">0%</span>
-                            </div>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progress-fill"></div>
-                        </div>
-                        <div class="achievements-mini">
-                            <h3>最近の実績</h3>
-                            <div id="recent-achievements"></div>
+            <!-- Right: AI response -->
+            <div class="arena-right">
+                <div class="ai-zone">
+                    <div class="zone-header">
+                        <h3>AI RESPONSE</h3>
+                        <div class="ai-status-indicator">
+                            <div class="status-dot" id="ai-status-dot"></div>
+                            <span id="ai-status">WAITING</span>
                         </div>
                     </div>
-                </div>
-
-                <div class="panel players-panel" id="players-panel">
-                    <div class="panel-header">
-                        <h2>PLAYERS</h2>
-                    </div>
-                    <div class="panel-body">
-                        <div id="players-list"></div>
+                    <div class="ai-output-container">
+                        <div id="ai-output" class="ai-text">AIが回答を待っています...</div>
+                        <div id="ai-analysis" class="ai-analysis"></div>
                     </div>
                 </div>
             </div>
@@ -229,6 +250,9 @@
                 <div class="result-actions">
                     <button class="btn btn-primary" id="play-again-btn">もう一度プレイ</button>
                     <button class="btn btn-secondary" id="back-to-menu-result-btn">メニューに戻る</button>
+                </div>
+                <div style="margin-top:12px;text-align:center;color:var(--text-secondary);font-size:0.9rem;">
+                    自動でメニューに戻るまで: <span id="auto-return-countdown">15</span> 秒
                 </div>
             </div>
         </div>

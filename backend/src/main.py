@@ -63,9 +63,14 @@ try:
 except Exception as e:
     print(f"Failed to mount /bgm static files: {e}")
 
+FRONTEND_ORIGINS = [
+    "http://localhost:9000",
+    "http://127.0.0.1:9000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=FRONTEND_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -97,6 +102,20 @@ def cleanup_inactive_players():
                     print(f"Cleaned up empty room: {room_id}")
 
 LMSTUDIO_API_URL = os.getenv("LMSTUDIO_API_URL", "http://host.docker.internal:1234/v1/chat/completions")
+
+# Scores persistence file (keeps top scores across restarts)
+SCORES_FILE = os.path.join(HERE, 'data', 'scores.json')
+try:
+    if os.path.isfile(SCORES_FILE):
+        with open(SCORES_FILE, 'r', encoding='utf-8') as sf:
+            stored = json.load(sf)
+            # basic validation
+            if isinstance(stored, dict):
+                SCORES = stored
+            else:
+                print('scores.json content invalid, starting fresh')
+except Exception as e:
+    print(f'Could not load scores from {SCORES_FILE}: {e}')
 
 class QuestionRequest(BaseModel):
     question: str
@@ -150,7 +169,7 @@ async def ask_ai(request: QuestionRequest):
         "\n- `invalid_reason`: validがfalseの場合は理由を日本語で記載"
         "\n【重要なルール】"
         "\n- ここでは、「質問文・問題分・説明文」から単語を回答してもらいます。「単語」から答えを連想させる(ほんのうじノ変→本能寺の変)のは不正です。"
-        "\n- 問題文や回答において、表記ゆれ（例: ひらがな・カタカナ・分割・当て字・意図的な誤字・類似音・記号混ぜ・英語表記・ローマ字・略語・隠語・俗称・伏せ字・一部だけの記載・分割記載など）を使って本来の答えを直接または間接的に誘導する入力はすべて不正です。"
+        "\n- 問題文や回答において、問題の単語をそのまま返答や表記ゆれ（例: ひらがな・カタカナ・分割・当て字・意図的な誤字・類似音・記号混ぜ・英語表記・ローマ字・略語・隠語・俗称・伏せ字・一部だけの記載・分割記載など）を使って本来の答えを直接または間接的に誘導する入力はすべて不正です。"
         "\n- 例:『鎌倉ばくふ』『織田おぶなが』『本能寺ノ変』『たいか＋の＋かいしん』『おだ・のぶなが』『ほんのうじのへん』『Tokugawa』『bakuhu』『Oda Nobunaga』『Honnouji』など、正答をひらがな・カタカナ・ローマ字・分割・記号・当て字・略語・隠語・俗称・一部のみ・伏せ字・誤字等で表現したものも全て不正です。"
         "\n- これらの不正入力やルール違反があった場合は、必ず `valid`: false とし、`invalid_reason` に「表記ゆれや難読化・不正入力」など理由を日本語で明記してください。"
         "\n- 危険・違法な行為や倫理的に不適切な内容も同様に `valid`: false で理由を明記してください。"
@@ -161,7 +180,8 @@ async def ask_ai(request: QuestionRequest):
             {"role": "system", "content": system_instruction},
             {"role": "user", "content": request.question}
         ],
-        "temperature": 0.2,
+    "temperature": 0.2,
+    "max_tokens": 800,
     }
 
     ai_response_text = ""
@@ -525,8 +545,21 @@ def submit_score(s: ScoreSubmit):
 
     rec = { 'player': nickname, 'score': canonical, 'time': s.time_seconds, 'meta': meta }
     SCORES.setdefault(mode, []).append(rec)
+    # persist scores to disk (best-effort)
+    try:
+        with open(SCORES_FILE, 'w', encoding='utf-8') as sf:
+            json.dump(SCORES, sf, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f'Warning: failed to persist scores to {SCORES_FILE}: {e}')
+
     print(f"score submitted: player={pid} mode={mode} canonical={canonical} meta={meta}")
     return { 'ok': True, 'canonical_score': canonical }
+
+
+@app.get('/scores/all')
+def scores_all():
+    # return full scores object for client-side ranking display
+    return { 'scores': SCORES }
 
 
 @app.get('/scores/top')

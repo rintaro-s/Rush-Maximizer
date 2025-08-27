@@ -99,20 +99,6 @@ body {
     display: block;
 }
 
-/* Safety: ensure game screen occupies viewport when activated.
-   Only apply aggressive defaults when the game-screen is active to avoid
-   showing gameplay UI on menu screens. */
-#game-screen.active {
-    display: block !important;
-    width: 100% !important;
-    min-height: 100vh !important;
-    box-sizing: border-box;
-}
-
-.screen, .screen.active {
-    width: 100%;
-}
-
 .menu-container {
     display: flex;
     flex-direction: column;
@@ -736,31 +722,6 @@ textarea#player-question:focus {
     gap: 1rem;
 }
 
-/* Keep page content from being hidden under the fixed HUD */
-body > .screen { padding-top: 84px; }
-
-/* Notifications: move to bottom-center and make pill-shaped */
-.notification {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(8px);
-    padding: 10px 18px;
-    border-radius: 999px;
-    background: rgba(10,10,12,0.88);
-    color: white;
-    box-shadow: 0 10px 36px rgba(0,0,0,0.7);
-    opacity: 0;
-    transition: all 220ms cubic-bezier(.2,.8,.2,1);
-    z-index: 99999;
-    min-width: 180px;
-    text-align: center;
-}
-.notification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-.notification.notification-success { background: linear-gradient(90deg, rgba(0,255,136,0.06), rgba(0,212,255,0.02)); color: var(--success-color); border: 1px solid rgba(0,255,136,0.06); }
-.notification.notification-error { background: linear-gradient(90deg, rgba(255,71,87,0.06), rgba(255,107,53,0.02)); color: var(--danger-color); border: 1px solid rgba(255,71,87,0.06); }
-.notification.notification-info { background: linear-gradient(90deg, rgba(0,212,255,0.06), rgba(0,212,255,0.02)); color: var(--primary-color); border: 1px solid rgba(0,212,255,0.06); }
-
 #matchmaking-status {
     color: var(--text-primary);
     font-weight: 600;
@@ -973,13 +934,6 @@ body > .screen { padding-top: 84px; }
     width: 40px;
 }
 
-.leaderboard-self {
-    background: linear-gradient(90deg, rgba(0,212,255,0.04), rgba(0,255,136,0.02));
-    border: 1px solid rgba(0,212,255,0.04);
-    padding: 0.6rem;
-    border-radius: 8px;
-}
-
 .player-info {
     flex-grow: 1;
 }
@@ -1110,59 +1064,47 @@ body > .screen { padding-top: 84px; }
 /* Game HUD Styles */
 .game-hud {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    padding: 0.6rem 1rem;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    position: fixed;
-    top: 12px;
-    left: 0;
-    right: 0;
-    margin: 0 auto;
-    max-width: 1200px;
-    z-index: 8000;
-    pointer-events: none; /* informational HUD should not block clicks */
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(26, 26, 26, 0.9));
+    border: 2px solid var(--primary-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 0 30px var(--primary-glow);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(20px);
 }
-
-/* Ensure HUD and arena are hidden unless their screen is active */
-.screen:not(.active) .game-hud { display: none !important; }
-.screen:not(.active) .game-arena { display: none !important; }
-
-/* Hide any temporary reparent wrapper used as a fallback unless explicitly shown */
-#game-screen-reparent { display: none; }
 
 .target-display {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-width: 260px;
+    min-width: 300px;
 }
 
 .target-label {
     color: var(--text-secondary);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     font-weight: 600;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 1px;
 }
 
 .target-value {
     font-family: var(--title-font);
-    font-size: clamp(1.8rem, 4.8vw, 3.2rem);
-    font-weight: 900;
+    font-size: 2.2rem;
+    font-weight: 700;
     color: var(--primary-color);
-    text-shadow: 0 0 20px var(--primary-glow);
-    background: rgba(0,0,0,0.35);
-    padding: 0.6rem 1.1rem;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.04);
-    margin-top: 0.2rem;
+    text-shadow: 0 0 15px var(--primary-glow);
+    background: rgba(0, 0, 0, 0.6);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--primary-color);
     text-align: center;
+    min-width: 200px;
 }
 
 .progress-ring {
@@ -1217,25 +1159,6 @@ body > .screen { padding-top: 84px; }
     gap: 2rem;
     padding: 2rem;
     min-height: calc(100vh - 200px);
-}
-
-/* Fallbacks for cases where layout collapses to 0x0 (safety net). Apply only when active. */
-#game-screen.active > * {
-    box-sizing: border-box;
-    width: 100%;
-}
-
-#game-screen.active .game-hud {
-    /* ensure hud occupies natural height and does not collapse */
-    display: flex !important;
-    position: relative !important;
-    width: 100% !important;
-}
-
-#game-screen.active .game-arena {
-    /* when forced full-screen, ensure arena has room */
-    min-height: calc(100vh - 140px) !important;
-    width: 100% !important;
 }
 
 .arena-zone {

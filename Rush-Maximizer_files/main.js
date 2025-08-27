@@ -543,74 +543,15 @@ class GameManager {
         try {
             this.closeAllModals();
             const overlay = document.getElementById('big-countdown');
-            if (overlay) {
-                overlay.classList.remove('active');
-                overlay.style.display = 'none';
-                overlay.style.pointerEvents = 'none';
-            }
-            // aggressively hide any modal / overlay elements that might block view
-            document.querySelectorAll('.modal, .tutorial-overlay, .countdown-overlay, .tutorial-highlight, #persistent-status-container').forEach(el => {
-                try {
-                    if (el.classList) el.classList.remove('active');
-                    el.style.display = 'none';
-                    el.style.pointerEvents = 'none';
-                    el.style.zIndex = '0';
-                } catch(e){}
+            if (overlay) { overlay.classList.remove('active'); overlay.style.display = 'none'; }
+            // forcibly hide any modal / overlay elements that might block view
+            document.querySelectorAll('.modal, .tutorial-overlay, .countdown-overlay').forEach(el => {
+                try { el.classList && el.classList.remove('active'); el.style.display = 'none'; } catch(e){}
             });
-            // ensure game-screen is scrolled to and on top with explicit sizing
+            document.querySelectorAll('.tutorial-highlight').forEach(el => el.remove());
+            // ensure game-screen is scrolled to and on top (very high z-index)
             const gs = document.getElementById('game-screen');
-            if (gs) {
-                // Force full-screen fixed layout for gameplay to avoid layout collapse bugs
-                gs.style.display = 'block';
-                gs.style.position = 'fixed';
-                gs.style.top = '0';
-                gs.style.left = '0';
-                gs.style.width = '100%';
-                gs.style.height = '100vh';
-                gs.style.minHeight = '100vh';
-                gs.style.zIndex = 99999;
-                gs.style.opacity = 1;
-                gs.style.pointerEvents = 'auto';
-                try { gs.scrollIntoView({ behavior: 'auto' }); } catch(e){}
-            }
-
-            // Fallback: if the game-screen subtree appears to have collapsed (all descendants 0x0),
-            // clone the content into a new fixed container and append to body so it renders.
-            try {
-                const all = gs ? Array.from(gs.querySelectorAll('*')) : [];
-                const anyVisible = all.some(el => {
-                    const r = el.getBoundingClientRect();
-                    return (r.width > 0 || r.height > 0);
-                });
-                if (!anyVisible && gs) {
-                    // move original children into a new fixed container so event listeners remain
-                    const existing = document.getElementById('game-screen-reparent');
-                    if (existing) existing.remove();
-                    const wrapper = document.createElement('div');
-                    wrapper.id = 'game-screen-reparent';
-                    wrapper.className = 'screen active';
-                    // style it like full-screen gameplay
-                    wrapper.style.position = 'fixed';
-                    wrapper.style.top = '0';
-                    wrapper.style.left = '0';
-                    wrapper.style.width = '100%';
-                    wrapper.style.height = '100vh';
-                    wrapper.style.zIndex = 100000;
-                    wrapper.style.background = 'transparent';
-                    wrapper.style.pointerEvents = 'auto';
-                    // move children from gs into wrapper, preserving nodes and listeners
-                    const moved = [];
-                    while (gs.firstChild) {
-                        const child = gs.firstChild;
-                        moved.push(child);
-                        wrapper.appendChild(child);
-                    }
-                    document.body.appendChild(wrapper);
-                    this._reparented = true;
-                    this._reparentId = 'game-screen-reparent';
-                    this._reparentedNodes = moved;
-                }
-            } catch (e) { console.warn('reparent fallback failed', e); }
+            if (gs) { gs.style.display = 'block'; gs.style.zIndex = 99999; gs.scrollIntoView({ behavior: 'auto' }); gs.style.opacity = 1; }
         } catch (e) { console.warn('beginGame overlay cleanup failed', e); }
     console.log('[GameManager] beginGame called, mode=', mode, 'questions count=', this.questions ? this.questions.length : 0);
         this.updateGameHUD();
@@ -684,13 +625,9 @@ class GameManager {
     }
 
     goBackToMenu() {
-    // clear any auto-return timer if active
-    try { if (this._autoReturnInterval) { clearInterval(this._autoReturnInterval); this._autoReturnInterval = null; } } catch (e) {}
-    // resume menu BGM
-    try { this.playBGM('menu.mp3'); } catch (e) {}
-    this.resetGameState();
-    this.showScreen('main-menu');
-    this.closeAllModals();
+        this.resetGameState();
+        this.showScreen('main-menu');
+        this.closeAllModals();
     }
 
     updateRuleDescription() {
@@ -1028,8 +965,6 @@ class GameManager {
 
     endGame() {
         this.stopTimer();
-        // stop gameplay BGM when game ends
-        try { this.stopBGM(); } catch (e) {}
         const timeTaken = this.initialTimeLimit - this.timeLimit;
         if (this.el.finalScore) this.el.finalScore.textContent = this.score;
         if (this.el.resultCorrect) this.el.resultCorrect.textContent = `${this.correctAnswers} / ${this.questions.length}`;
@@ -1038,26 +973,9 @@ class GameManager {
         if (this.el.resultAccuracy) this.el.resultAccuracy.textContent = `${accuracy}%`;
         if (this.el.resultTime) this.el.resultTime.textContent = this.formatTime(timeTaken);
         this.showModal('result-modal');
-        // submit score for non-practice modes
         if (this.currentMode !== 'practice') {
             this.submitScore(timeTaken);
         }
-
-        // start auto-return countdown (15s) and update UI element if present
-        try { if (this._autoReturnInterval) clearInterval(this._autoReturnInterval); } catch (e) {}
-        let autoSec = 15;
-        const autoEl = document.getElementById('auto-return-countdown');
-        if (autoEl) autoEl.textContent = String(autoSec);
-        this._autoReturnInterval = setInterval(() => {
-            autoSec--;
-            if (autoEl) autoEl.textContent = String(autoSec);
-            if (autoSec <= 0) {
-                clearInterval(this._autoReturnInterval);
-                this._autoReturnInterval = null;
-                this.closeModal('result-modal');
-                this.goBackToMenu();
-            }
-        }, 1000);
     }
 
     async submitScore(timeInSeconds) {
@@ -1072,40 +990,11 @@ class GameManager {
                 time_seconds: timeInSeconds,
                 client_raw_score: this.score
             };
-            const res = await fetch(`${this.gameServerUrl}/scores/submit`, {
+            await fetch(`${this.gameServerUrl}/scores/submit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            if (!res.ok) throw new Error(`Score submit failed: ${res.status}`);
-
-            // Fetch updated scores and show leaderboard with highlight
-            try {
-                const res2 = await fetch(`${this.gameServerUrl}/scores/all`);
-                if (res2.ok) {
-                    const json = await res2.json();
-                    const scores = (json && json.scores && json.scores[this.currentMode]) || [];
-                    this.showModal('leaderboard-modal');
-                    // populate leaderboard list
-                    if (this.el.leaderboardList) {
-                        this.el.leaderboardList.innerHTML = '';
-                        // sort by score desc
-                        scores.sort((a,b) => (b.score||0) - (a.score||0));
-                        scores.forEach((item, i) => {
-                            const row = document.createElement('div');
-                            row.className = 'leaderboard-item';
-                            if (item.player === (localStorage.getItem('nickname') || this.nickname)) {
-                                row.classList.add('leaderboard-self');
-                            }
-                            row.innerHTML = `<div class="rank">#${i+1}</div><div class="player-name">${item.player}</div><div class="player-score">${item.score}</div>`;
-                            this.el.leaderboardList.appendChild(row);
-                        });
-                    }
-                }
-            } catch (e) {
-                console.warn('Failed to fetch latest scores:', e);
-            }
-
         } catch (e) {
             console.error('Score submission failed:', e);
         }
@@ -1249,40 +1138,8 @@ class GameManager {
                 this.stopBGM();
             }
         } catch (e) {}
-        // When switching screens, clear any forced full-screen inline styles applied to game-screen
-        // This ensures returning to menu restores normal layout
-        if (screenId !== 'game-screen') {
-            const gs = document.getElementById('game-screen');
-            if (gs) {
-                gs.style.position = '';
-                gs.style.top = '';
-                gs.style.left = '';
-                gs.style.width = '';
-                gs.style.height = '';
-                gs.style.minHeight = '';
-                gs.style.zIndex = '';
-                gs.style.opacity = '';
-                gs.style.pointerEvents = '';
-            }
-            // cleanup any temporary reparented container
-            try {
-                if (this._reparented && this._reparentId) {
-                    const wrapper = document.getElementById(this._reparentId);
-                    const gsEl = document.getElementById('game-screen');
-                    if (wrapper) {
-                        // if we recorded moved nodes, move them back
-                        if (this._reparentedNodes && this._reparentedNodes.length && gsEl) {
-                            this._reparentedNodes.forEach(n => gsEl.appendChild(n));
-                        }
-                        wrapper.remove();
-                    }
-                    this._reparented = false;
-                    this._reparentId = null;
-                    this._reparentedNodes = null;
-                }
-            } catch (e) {}
-        }
     }
+
     showModal(modalId) { 
         const modal = document.getElementById(modalId);
         if (modal) modal.classList.add('active');
