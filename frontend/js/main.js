@@ -1,10 +1,12 @@
 class GameManager {
     constructor() {
+        // --- Core Properties ---
         this.gameServerUrl = localStorage.getItem('gameServerUrl') || (typeof config !== 'undefined' ? config.backendUrl : '');
         this.lmServerUrl = localStorage.getItem('lmServerUrl') || '';
         this.playerId = localStorage.getItem('playerId');
         this.nickname = localStorage.getItem('nickname') || '';
 
+        // --- Game State ---
         this.questions = [];
         this.currentQuestionIndex = 0;
         this.score = 0;
@@ -12,106 +14,115 @@ class GameManager {
         this.questionCount = 0;
         this.timer = null;
         this.timeLimit = 300; // Default 5 minutes
+        this.initialTimeLimit = 300;
         this.questionsPerGame = 10; // Default 10 questions
+        this.currentMode = 'solo';
 
+        // --- Multiplayer State ---
+        this.lobbyPollInterval = null;
+
+        // --- Initialization ---
+        this.el = {};
         this.cacheElements();
         this.attachEventListeners();
         this.loadSettings();
         this.initUI();
     }
 
-    cache(id) { return document.getElementById(id); }
+    // --- Caching and Event Binding ---
 
     cacheElements() {
-        this.el = {
-            // Modals & Screens
-            startupOverlay: this.cache('startup-overlay'),
-            mainMenu: this.cache('main-menu'),
-            gameScreen: this.cache('game-screen'),
-            settingsModal: this.cache('settings-modal'),
-            leaderboardModal: this.cache('leaderboard-modal'),
-            achievementsModal: this.cache('achievements-modal'),
-            resultModal: this.cache('result-modal'),
-            controlsOverlay: this.cache('controls-overlay'),
-            practiceSetupModal: this.cache('practice-setup-modal'),
-            matchSelectModal: this.cache('match-select-modal'),
-            randomMatchModal: this.cache('random-match-modal'),
-            roomModal: this.cache('room-modal'),
-
-            // Startup
-            startupServer: this.cache('startup-server'),
-            startupLMServer: this.cache('startup-lmserver'),
-            startupNickname: this.cache('startup-nickname'),
-            connectServerBtn: this.cache('connect-server-btn'),
-            connectionStatus: this.cache('connection-status'),
-            lobbyStatus: this.cache('lobby-status'),
-            lobbyMinigame: this.cache('lobby-minigame'),
-            minigameArea: this.cache('minigame-area'),
-            minigameBtn: this.cache('minigame-btn'),
-            minigameScore: this.cache('minigame-score'),
-
-            // Main Menu
-            soloModeBtn: this.cache('solo-mode-btn'),
-            vsModeBtn: this.cache('vs-mode-btn'),
-            rtaModeBtn: this.cache('rta-mode-btn'),
-            practiceModeBtn: this.cache('practice-mode-btn'),
-            leaderboardBtn: this.cache('leaderboard-btn'),
-            achievementsBtn: this.cache('achievements-btn'),
-            settingsMainBtn: this.cache('settings-main-btn'),
-
-            // Game Screen
-            backToMenuBtn: this.cache('back-to-menu-btn'),
-            currentMode: this.cache('current-mode'),
-            questionNumber: this.cache('question-number'),
-            totalQuestions: this.cache('total-questions'),
-            currentScore: this.cache('current-score'),
-            timerDisplay: this.cache('timer-display'),
-            targetAnswer: this.cache('target-answer'),
-            aiOutput: this.cache('ai-output'),
-            aiAnalysis: this.cache('ai-analysis'),
-            aiStatus: this.cache('ai-status'),
-            playerQuestion: this.cache('player-question'),
-            questionHistory: this.cache('question-history'),
-            questionCount: this.cache('question-count'),
-            clearQuestionBtn: this.cache('clear-question-btn'),
-            submitQuestionBtn: this.cache('submit-question-btn'),
-            totalScore: this.cache('total-score'),
-            correctCount: this.cache('correct-count'),
-            accuracy: this.cache('accuracy'),
-            progressFill: this.cache('progress-fill'),
-
-            // Result Modal
-            finalScore: this.cache('final-score'),
-            resultCorrect: this.cache('result-correct'),
-            resultQuestions: this.cache('result-questions'),
-            resultAccuracy: this.cache('result-accuracy'),
-            resultTime: this.cache('result-time'),
-            playAgainBtn: this.cache('play-again-btn'),
-            backToMenuResultBtn: this.cache('back-to-menu-result-btn'),
-
-            // Settings
-            saveSettingsBtn: this.cache('save-settings-btn'),
-            themeSelect: this.cache('theme'),
-            gameServerAddress: this.cache('game-server-address'),
-            lmServerAddress: this.cache('lm-server-address'),
-
-            // Leaderboard
-            leaderboardList: this.cache('leaderboard-list'),
-
-            // Multiplayer Modals
-            matchRandomBtn: this.cache('match-random-btn'),
-            matchCustomBtn: this.cache('match-custom-btn'),
-            randomRuleSelect: this.cache('random-rule-select'),
-            ruleDescription: this.cache('rule-description'),
-            randomJoinBtn: this.cache('random-join-btn'),
-            createRoomBtn: this.cache('create-room-btn'),
-            joinRoomBtn: this.cache('join-room-btn'),
-            roomStatus: this.cache('room-status'),
-        };
+        // A simpler, more direct caching method to avoid potential bugs.
+        this.el.startupOverlay = document.getElementById('startup-overlay');
+        this.el.mainMenu = document.getElementById('main-menu');
+        this.el.gameScreen = document.getElementById('game-screen');
+        this.el.settingsModal = document.getElementById('settings-modal');
+        this.el.leaderboardModal = document.getElementById('leaderboard-modal');
+        this.el.achievementsModal = document.getElementById('achievements-modal');
+        this.el.resultModal = document.getElementById('result-modal');
+        this.el.controlsOverlay = document.getElementById('controls-overlay');
+        this.el.practiceSetupModal = document.getElementById('practice-setup-modal');
+        this.el.matchSelectModal = document.getElementById('match-select-modal');
+        this.el.randomMatchModal = document.getElementById('random-match-modal');
+        this.el.roomModal = document.getElementById('room-modal');
+        this.el.startupServer = document.getElementById('startup-server');
+        this.el.startupLmserver = document.getElementById('startup-lmserver');
+        this.el.startupNickname = document.getElementById('startup-nickname');
+        this.el.connectServerBtn = document.getElementById('connect-server-btn');
+        this.el.connectionStatus = document.getElementById('connection-status');
+        this.el.lobbyStatus = document.getElementById('lobby-status');
+        this.el.lobbyMinigame = document.getElementById('lobby-minigame');
+        this.el.minigameArea = document.getElementById('minigame-area');
+        this.el.minigameBtn = document.getElementById('minigame-btn');
+        this.el.minigameScore = document.getElementById('minigame-score');
+        this.el.startupForceLm = document.getElementById('startup-force-lm');
+        this.el.soloModeBtn = document.getElementById('solo-mode-btn');
+        this.el.vsModeBtn = document.getElementById('vs-mode-btn');
+        this.el.rtaModeBtn = document.getElementById('rta-mode-btn');
+        this.el.practiceModeBtn = document.getElementById('practice-mode-btn');
+        this.el.leaderboardBtn = document.getElementById('leaderboard-btn');
+        this.el.achievementsBtn = document.getElementById('achievements-btn');
+        this.el.settingsMainBtn = document.getElementById('settings-main-btn');
+        this.el.backToMenuBtn = document.getElementById('back-to-menu-btn');
+        this.el.currentMode = document.getElementById('current-mode');
+        this.el.questionNumber = document.getElementById('question-number');
+        this.el.totalQuestions = document.getElementById('total-questions');
+        this.el.currentScore = document.getElementById('current-score');
+        this.el.timerDisplay = document.getElementById('timer-display');
+        this.el.targetAnswer = document.getElementById('target-answer');
+        this.el.aiOutput = document.getElementById('ai-output');
+        this.el.aiAnalysis = document.getElementById('ai-analysis');
+        this.el.aiStatus = document.getElementById('ai-status');
+        this.el.playerQuestion = document.getElementById('player-question');
+        this.el.questionHistory = document.getElementById('question-history');
+        this.el.questionCount = document.getElementById('question-count');
+        this.el.clearQuestionBtn = document.getElementById('clear-question-btn');
+        this.el.submitQuestionBtn = document.getElementById('submit-question-btn');
+        this.el.totalScore = document.getElementById('total-score');
+        this.el.correctCount = document.getElementById('correct-count');
+        this.el.accuracy = document.getElementById('accuracy');
+        this.el.progressFill = document.getElementById('progress-fill');
+        this.el.finalScore = document.getElementById('final-score');
+        this.el.resultCorrect = document.getElementById('result-correct');
+        this.el.resultQuestions = document.getElementById('result-questions');
+        this.el.resultAccuracy = document.getElementById('result-accuracy');
+        this.el.resultTime = document.getElementById('result-time');
+        this.el.playAgainBtn = document.getElementById('play-again-btn');
+        this.el.backToMenuResultBtn = document.getElementById('back-to-menu-result-btn');
+        this.el.saveSettingsBtn = document.getElementById('save-settings-btn');
+        this.el.theme = document.getElementById('theme');
+        this.el.gameServerAddress = document.getElementById('game-server-address');
+        this.el.lmServerAddress = document.getElementById('lm-server-address');
+        this.el.leaderboardList = document.getElementById('leaderboard-list');
+        this.el.matchRandomBtn = document.getElementById('match-random-btn');
+        this.el.matchCustomBtn = document.getElementById('match-custom-btn');
+        this.el.randomRuleSelect = document.getElementById('random-rule-select');
+        this.el.ruleDescription = document.getElementById('rule-description');
+        this.el.randomJoinBtn = document.getElementById('random-join-btn');
+        this.el.createRoomBtn = document.getElementById('create-room-btn');
+        this.el.joinRoomBtn = document.getElementById('join-room-btn');
+        this.el.roomStatus = document.getElementById('room-status');
+        this.el.roomName = document.getElementById('room-name');
+        this.el.roomPassword = document.getElementById('room-password');
+        this.el.roomMax = document.getElementById('room-max');
+        this.el.roomRule = document.getElementById('room-rule');
+        this.el.joinRoomId = document.getElementById('join-room-id');
+        this.el.joinRoomPassword = document.getElementById('join-room-password');
+        this.el.practiceQuestions = document.getElementById('practice-questions');
+        this.el.practiceTime = document.getElementById('practice-time');
+        this.el.practiceStartBtn = document.getElementById('practice-start-btn');
+        this.el.controlsStartBtn = document.getElementById('controls-start-btn');
+        this.el.controlsBackBtn = document.getElementById('controls-back-btn');
     }
 
     attachEventListeners() {
-        const safeAdd = (el, ev, fn) => { if (el) el.addEventListener(ev, fn.bind(this)); };
+        const safeAdd = (el, ev, fn) => {
+            if (el) {
+                el.addEventListener(ev, fn.bind(this));
+            } else {
+                console.warn(`Event listener for ${ev} could not be attached to a null element.`);
+            }
+        };
 
         // Startup
         safeAdd(this.el.connectServerBtn, 'click', this.startupConnect);
@@ -129,11 +140,9 @@ class GameManager {
         safeAdd(this.el.backToMenuBtn, 'click', this.goBackToMenu);
         safeAdd(this.el.submitQuestionBtn, 'click', this.submitQuestion);
         safeAdd(this.el.clearQuestionBtn, 'click', this.clearQuestion);
-        if (this.el.playerQuestion) {
-            this.el.playerQuestion.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) this.submitQuestion();
-            });
-        }
+        safeAdd(this.el.playerQuestion, 'keydown', (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) this.submitQuestion();
+        });
 
         // Modals
         document.querySelectorAll('.modal .close-btn').forEach(btn => {
@@ -142,9 +151,9 @@ class GameManager {
         safeAdd(this.el.saveSettingsBtn, 'click', this.saveSettings);
         safeAdd(this.el.playAgainBtn, 'click', () => this.startGame(this.currentMode));
         safeAdd(this.el.backToMenuResultBtn, 'click', this.goBackToMenu);
-        safeAdd(this.cache('practice-start-btn'), 'click', this.startPracticeMode);
-        safeAdd(this.cache('controls-start-btn'), 'click', () => this.closeModal('controls-overlay'));
-        safeAdd(this.cache('controls-back-btn'), 'click', this.goBackToMenu);
+        safeAdd(this.el.practiceStartBtn, 'click', this.startPracticeMode);
+        safeAdd(this.el.controlsStartBtn, 'click', () => this.closeModal('controls-overlay'));
+        safeAdd(this.el.controlsBackBtn, 'click', this.goBackToMenu);
 
         // Multiplayer
         safeAdd(this.el.matchRandomBtn, 'click', () => { this.showModal('random-match-modal'); this.closeModal('match-select-modal'); });
@@ -160,47 +169,72 @@ class GameManager {
         });
     }
 
+    // --- UI Initialization and State ---
+
     initUI() {
         this.showScreen('main-menu');
-        if (this.gameServerUrl && this.nickname) {
-            this.el.startupServer.value = this.gameServerUrl;
-            this.el.startupLMServer.value = this.lmServerUrl;
-            this.el.startupNickname.value = this.nickname;
-            this.closeModal('startup-overlay');
-        } else {
-            this.showModal('startup-overlay');
-        }
+        this.showModal('startup-overlay');
+        if (this.gameServerUrl && this.el.startupServer) this.el.startupServer.value = this.gameServerUrl;
+        if (this.lmServerUrl && this.el.startupLmserver) this.el.startupLmserver.value = this.lmServerUrl;
+        if (this.nickname && this.el.startupNickname) this.el.startupNickname.value = this.nickname;
         this.updateRuleDescription();
     }
 
+    loadSettings() {
+        const theme = localStorage.getItem('theme') || 'dark';
+        if (this.el.theme) this.el.theme.value = theme;
+        this.applyTheme(theme);
+        if (this.el.gameServerAddress) this.el.gameServerAddress.value = this.gameServerUrl;
+        if (this.el.lmServerAddress) this.el.lmServerAddress.value = this.lmServerUrl;
+    }
+
+    saveSettings() {
+        if (this.el.gameServerAddress) this.gameServerUrl = this.el.gameServerAddress.value.trim();
+        if (this.el.lmServerAddress) this.lmServerUrl = this.el.lmServerAddress.value.trim();
+        const theme = this.el.theme ? this.el.theme.value : 'dark';
+        
+        localStorage.setItem('gameServerUrl', this.gameServerUrl);
+        localStorage.setItem('lmServerUrl', this.lmServerUrl);
+        localStorage.setItem('theme', theme);
+        
+        this.applyTheme(theme);
+        this.showNotification('設定を保存しました');
+        this.closeModal('settings-modal');
+    }
+
+    applyTheme(theme) {
+        document.documentElement.className = theme;
+    }
+
     // --- Connection and Setup ---
+
     async startupConnect() {
-        const server = this.el.startupServer.value.trim();
-        const lm = this.el.startupLMServer.value.trim();
-        const nick = this.el.startupNickname.value.trim();
-        const force = this.cache('startup-force-lm').checked;
+        const server = this.el.startupServer ? this.el.startupServer.value.trim() : '';
+        const lm = this.el.startupLmserver ? this.el.startupLmserver.value.trim() : '';
+        const nick = this.el.startupNickname ? this.el.startupNickname.value.trim() : '';
+        const force = this.el.startupForceLm ? this.el.startupForceLm.checked : false;
 
         if (!server || !nick) {
             return this.showNotification('ゲームサーバーとニックネームを入力してください', 'error');
         }
 
-        this.el.connectServerBtn.disabled = true;
-        this.el.connectionStatus.textContent = 'サーバーに接続中...';
+        if (this.el.connectServerBtn) this.el.connectServerBtn.disabled = true;
+        if (this.el.connectionStatus) this.el.connectionStatus.textContent = 'サーバーに接続中...';
 
         try {
             const res = await fetch(`${server}/status`);
             if (!res.ok) throw new Error(`サーバーが応答しません (Status: ${res.status})`);
             const info = await res.json();
-            this.el.connectionStatus.textContent = `ゲームサーバー: OK (ID: ${info.server_id.slice(0, 8)})`;
+            if (this.el.connectionStatus) this.el.connectionStatus.textContent = `ゲームサーバー: OK (ID: ${info.server_id.slice(0, 8)})`;
             this.gameServerUrl = server;
             this.nickname = nick;
 
             if (lm && !force) {
-                this.el.connectionStatus.textContent += ' | LMStudioに接続中...';
+                if (this.el.connectionStatus) this.el.connectionStatus.textContent += ' | LMStudioに接続中...';
                 const probe = await fetch(`${server}/probe_lm`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ lm_server: lm }) });
                 const probej = await probe.json();
                 if (!probej.ok) throw new Error(`LMStudioに接続できません: ${probej.error || '不明なエラー'}`);
-                this.el.connectionStatus.textContent = this.el.connectionStatus.textContent.replace(' | LMStudioに接続中...', ' | LMStudio: OK');
+                if (this.el.connectionStatus) this.el.connectionStatus.textContent = this.el.connectionStatus.textContent.replace(' | LMStudioに接続中...', ' | LMStudio: OK');
             }
             this.lmServerUrl = lm;
 
@@ -218,14 +252,15 @@ class GameManager {
             this.closeModal('startup-overlay');
 
         } catch (e) {
-            this.el.connectionStatus.textContent = `接続失敗: ${e.message}`;
+            if (this.el.connectionStatus) this.el.connectionStatus.textContent = `接続失敗: ${e.message}`;
             this.showNotification(e.message, 'error');
         } finally {
-            this.el.connectServerBtn.disabled = false;
+            if (this.el.connectServerBtn) this.el.connectServerBtn.disabled = false;
         }
     }
 
-    // --- Game Modes ---
+    // --- Game Modes & Flow ---
+
     async startSoloMode() {
         this.currentMode = 'solo';
         this.timeLimit = 5 * 60;
@@ -242,8 +277,8 @@ class GameManager {
 
     startPracticeMode() {
         this.currentMode = 'practice';
-        this.questionsPerGame = parseInt(this.cache('practice-questions').value, 10) || 10;
-        this.timeLimit = (parseInt(this.cache('practice-time').value, 10) || 5) * 60;
+        this.questionsPerGame = this.el.practiceQuestions ? parseInt(this.el.practiceQuestions.value, 10) : 10;
+        this.timeLimit = (this.el.practiceTime ? parseInt(this.el.practiceTime.value, 10) : 5) * 60;
         this.closeModal('practice-setup-modal');
         this.fetchQuestionsAndStartGame();
     }
@@ -272,15 +307,23 @@ class GameManager {
         this.showScreen('game-screen');
         this.showModal('controls-overlay');
 
-        this.el.currentMode.textContent = this.getModeName(mode);
-        this.el.totalQuestions.textContent = this.questions.length;
+        if (this.el.currentMode) this.el.currentMode.textContent = this.getModeName(mode);
+        if (this.el.totalQuestions) this.el.totalQuestions.textContent = this.questions.length;
 
         this.showQuestion();
         this.startTimer();
     }
 
+    goBackToMenu() {
+        this.resetGameState();
+        this.showScreen('main-menu');
+        this.closeAllModals();
+    }
+
     // --- Multiplayer Flow ---
+
     updateRuleDescription() {
+        if (!this.el.randomRuleSelect || !this.el.ruleDescription) return;
         const selectedRule = this.el.randomRuleSelect.value;
         const descriptions = {
             classic: '<b>クラシック:</b> 標準的なルールです。10問の問題に挑戦し、スコアを競います。',
@@ -291,18 +334,20 @@ class GameManager {
     }
 
     async joinRandomMatch() {
-        const rule = this.el.randomRuleSelect.value;
+        const rule = this.el.randomRuleSelect ? this.el.randomRuleSelect.value : 'classic';
         this.closeModal('random-match-modal');
-        this.el.lobbyStatus.textContent = `「${this.getModeName(rule)}」ルールでマッチング待機中...`;
-        this.el.lobbyStatus.style.display = 'block';
-        this.startLobbyPolling(rule);
+        if (this.el.lobbyStatus) {
+            this.el.lobbyStatus.textContent = `「${this.getModeName(rule)}」ルールでマッチング待機中...`;
+            this.el.lobbyStatus.style.display = 'block';
+        }
+        this.startLobbyPolling({ rule });
     }
 
     async createRoom() {
-        const name = this.cache('room-name').value || '';
-        const password = this.cache('room-password').value || '';
-        const max_players = parseInt(this.cache('room-max').value, 10) || 3;
-        const rule = this.cache('room-rule').value || 'classic';
+        const name = this.el.roomName ? this.el.roomName.value : '';
+        const password = this.el.roomPassword ? this.el.roomPassword.value : '';
+        const max_players = this.el.roomMax ? parseInt(this.el.roomMax.value, 10) : 3;
+        const rule = this.el.roomRule ? this.el.roomRule.value : 'classic';
 
         try {
             const res = await fetch(`${this.gameServerUrl}/room/create`, { 
@@ -312,48 +357,38 @@ class GameManager {
             });
             const data = await res.json();
             if (data.error) throw new Error(data.error);
-            this.el.roomStatus.textContent = `ルーム作成完了！ID: ${data.room_id}。友達を待っています...`;
-            this.startLobbyPolling(null, data.room_id);
+            if (this.el.roomStatus) this.el.roomStatus.textContent = `ルーム作成完了！ID: ${data.room_id}。友達を待っています...`;
+            this.startLobbyPolling({ roomId: data.room_id });
         } catch (e) {
-            this.el.roomStatus.textContent = `作成失敗: ${e.message}`;
+            if (this.el.roomStatus) this.el.roomStatus.textContent = `作成失敗: ${e.message}`;
             this.showNotification(e.message, 'error');
         }
     }
 
     async joinRoom() {
-        const room_id = this.cache('join-room-id').value.trim();
-        const password = this.cache('join-room-password').value || '';
-        if (!room_id) return this.showNotification('ルームIDを入力してください', 'error');
+        const roomId = this.el.joinRoomId ? this.el.joinRoomId.value.trim() : '';
+        const password = this.el.joinRoomPassword ? this.el.joinRoomPassword.value : '';
+        if (!roomId) return this.showNotification('ルームIDを入力してください', 'error');
 
         try {
-            const res = await fetch(`${this.gameServerUrl}/room/join`, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ player_id: this.playerId, room_id, password })
-            });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            this.el.roomStatus.textContent = `ルーム「${room_id}」に参加しました。ゲーム開始を待っています...`;
-            if (data.game_id) {
-                this.handleGameStart(data);
-            } else {
-                this.startLobbyPolling(null, room_id);
-            }
+            this.startLobbyPolling({ roomId, password });
         } catch (e) {
-            this.el.roomStatus.textContent = `参加失敗: ${e.message}`;
+            if (this.el.roomStatus) this.el.roomStatus.textContent = `参加失敗: ${e.message}`;
             this.showNotification(e.message, 'error');
         }
     }
 
-    startLobbyPolling(rule, roomId = null) {
+    startLobbyPolling(params) {
         if (this.lobbyPollInterval) clearInterval(this.lobbyPollInterval);
-        this.el.lobbyMinigame.style.display = 'block';
+        if (this.el.lobbyMinigame) this.el.lobbyMinigame.style.display = 'block';
         this.startMinigame();
 
-        this.lobbyPollInterval = setInterval(async () => {
+        const poll = async () => {
             try {
-                const endpoint = roomId ? `${this.gameServerUrl}/room/join` : `${this.gameServerUrl}/lobby/join`;
-                const payload = roomId ? { player_id: this.playerId, room_id: roomId } : { player_id: this.playerId, rule };
+                const endpoint = params.roomId ? `${this.gameServerUrl}/room/join` : `${this.gameServerUrl}/lobby/join`;
+                const payload = params.roomId 
+                    ? { player_id: this.playerId, room_id: params.roomId, password: params.password || '' }
+                    : { player_id: this.playerId, rule: params.rule };
                 
                 const res = await fetch(endpoint, { 
                     method: 'POST', 
@@ -362,14 +397,12 @@ class GameManager {
                 });
                 const data = await res.json();
 
-                if (data.error) {
-                    throw new Error(data.error);
-                }
+                if (data.error) throw new Error(data.error);
 
                 if (data.game_id) {
                     this.handleGameStart(data);
-                } else if (data.waiting) {
-                    const statusText = roomId 
+                } else if (data.waiting && this.el.lobbyStatus) {
+                    const statusText = params.roomId 
                         ? `ルーム待機中 (${data.position}/${data.max_players || '-'})`
                         : `マッチング待機中 (順番: ${data.position})`;
                     this.el.lobbyStatus.textContent = statusText;
@@ -378,14 +411,17 @@ class GameManager {
                 this.showNotification(`ロビーエラー: ${e.message}`, 'error');
                 this.stopLobbyPolling();
             }
-        }, 3000);
+        };
+
+        poll();
+        this.lobbyPollInterval = setInterval(poll, 3000);
     }
 
     stopLobbyPolling() {
         if (this.lobbyPollInterval) clearInterval(this.lobbyPollInterval);
         this.lobbyPollInterval = null;
-        this.el.lobbyStatus.style.display = 'none';
-        this.el.lobbyMinigame.style.display = 'none';
+        if (this.el.lobbyStatus) this.el.lobbyStatus.style.display = 'none';
+        if (this.el.lobbyMinigame) this.el.lobbyMinigame.style.display = 'none';
         this.stopMinigame();
     }
 
@@ -393,37 +429,42 @@ class GameManager {
         this.stopLobbyPolling();
         this.showNotification('マッチング完了！ゲームを開始します。', 'success');
         this.questions = gameData.questions.map(q => ({ ...q, answers: [] })); // Answers are not sent for multiplayer
-        this.closeModal('room-modal');
+        this.closeAllModals();
         this.startGame('vs');
     }
 
     // --- In-Game Logic ---
+
     resetGameState() {
         this.stopTimer();
         this.score = 0;
         this.correctAnswers = 0;
         this.questionCount = 0;
         this.currentQuestionIndex = 0;
-        this.el.questionHistory.innerHTML = '';
-        this.el.playerQuestion.value = '';
+        if (this.el.questionHistory) this.el.questionHistory.innerHTML = '';
+        if (this.el.playerQuestion) this.el.playerQuestion.value = '';
         this.updateUI();
     }
 
     showQuestion() {
         if (this.currentQuestionIndex >= this.questions.length) {
-            this.endGame();
-            return;
+            return this.endGame();
         }
         const q = this.questions[this.currentQuestionIndex];
-        this.el.targetAnswer.textContent = this.currentMode === 'vs' ? '???' : q.answers.join(' / ');
-        this.el.questionNumber.textContent = this.currentQuestionIndex + 1;
-        this.el.aiOutput.textContent = 'AIが回答を待っています...';
-        this.el.aiAnalysis.innerHTML = '';
+        if (!q) return this.endGame();
+
+        if (this.el.targetAnswer) {
+            this.el.targetAnswer.textContent = this.currentMode === 'vs' ? '???' : q.answers.join(' / ');
+        }
+        if (this.el.questionNumber) this.el.questionNumber.textContent = this.currentQuestionIndex + 1;
+        if (this.el.aiOutput) this.el.aiOutput.textContent = 'AIが回答を待っています...';
+        if (this.el.aiAnalysis) this.el.aiAnalysis.innerHTML = '';
         this.setAIStatus('待機中', '#ccc');
         this.updateUI();
     }
 
     async submitQuestion() {
+        if (!this.el.playerQuestion) return;
         const text = this.el.playerQuestion.value.trim();
         if (!text) return;
 
@@ -433,7 +474,7 @@ class GameManager {
         }
 
         this.setAIStatus('処理中', '#ffaa00');
-        this.el.submitQuestionBtn.disabled = true;
+        if (this.el.submitQuestionBtn) this.el.submitQuestionBtn.disabled = true;
         this.questionCount++;
         this.appendQuestionHistory(text);
 
@@ -446,8 +487,8 @@ class GameManager {
             if (!res.ok) throw new Error(`サーバーエラー: ${res.status}`);
             const data = await res.json();
             
-            this.el.aiOutput.textContent = data.ai_response || '(応答なし)';
-            if (data.reasoning) {
+            if (this.el.aiOutput) this.el.aiOutput.textContent = data.ai_response || '(応答なし)';
+            if (data.reasoning && this.el.aiAnalysis) {
                 this.el.aiAnalysis.innerHTML = `<p><b>AIの思考:</b> ${data.reasoning}</p>`;
             }
             if (data.valid === false) {
@@ -461,7 +502,7 @@ class GameManager {
             this.setAIStatus('エラー', '#ff4757');
             this.showNotification(e.message, 'error');
         } finally {
-            this.el.submitQuestionBtn.disabled = false;
+            if (this.el.submitQuestionBtn) this.el.submitQuestionBtn.disabled = false;
         }
     }
 
@@ -493,12 +534,12 @@ class GameManager {
     endGame() {
         this.stopTimer();
         const timeTaken = this.initialTimeLimit - this.timeLimit;
-        this.el.finalScore.textContent = this.score;
-        this.el.resultCorrect.textContent = `${this.correctAnswers} / ${this.questions.length}`;
-        this.el.resultQuestions.textContent = this.questionCount;
+        if (this.el.finalScore) this.el.finalScore.textContent = this.score;
+        if (this.el.resultCorrect) this.el.resultCorrect.textContent = `${this.correctAnswers} / ${this.questions.length}`;
+        if (this.el.resultQuestions) this.el.resultQuestions.textContent = this.questionCount;
         const accuracy = this.questions.length > 0 ? Math.round((this.correctAnswers / this.questions.length) * 100) : 0;
-        this.el.resultAccuracy.textContent = `${accuracy}%`;
-        this.el.resultTime.textContent = this.formatTime(timeTaken);
+        if (this.el.resultAccuracy) this.el.resultAccuracy.textContent = `${accuracy}%`;
+        if (this.el.resultTime) this.el.resultTime.textContent = this.formatTime(timeTaken);
         this.showModal('result-modal');
 
         if (this.currentMode !== 'practice') {
@@ -507,6 +548,7 @@ class GameManager {
     }
 
     async submitScore(timeInSeconds) {
+        if (!this.playerId) return;
         try {
             await fetch(`${this.gameServerUrl}/scores/submit`, {
                 method: 'POST',
@@ -524,24 +566,25 @@ class GameManager {
     }
 
     // --- UI & State Management ---
+
     updateUI() {
-        this.el.currentScore.textContent = this.score;
-        this.el.totalScore.textContent = this.score;
-        this.el.correctCount.textContent = this.correctAnswers;
-        this.el.questionCount.textContent = `質問回数: ${this.questionCount}`;
-        const accuracy = this.correctAnswers > 0 ? Math.round((this.correctAnswers / this.questionCount) * 100) : 0;
-        this.el.accuracy.textContent = `${accuracy}%`;
+        if (this.el.currentScore) this.el.currentScore.textContent = this.score;
+        if (this.el.totalScore) this.el.totalScore.textContent = this.score;
+        if (this.el.correctCount) this.el.correctCount.textContent = this.correctAnswers;
+        if (this.el.questionCount) this.el.questionCount.textContent = `質問回数: ${this.questionCount}`;
+        const accuracy = this.correctAnswers > 0 && this.questionCount > 0 ? Math.round((this.correctAnswers / this.questionCount) * 100) : 0;
+        if (this.el.accuracy) this.el.accuracy.textContent = `${accuracy}%`;
         const progress = this.questions.length > 0 ? ((this.currentQuestionIndex) / this.questions.length) * 100 : 0;
-        this.el.progressFill.style.width = `${progress}%`;
+        if (this.el.progressFill) this.el.progressFill.style.width = `${progress}%`;
     }
 
     startTimer() {
         this.stopTimer();
         this.initialTimeLimit = this.timeLimit;
-        this.el.timerDisplay.textContent = this.formatTime(this.timeLimit);
+        if (this.el.timerDisplay) this.el.timerDisplay.textContent = this.formatTime(this.timeLimit);
         this.timer = setInterval(() => {
             this.timeLimit--;
-            this.el.timerDisplay.textContent = this.formatTime(this.timeLimit);
+            if (this.el.timerDisplay) this.el.timerDisplay.textContent = this.formatTime(this.timeLimit);
             if (this.timeLimit <= 0) {
                 this.endGame();
             }
@@ -553,79 +596,73 @@ class GameManager {
         this.timer = null;
     }
 
-    loadSettings() {
-        const theme = localStorage.getItem('theme') || 'dark';
-        this.el.themeSelect.value = theme;
-        this.applyTheme(theme);
-        this.el.gameServerAddress.value = this.gameServerUrl;
-        this.el.lmServerAddress.value = this.lmServerUrl;
-    }
-
-    saveSettings() {
-        this.gameServerUrl = this.el.gameServerAddress.value.trim();
-        this.lmServerUrl = this.el.lmServerAddress.value.trim();
-        const theme = this.el.themeSelect.value;
-        localStorage.setItem('gameServerUrl', this.gameServerUrl);
-        localStorage.setItem('lmServerUrl', this.lmServerUrl);
-        localStorage.setItem('theme', theme);
-        this.applyTheme(theme);
-        this.showNotification('設定を保存しました');
-        this.closeModal('settings-modal');
-    }
-
-    applyTheme(theme) {
-        document.documentElement.className = theme;
-    }
-
     async showLeaderboard() {
         this.showModal('leaderboard-modal');
-        const mode = document.querySelector('#leaderboard-modal .tab-btn.active').dataset.board || 'solo';
+        const activeTab = document.querySelector('#leaderboard-modal .tab-btn.active');
+        const mode = activeTab ? activeTab.dataset.board : 'solo';
+        if (!this.gameServerUrl) return;
+
         try {
             const res = await fetch(`${this.gameServerUrl}/scores/top?mode=${mode}`);
             const data = await res.json();
-            this.el.leaderboardList.innerHTML = '';
-            if (data.top && data.top.length > 0) {
-                data.top.forEach((item, i) => {
-                    const row = document.createElement('div');
-                    row.className = 'leaderboard-item';
-                    row.innerHTML = `<div class="rank">#${i + 1}</div><div class="player-name">${item.player}</div><div class="player-score">${item.score}</div>`;
-                    this.el.leaderboardList.appendChild(row);
-                });
-            } else {
-                this.el.leaderboardList.innerHTML = '<p style="text-align:center;opacity:0.8;">まだ記録がありません。</p>';
+            if (this.el.leaderboardList) {
+                this.el.leaderboardList.innerHTML = '';
+                if (data.top && data.top.length > 0) {
+                    data.top.forEach((item, i) => {
+                        const row = document.createElement('div');
+                        row.className = 'leaderboard-item';
+                        row.innerHTML = `<div class="rank">#${i + 1}</div><div class="player-name">${item.player}</div><div class="player-score">${item.score}</div>`;
+                        this.el.leaderboardList.appendChild(row);
+                    });
+                } else {
+                    this.el.leaderboardList.innerHTML = '<p style="text-align:center;opacity:0.8;">まだ記録がありません。</p>';
+                }
             }
         } catch (e) {
-            this.el.leaderboardList.innerHTML = '<p style="text-align:center;color:red;">ランキングの読み込みに失敗しました。</p>';
+            if (this.el.leaderboardList) this.el.leaderboardList.innerHTML = '<p style="text-align:center;color:red;">ランキングの読み込みに失敗しました。</p>';
         }
     }
 
     // --- Helpers ---
-    goBackToMenu() {
-        this.resetGameState();
-        this.showScreen('main-menu');
-        this.closeAllModals();
-    }
 
     showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        this.cache(screenId).classList.add('active');
+        const screen = document.getElementById(screenId);
+        if (screen) screen.classList.add('active');
     }
 
-    showModal(modalId) { this.cache(modalId).classList.add('active'); }
-    closeModal(modalId) { this.cache(modalId).classList.remove('active'); }
-    closeParentModal(el) { el.closest('.modal').classList.remove('active'); }
-    closeAllModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); }
+    showModal(modalId) { 
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.add('active');
+    }
+
+    closeModal(modalId) { 
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.remove('active');
+    }
+
+    closeParentModal(el) { 
+        const modal = el.closest('.modal');
+        if (modal) modal.classList.remove('active');
+    }
+
+    closeAllModals() { 
+        document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+    }
 
     getModeName(m) {
         return ({ solo: 'ソロモード', vs: '対戦モード', rta: 'RTAモード', practice: '練習モード', classic: 'クラシック', speed: 'スピード', challenge: 'チャレンジ' })[m] || m;
     }
 
     setAIStatus(text, color) {
-        this.el.aiStatus.textContent = text;
-        this.el.aiStatus.style.background = color;
+        if (this.el.aiStatus) {
+            this.el.aiStatus.textContent = text;
+            this.el.aiStatus.style.background = color;
+        }
     }
 
     appendQuestionHistory(text) {
+        if (!this.el.questionHistory) return;
         const d = document.createElement('div');
         d.className = 'question-item';
         d.textContent = `${this.questionCount}. ${text}`;
@@ -633,12 +670,15 @@ class GameManager {
         this.el.questionHistory.scrollTop = this.el.questionHistory.scrollHeight;
     }
 
-    clearQuestion() { this.el.playerQuestion.value = ''; }
+    clearQuestion() { 
+        if (this.el.playerQuestion) this.el.playerQuestion.value = ''; 
+    }
 
     calculateScore() { return 100; } // Placeholder
 
     formatTime(seconds) {
-        const m = Math.floor(seconds / 60); const s = seconds % 60;
+        const m = Math.floor(seconds / 60); 
+        const s = seconds % 60;
         return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
 
@@ -656,6 +696,7 @@ class GameManager {
 
     switchTab(btn) {
         const parent = btn.closest('.modal-content');
+        if (!parent) return;
         parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         if (parent.closest('#leaderboard-modal')) {
@@ -697,5 +738,10 @@ class GameManager {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    window.gameManager = new GameManager();
+    try {
+        window.gameManager = new GameManager();
+    } catch (e) {
+        console.error("Failed to initialize GameManager:", e);
+        document.body.innerHTML = `<div style="color: red; padding: 2rem; font-family: sans-serif;"><h1>Application Error</h1><p>Could not start the application due to a critical error. Please check the console for details.</p><pre>${e.stack}</pre></div>`;
+    }
 });

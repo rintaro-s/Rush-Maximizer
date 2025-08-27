@@ -1,0 +1,142 @@
+[
+    {
+        "id": 1,
+        "prompt": "1868年の江戸での平和的解決",
+        "answers": ["江戸無血開城"],
+        "category": "歴史",
+        "difficulty": "normal"
+    },
+    {
+        "id": 2,
+        "prompt": "天下統一を目指した戦国時代の武将",
+        "answers": ["織田信長"],
+        "category": "歴史",
+        "difficulty": "easy"
+    },
+    {
+        "id": 3,
+        "prompt": "黒船で日本に来航したアメリカの軍人",
+        "answers": ["ペリー", "マシュー・ペリー"],
+        "category": "歴史",
+        "difficulty": "easy"
+    },
+    {
+        "id": 4,
+        "prompt": "1582年に明智光秀が織田信長を襲撃した事件",
+        "answers": ["本能寺の変"],
+        "category": "歴史",
+        "difficulty": "normal"
+    },
+    {
+        "id": 5,
+        "prompt": "源頼朝が1192年に開いた武家政権",
+        "answers": ["鎌倉幕府"],
+        "category": "歴史",
+        "difficulty": "normal"
+    },
+    {
+        "id": 6,
+        "prompt": "日本最高峰の活火山",
+        "answers": ["富士山"],
+        "category": "地理",
+        "difficulty": "easy"
+    },
+    {
+        "id": 7,
+        "prompt": "薩長同盟の仲介をした土佐藩の志士",
+        "answers": ["坂本龍馬"],
+        "category": "歴史",
+        "difficulty": "normal"
+    },
+    {
+        "id": 8,
+        "prompt": "1600年に徳川家康が勝利した天下分け目の戦い",
+        "answers": ["関ヶ原の戦い"],
+        "category": "歴史",
+        "difficulty": "normal"
+    },
+    {
+        "id": 9,
+        "prompt": "太陽を中心とした惑星系",
+        "answers": ["太陽系"],
+        "category": "理科",
+        "difficulty": "easy"
+    },
+    {
+        "id": 10,
+        "prompt": "平安時代末期の武将で平氏の棟梁",
+        "answers": ["平清盛"],
+        "category": "歴史",
+        "difficulty": "hard"
+    },
+    {
+        "id": 11,
+        "prompt": "源氏の武将で兄の頼朝と対立した悲劇の英雄",
+        "answers": ["源義経"],
+        "category": "歴史",
+        "difficulty": "normal"
+    },
+    {
+        "id": 12,
+        "prompt": "江戸幕府を開いた初代将軍",
+        "answers": ["徳川家康"],
+        "category": "歴史",
+        "difficulty": "easy"
+    },
+    {
+        "id": 13,
+        "prompt": "645年の政治改革",
+        "answers": ["大化の改新"],
+        "category": "歴史",
+        "difficulty": "hard"
+    },
+    {
+        "id": 14,
+        "prompt": "飛鳥時代の政治家で十七条憲法を制定",
+        "answers": ["聖徳太子", "厩戸皇子"],
+        "category": "歴史",
+        "difficulty": "normal"
+    },
+    {
+        "id": 15,
+        "prompt": "1868年の政治的変革",
+        "answers": ["明治維新"],
+        "category": "歴史",
+        "difficulty": "normal"
+    },
+    {
+        "id": 16,
+        "prompt": "遺伝情報を持つ物質",
+        "answers": ["DNA", "デオキシリボ核酸"],
+        "category": "理科",
+        "difficulty": "normal"
+    },
+    {
+        "id": 17,
+        "prompt": "植物が光エネルギーを使って栄養を作る過程",
+        "answers": ["光合成"],
+        "category": "理科",
+        "difficulty": "normal"
+    },
+    {
+        "id": 18,
+        "prompt": "万有引力の法則を発見した物理学者",
+        "answers": ["ニュートン", "アイザック・ニュートン"],
+        "category": "理科",
+        "difficulty": "normal"
+    },
+    {
+        "id": 19,
+        "prompt": "「吾輩は猫である」の作者",
+        "answers": ["夏目漱石"],
+        "category": "国語",
+        "difficulty": "normal"
+    },
+    {
+        "id": 20,
+        "prompt": "清少納言が書いた随筆",
+        "answers": ["枕草子"],
+        "category": "国語",
+        "difficulty": "normal"
+    }
+]

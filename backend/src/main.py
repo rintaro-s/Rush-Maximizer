@@ -9,15 +9,15 @@ from typing import Optional
 import uuid
 import random
 
-# load question bank for server-side distribution (do not expose answers to clients)
 HERE = os.path.dirname(__file__)
-DATA_PATH = os.path.normpath(os.path.join(HERE, '..', '..', 'frontend', 'data', 'questions.json'))
+DATA_PATH = os.path.join(HERE, "data", "questions.json")
+ALL_QUESTIONS = []
 try:
     with open(DATA_PATH, 'r', encoding='utf-8') as f:
-        ALL_QUESTIONS = [q for q in json.load(f)]
+        ALL_QUESTIONS = json.load(f)
+    print(f"Successfully loaded {len(ALL_QUESTIONS)} questions from {DATA_PATH}")
 except Exception as e:
-    print(f"Failed to load questions from {DATA_PATH}: {e}")
-    ALL_QUESTIONS = []
+    print(f"CRITICAL: Failed to load questions from {DATA_PATH}: {e}")
 
 # server runtime state
 SERVER_ID = str(uuid.uuid4())

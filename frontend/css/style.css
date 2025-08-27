@@ -642,6 +642,11 @@ textarea#player-question:focus {
     backdrop-filter: blur(10px);
 }
 
+/* show modal when active class is present */
+.modal.active {
+    display: block;
+}
+
 .modal-content {
     position: absolute;
     top: 50%;
