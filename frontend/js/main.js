@@ -14,13 +14,46 @@ class GameManager {
         this.initialTimeLimit = 300;
         this.questionsPerGame = 10;
         this.currentMode = 'solo';
+        this.isMatchmaking = false;
+    this.isProcessingAI = false;
+    this.isLocked = false; // when true, user input is disabled (e.g., during countdown)
+        this.matchmakingStatus = {};
         this.lobbyPollInterval = null;
         this.serverStatsInterval = null;
+        this.heartbeatInterval = null;
         this.el = {};
         this.cacheElements();
         this.attachEventListeners();
         this.loadSettings();
         this.initUI();
+        this.setupAudioUnlock();
+    }
+
+    // Workaround for browser autoplay policies: wait for first user gesture to unlock audio
+    setupAudioUnlock() {
+        this.audioUnlocked = false;
+        this.pendingBGM = null;
+        const unlock = (e) => {
+            try {
+                this.audioUnlocked = true;
+                this.ensureAudioManager();
+                // if a BGM was requested before unlock, play it now
+                if (this.pendingBGM) {
+                    try { this.playBGM(this.pendingBGM); } catch (e) {}
+                    this.pendingBGM = null;
+                }
+            } catch (err) {
+                console.warn('audio unlock failed', err);
+            } finally {
+                // remove listeners after first gesture
+                document.removeEventListener('click', unlock);
+                document.removeEventListener('keydown', unlock);
+                document.removeEventListener('touchstart', unlock);
+            }
+        };
+        document.addEventListener('click', unlock, { once: true });
+        document.addEventListener('keydown', unlock, { once: true });
+        document.addEventListener('touchstart', unlock, { once: true });
     }
 
     cacheElements() {
@@ -108,7 +141,12 @@ class GameManager {
             practiceStartBtn: document.getElementById('practice-start-btn'),
             controlsStartBtn: document.getElementById('controls-start-btn'),
             controlsBackBtn: document.getElementById('controls-back-btn'),
-            serverStats: document.getElementById('server-stats')
+            serverStats: document.getElementById('server-stats'),
+            persistentStatusContainer: document.getElementById('persistent-status-container'),
+            matchmakingStatus: document.getElementById('matchmaking-status'),
+            cancelMatchmakingBtn: document.getElementById('cancel-matchmaking-btn'),
+            matchFoundModal: document.getElementById('match-found-modal'),
+            matchFoundCountdown: document.getElementById('match-found-countdown')
         };
         this.el = el;
     }
@@ -148,6 +186,7 @@ class GameManager {
         safeAdd(this.el.randomJoinBtn, 'click', this.joinRandomMatch);
         safeAdd(this.el.createRoomBtn, 'click', this.createRoom);
         safeAdd(this.el.joinRoomBtn, 'click', this.joinRoom);
+        safeAdd(this.el.cancelMatchmakingBtn, 'click', this.cancelMatchmaking);
 
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => this.switchTab(btn));
@@ -208,6 +247,25 @@ class GameManager {
             this.gameServerUrl = server;
             this.nickname = nick;
 
+            // If we already have a stored playerId, try to validate it via heartbeat to avoid duplicate registration
+            if (this.playerId) {
+                try {
+                    const hb = await fetch(`${server}/heartbeat`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ player_id: this.playerId }) });
+                    const hbj = await hb.json();
+                    if (!hbj.ok) {
+                        // server doesn't recognize this id anymore
+                        this.playerId = null;
+                        localStorage.removeItem('playerId');
+                    } else {
+                        if (this.el.connectionStatus) this.el.connectionStatus.textContent += ' | player session restored';
+                    }
+                } catch (e) {
+                    // ignore and fall back to register
+                    this.playerId = null;
+                    localStorage.removeItem('playerId');
+                }
+            }
+
             if (lm && !force) {
                 if (this.el.connectionStatus) this.el.connectionStatus.textContent += ' | LMStudioに接続中...';
                 const probe = await fetch(`${server}/probe_lm`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ lm_server: lm }) });
@@ -217,18 +275,38 @@ class GameManager {
             }
             this.lmServerUrl = lm;
 
-            const reg = await fetch(`${server}/register`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nickname: nick }) });
-            const regj = await reg.json();
-            if (!regj.player_id) throw new Error('プレイヤー登録に失敗しました');
-            this.playerId = regj.player_id;
+            // read BGM preference from startup UI
+            const bgmCheckbox = document.getElementById('startup-bgm-enabled');
+            this.startWithBgm = bgmCheckbox ? !!bgmCheckbox.checked : true;
+
+            // Register only if we don't have a valid playerId
+            if (!this.playerId) {
+                const reg = await fetch(`${server}/register`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nickname: nick }) });
+                const regj = await reg.json();
+                if (!regj.player_id) throw new Error('プレイヤー登録に失敗しました');
+                this.playerId = regj.player_id;
+                if (regj.session_token) {
+                    this.sessionToken = regj.session_token;
+                    localStorage.setItem('sessionToken', this.sessionToken);
+                }
+            } else {
+                // restore session token if present
+                this.sessionToken = localStorage.getItem('sessionToken');
+            }
 
             localStorage.setItem('gameServerUrl', this.gameServerUrl);
             localStorage.setItem('lmServerUrl', this.lmServerUrl);
             localStorage.setItem('nickname', this.nickname);
-            localStorage.setItem('playerId', this.playerId);
+            if (this.playerId) localStorage.setItem('playerId', this.playerId);
+
+            // If user chose to start with BGM, play menu BGM now (if unlocked or pending)
+            try {
+                if (this.startWithBgm) this.playBGM('menu.mp3');
+            } catch (e) {}
 
             this.showNotification('接続しました！', 'success');
             this.closeModal('startup-overlay');
+            this.startHeartbeat();
             this.startServerStatsPolling();
 
         } catch (e) {
@@ -237,6 +315,29 @@ class GameManager {
         } finally {
             if (this.el.connectServerBtn) this.el.connectServerBtn.disabled = false;
         }
+    }
+
+    startHeartbeat() {
+        if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+        this.heartbeatInterval = setInterval(async () => {
+            if (!this.playerId || !this.gameServerUrl) return;
+            try {
+                const hbPayload = { player_id: this.playerId };
+                if (this.sessionToken) hbPayload.session_token = this.sessionToken;
+                await fetch(`${this.gameServerUrl}/heartbeat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(hbPayload)
+                });
+            } catch (e) {
+                console.warn('Heartbeat failed:', e);
+            }
+        }, 15000);
+    }
+
+    stopHeartbeat() {
+        if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+        this.heartbeatInterval = null;
     }
 
     startServerStatsPolling() {
@@ -255,7 +356,13 @@ class GameManager {
         this.serverStatsInterval = setInterval(updateStats, 5000);
     }
 
+    disableMatchButtons(disabled) {
+        const ids = ['matchRandomBtn','matchCustomBtn','randomJoinBtn','createRoomBtn','joinRoomBtn'];
+        ids.forEach(id => { const b = this.el[id]; if (b) b.disabled = disabled; });
+    }
+
     async startSoloMode() {
+        if (this.isMatchmaking) return this.showNotification('マッチング中は他のモードを開始できません。', 'warning');
         this.currentMode = 'solo';
         this.timeLimit = 0;
         this.questionsPerGame = 10;
@@ -264,6 +371,7 @@ class GameManager {
     }
 
     async startRtaMode() {
+        if (this.isMatchmaking) return this.showNotification('マッチング中は他のモードを開始できません。', 'warning');
         this.currentMode = 'rta';
         this.timeLimit = 180;
         this.questionsPerGame = 10;
@@ -272,6 +380,7 @@ class GameManager {
     }
 
     startPracticeMode() {
+        if (this.isMatchmaking) return this.showNotification('マッチング中は他のモードを開始できません。', 'warning');
         this.currentMode = 'practice';
         this.questionsPerGame = this.el.practiceQuestions ? parseInt(this.el.practiceQuestions.value, 10) : 10;
         this.timeLimit = (this.el.practiceTime ? parseInt(this.el.practiceTime.value, 10) : 5) * 60;
@@ -299,6 +408,12 @@ class GameManager {
     }
 
     startGame(mode) {
+        // Start the game after a short countdown to prevent accidental inputs
+        this.startGameWithCountdown(mode, 3);
+    }
+
+    // Begin actual game logic immediately (called after countdown)
+    beginGame(mode) {
         this.currentMode = mode;
         this.resetGameState();
         this.showScreen('game-screen');
@@ -308,6 +423,60 @@ class GameManager {
         this.showQuestion();
         if (this.timeLimit > 0) {
             this.startTimer();
+        }
+        // play default BGM for gameplay
+        try { this.playBGM('fighting_bgm.mp3'); } catch (e) {}
+    }
+
+    startGameWithCountdown(mode, seconds) {
+        if (!seconds || seconds <= 0) return this.beginGame(mode);
+        // lock UI
+        this.isLocked = true;
+        if (this.el.submitQuestionBtn) this.el.submitQuestionBtn.disabled = true;
+        if (this.el.playerQuestion) this.el.playerQuestion.disabled = true;
+        // show big countdown overlay
+        const overlay = document.getElementById('big-countdown');
+        const numberEl = document.getElementById('big-count-number');
+        if (overlay && numberEl) {
+            overlay.classList.add('active');
+            let count = seconds;
+            const tick = async () => {
+                numberEl.textContent = String(count);
+                // animate
+                numberEl.style.animation = 'none';
+                // force reflow
+                void numberEl.offsetWidth;
+                numberEl.style.animation = `countdown-pop 900ms cubic-bezier(.2,.8,.2,1)`;
+                try { if (this.startWithBgm) this.playSE('count_down.mp3'); } catch (e) {}
+                count--;
+                if (count < 0) {
+                    overlay.classList.remove('active');
+                    this.isLocked = false;
+                    if (this.el.submitQuestionBtn) this.el.submitQuestionBtn.disabled = false;
+                    if (this.el.playerQuestion) this.el.playerQuestion.disabled = false;
+                    this.beginGame(mode);
+                    return;
+                }
+                setTimeout(tick, 900);
+            };
+            // start
+            setTimeout(tick, 80);
+        } else {
+            // fallback to simple countdown
+            let countdown = seconds;
+            if (this.el.matchFoundCountdown) this.el.matchFoundCountdown.textContent = countdown;
+            const iv = setInterval(() => {
+                countdown--;
+                if (this.el.matchFoundCountdown) this.el.matchFoundCountdown.textContent = countdown;
+                try { if (this.startWithBgm) this.playSE('count_down.mp3'); } catch (e) {}
+                if (countdown <= 0) {
+                    clearInterval(iv);
+                    this.isLocked = false;
+                    if (this.el.submitQuestionBtn) this.el.submitQuestionBtn.disabled = false;
+                    if (this.el.playerQuestion) this.el.playerQuestion.disabled = false;
+                    this.beginGame(mode);
+                }
+            }, 1000);
         }
     }
 
@@ -328,13 +497,19 @@ class GameManager {
         this.el.ruleDescription.innerHTML = descriptions[selectedRule] || '';
     }
 
-    async joinRandomMatch() {
-        const rule = this.el.randomRuleSelect ? this.el.randomRuleSelect.value : 'classic';
-        this.closeModal('random-match-modal');
-        this.startLobbyPolling({ rule });
+    joinRandomMatch() {
+    if (this.isMatchmaking) return this.showNotification('すでにエントリー中です', 'warning');
+    const rule = this.el.randomRuleSelect ? this.el.randomRuleSelect.value : 'classic';
+    this.closeModal('random-match-modal');
+    this.isMatchmaking = true;
+    this.matchmakingStatus = { type: 'random', rule: rule };
+    this.disableMatchButtons(true);
+    this.showPersistentStatusUI();
+    this.startLobbyPolling({ rule });
     }
 
     async createRoom() {
+    if (this.isMatchmaking) return this.showNotification('すでにエントリー中です', 'warning');
         const name = this.el.roomName ? this.el.roomName.value : '';
         const password = this.el.roomPassword ? this.el.roomPassword.value : '';
         const max_players = this.el.roomMax ? parseInt(this.el.roomMax.value, 10) : 3;
@@ -347,28 +522,52 @@ class GameManager {
             });
             const data = await res.json();
             if (data.error) throw new Error(data.error);
-            if (this.el.roomStatus) this.el.roomStatus.textContent = `ルーム作成完了！ID: ${data.room_id}。友達を待っています...`;
+            this.isMatchmaking = true;
+            this.matchmakingStatus = { type: 'room', roomId: data.room_id };
+            this.disableMatchButtons(true);
+            this.showPersistentStatusUI();
             this.startLobbyPolling({ roomId: data.room_id });
+            this.closeModal('room-modal');
         } catch (e) {
-            if (this.el.roomStatus) this.el.roomStatus.textContent = `作成失敗: ${e.message}`;
-            this.showNotification(e.message, 'error');
+            this.showNotification(`ルーム作成失敗: ${e.message}`, 'error');
         }
     }
 
-    async joinRoom() {
+    joinRoom() {
+    if (this.isMatchmaking) return this.showNotification('すでにエントリー中です', 'warning');
         const roomId = this.el.joinRoomId ? this.el.joinRoomId.value.trim() : '';
-        const password = this.el.joinRoomPassword ? this.el.joinRoomPassword.value : '';
+        const password = this.el.joinRoomPassword ? this.el.joinRoomPassword.value.trim() : '';
         if (!roomId) return this.showNotification('ルームIDを入力してください', 'error');
-        this.startLobbyPolling({ roomId, password });
+        this.isMatchmaking = true;
+        this.matchmakingStatus = { type: 'room', roomId: roomId };
+    this.disableMatchButtons(true);
+    this.showPersistentStatusUI();
+    this.startLobbyPolling({ roomId, password });
+        this.closeModal('room-modal');
+    }
+
+    async cancelMatchmaking() {
+        if (!this.isMatchmaking) return;
+        try {
+            await fetch(`${this.gameServerUrl}/lobby/leave`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ player_id: this.playerId })
+            });
+        } catch (e) {
+            console.error('Failed to leave lobby:', e);
+        }
+        this.isMatchmaking = false;
+        this.stopLobbyPolling();
+    this.hidePersistentStatusUI();
+    this.disableMatchButtons(false);
     }
 
     startLobbyPolling(params) {
         if (this.lobbyPollInterval) clearInterval(this.lobbyPollInterval);
-        if (this.el.lobbyStatusContainer) this.el.lobbyStatusContainer.style.display = 'block';
-        if (this.el.lobbyMinigame) this.el.lobbyMinigame.style.display = 'block';
-        this.startMinigame();
-
+        
         const poll = async () => {
+            if (!this.isMatchmaking) return this.stopLobbyPolling();
             try {
                 const endpoint = params.roomId ? `${this.gameServerUrl}/room/join` : `${this.gameServerUrl}/lobby/join`;
                 const payload = params.roomId 
@@ -385,19 +584,15 @@ class GameManager {
                 if (data.error) throw new Error(data.error);
 
                 if (data.game_id) {
-                    this.handleGameStart(data);
+                    this.handleMatchFound(data);
                 } else if (data.waiting) {
-                    if (this.el.lobbyStatus) this.el.lobbyStatus.textContent = params.roomId ? 'ルームで待機中' : 'ランダムマッチで待機中';
-                    if (this.el.lobbyDetails) {
-                        const detailText = params.roomId
-                            ? `${data.current_players} / ${data.max_players} 人`
-                            : `あなたは ${data.position} 番目です`;
-                        this.el.lobbyDetails.textContent = detailText;
-                    }
+                    this.matchmakingStatus = { ...this.matchmakingStatus, ...data };
+                    this.updatePersistentStatusUI();
                 }
             } catch (e) {
                 this.showNotification(`ロビーエラー: ${e.message}`, 'error');
                 this.stopLobbyPolling();
+                this.hidePersistentStatusUI();
             }
         };
 
@@ -408,17 +603,53 @@ class GameManager {
     stopLobbyPolling() {
         if (this.lobbyPollInterval) clearInterval(this.lobbyPollInterval);
         this.lobbyPollInterval = null;
-        if (this.el.lobbyStatusContainer) this.el.lobbyStatusContainer.style.display = 'none';
-        if (this.el.lobbyMinigame) this.el.lobbyMinigame.style.display = 'none';
-        this.stopMinigame();
     }
 
-    handleGameStart(gameData) {
+    showPersistentStatusUI() {
+        if (this.el.persistentStatusContainer) this.el.persistentStatusContainer.style.display = 'flex';
+        this.updatePersistentStatusUI();
+    }
+
+    hidePersistentStatusUI() {
+        if (this.el.persistentStatusContainer) this.el.persistentStatusContainer.style.display = 'none';
+    }
+
+    updatePersistentStatusUI() {
+        if (!this.el.matchmakingStatus || !this.isMatchmaking) return;
+        const { type, rule, current_players, max_players, position, total_waiting } = this.matchmakingStatus;
+        let statusText = '';
+        if (type === 'random') {
+            statusText = `マッチング待機中 (${this.getModeName(rule)}) - ${position || '?'} / ${total_waiting || '?'}`;
+        } else if (type === 'room') {
+            statusText = `ルーム待機中: ${current_players || ''}/${max_players || ''}`;
+        }
+        this.el.matchmakingStatus.textContent = statusText;
+    }
+
+    async handleMatchFound(gameData) {
+        this.isMatchmaking = false;
         this.stopLobbyPolling();
-        this.showNotification('マッチング完了！ゲームを開始します。', 'success');
+        this.hidePersistentStatusUI();
+        this.stopTimer();
+        // Determine countdown seconds. If server provided a start_at timestamp, sync to it.
+        let countdown = 5;
+        if (gameData && gameData.start_at) {
+            try {
+                const startAt = Number(gameData.start_at);
+                const now = Date.now();
+                // detect seconds vs milliseconds
+                const startMs = startAt > 1e12 ? startAt : startAt * 1000;
+                const diffSec = Math.ceil((startMs - now) / 1000);
+                if (!isNaN(diffSec) && diffSec > 0) countdown = diffSec;
+                else countdown = 1;
+            } catch (e) {
+                countdown = 5;
+            }
+        }
+        if (this.el.matchFoundCountdown) this.el.matchFoundCountdown.textContent = countdown;
         this.questions = gameData.questions.map(q => ({ ...q, answers: [] }));
-        this.closeAllModals();
-        this.startGame('vs');
+        // Use the shared countdown routine
+        this.startGameWithCountdown('vs', countdown);
     }
 
     resetGameState() {
@@ -454,25 +685,29 @@ class GameManager {
         const text = this.el.playerQuestion.value.trim();
         if (!text) return;
 
+        if (this.isLocked) return this.showNotification('カウントダウン中は操作できません', 'warning');
+        if (this.isProcessingAI) return this.showNotification('AI処理中はリクエストを送れません', 'warning');
+
         const q = this.questions[this.currentQuestionIndex];
         if (this.currentMode !== 'vs' && (q.answers || []).some(ans => text.toLowerCase().includes(ans.toLowerCase()))) {
             return this.showNotification('質問に答えが含まれています。', 'error');
         }
 
         this.setAIStatus('処理中', '#ffaa00');
+        this.isProcessingAI = true;
         if (this.el.submitQuestionBtn) this.el.submitQuestionBtn.disabled = true;
         this.questionCount++;
         this.appendQuestionHistory(text);
 
         try {
             const res = await fetch(`${this.gameServerUrl}/ask_ai`, {
-                method: 'POST', 
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ question: text, target_answer: (q.answers || [])[0] || '', lm_server: this.lmServerUrl })
             });
             if (!res.ok) throw new Error(`サーバーエラー: ${res.status}`);
             const data = await res.json();
-            
+
             if (this.el.aiOutput) this.el.aiOutput.textContent = data.ai_response || '(応答なし)';
             if (data.reasoning && this.el.aiAnalysis) {
                 this.el.aiAnalysis.innerHTML = `<p><b>AIの思考:</b> ${data.reasoning}</p>`;
@@ -481,13 +716,15 @@ class GameManager {
                 this.showNotification(`不正な質問: ${data.invalid_reason || 'ルール違反'}`, 'error');
             }
 
-            const isCorrect = this.checkAnswer(data.ai_response, q.answers);
+            let isCorrect = this.checkAnswer(data.ai_response, q.answers);
+            if (data.valid === false) isCorrect = false;
             this.handleAnswerResult(isCorrect);
 
         } catch (e) {
             this.setAIStatus('エラー', '#ff4757');
             this.showNotification(e.message, 'error');
         } finally {
+            this.isProcessingAI = false;
             if (this.el.submitQuestionBtn) this.el.submitQuestionBtn.disabled = false;
         }
     }
@@ -504,10 +741,12 @@ class GameManager {
             this.correctAnswers++;
             this.setAIStatus('正解！', '#00ff88');
             this.showNotification('正解！', 'success');
+            if (typeof this.playSE === 'function') this.playSE('seikai.mp3');
             setTimeout(() => this.nextQuestion(), 1500);
         } else {
             this.score = Math.max(0, this.score - 10);
             this.setAIStatus('不正解', '#ff4757');
+            if (typeof this.playSE === 'function') this.playSE('huseikai.mp3');
         }
         this.updateUI();
     }
@@ -535,18 +774,90 @@ class GameManager {
     async submitScore(timeInSeconds) {
         if (!this.playerId) return;
         try {
+            const payload = {
+                player_id: this.playerId,
+                session_token: this.sessionToken,
+                mode: this.currentMode,
+                correct_count: this.correctAnswers,
+                total_questions: this.questions.length,
+                time_seconds: timeInSeconds,
+                client_raw_score: this.score
+            };
             await fetch(`${this.gameServerUrl}/scores/submit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    player_id: this.playerId, 
-                    mode: this.currentMode, 
-                    score: this.score, 
-                    time_seconds: timeInSeconds 
-                })
+                body: JSON.stringify(payload)
             });
         } catch (e) {
             console.error('Score submission failed:', e);
+        }
+    }
+
+    // Simple audio manager for BGM
+    ensureAudioManager() {
+        if (this.audio) return;
+        try {
+            this.audio = new Audio();
+            this.audio.loop = true;
+            this.audio.volume = 0.5;
+        } catch (e) {
+            console.warn('Audio not supported:', e);
+            this.audio = null;
+        }
+    }
+
+    playBGM(fileName) {
+        this.ensureAudioManager();
+        if (!this.audio) return;
+        try {
+            const url = (this.gameServerUrl || '') + `/bgm/${fileName}`;
+            console.log('playBGM url=', url, 'gameServerUrl=', this.gameServerUrl, 'audioUnlocked=', !!this.audioUnlocked);
+            if (!this.audioUnlocked) {
+                // Defer playback until user interacts
+                this.pendingBGM = fileName;
+                console.warn('BGM play deferred until user gesture (autoplay policy)');
+                return;
+            }
+            // If changing tracks, pause and load new source to avoid overlapping play/pause aborts
+            if (this.audio.src !== url) {
+                try { this.audio.pause(); } catch (e) {}
+                this.audio.src = url;
+                try { this.audio.load(); } catch (e) {}
+                // give the browser a moment to settle before calling play
+                setTimeout(() => {
+                    this.audio.play().catch(e => {
+                        console.warn('BGM play failed:', e);
+                    });
+                }, 60);
+            } else {
+                this.audio.play().catch(e => {
+                    console.warn('BGM play failed:', e);
+                });
+            }
+        } catch (e) {
+            console.warn('playBGM error', e);
+        }
+    }
+
+    // SE再生用メソッド
+    playSE(fileName) {
+        if (!this.se) {
+            this.se = new Audio();
+            this.se.volume = 0.7;
+        }
+        const url = (this.gameServerUrl || '') + `/bgm/${fileName}`;
+        console.log('playSE url=', url, 'gameServerUrl=', this.gameServerUrl);
+        this.se.src = url;
+        this.se.loop = false;
+        this.se.currentTime = 0;
+        this.se.play().catch(e => {
+            console.warn('SE play failed:', e);
+        });
+    }
+
+    stopBGM() {
+        if (this.audio) {
+            try { this.audio.pause(); } catch (e) {}
         }
     }
 
@@ -609,6 +920,14 @@ class GameManager {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         const screen = document.getElementById(screenId);
         if (screen) screen.classList.add('active');
+        // Play menu BGM when showing main menu. For other screens (except game-screen), stop BGM.
+        try {
+            if (screenId === 'main-menu') {
+                this.playBGM('menu.mp3');
+            } else if (screenId !== 'game-screen') {
+                this.stopBGM();
+            }
+        } catch (e) {}
     }
 
     showModal(modalId) { 
@@ -722,4 +1041,14 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Failed to initialize GameManager:", e);
         document.body.innerHTML = `<div style="color: red; padding: 2rem; font-family: sans-serif;"><h1>Application Error</h1><p>Could not start the application due to a critical error. Please check the console for details.</p><pre>${e.stack}</pre></div>`;
     }
+});
+
+// Ensure logo pulse class is applied even if CSS animation was blocked or not applied
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const logo = document.querySelector('.game-title h1');
+        if (logo && !logo.classList.contains('logo-pulse')) {
+            logo.classList.add('logo-pulse');
+        }
+    } catch (e) {}
 });

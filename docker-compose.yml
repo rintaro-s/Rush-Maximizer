@@ -9,6 +9,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/src:/app
+      - ./bgm:/bgm:ro
     # LMStudioがホストマシンで動いてるから、
     # コンテナからホストにアクセスできるようにする
     extra_hosts:

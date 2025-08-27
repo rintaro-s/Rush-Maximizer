@@ -28,6 +28,9 @@
                 <input id="startup-nickname" type="text" placeholder="ニックネーム" style="flex:1;padding:8px;border-radius:6px;border:1px solid #223;">
                 <button id="connect-server-btn" class="btn btn-primary" style="padding:8px 12px;">接続して開始</button>
             </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+                <input id="startup-bgm-enabled" type="checkbox" style="width:16px;height:16px;"> <label for="startup-bgm-enabled" style="color:#cfe">BGMを再生して開始</label>
+            </div>
             <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
                 <input id="startup-force-lm" type="checkbox" style="width:16px;height:16px;"> <label for="startup-force-lm" style="color:#cfe">LMStudio 接続チェックをスキップ（強制接続）</label>
             </div>
@@ -314,6 +317,11 @@
         </div>
     </div>
 
+    <!-- Large countdown overlay -->
+    <div id="big-countdown" class="countdown-overlay">
+        <div id="big-count-number" class="count-number">3</div>
+    </div>
+
     <!-- Practice setup modal -->
     <div id="practice-setup-modal" class="modal">
         <div class="modal-content">
@@ -422,6 +430,20 @@
 
     <script src="js/config.js"></script>
     <script src="js/main.js?v=2.0"></script>
+
+    <!-- Persistent Status Indicators -->
+    <div id="persistent-status-container" style="display:none;">
+        <div id="matchmaking-status"></div>
+        <button id="cancel-matchmaking-btn" class="btn btn-secondary">キャンセル</button>
+    </div>
+
+    <div id="match-found-modal" class="modal">
+        <div class="modal-content">
+            <h2>対戦相手が見つかりました！</h2>
+            <p>まもなくゲームを開始します...</p>
+            <div id="match-found-countdown">5</div>
+        </div>
+    </div>
 
 </body>
 </html>

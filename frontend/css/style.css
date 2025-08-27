@@ -117,7 +117,42 @@ body {
     text-shadow: 0 0 30px var(--primary-glow);
     margin-bottom: 1rem;
     letter-spacing: 0.1em;
-    animation: glow-pulse 2s ease-in-out infinite alternate;
+    animation: glow-pulse 2s ease-in-out infinite alternate, bpm-blink 0.48s ease-in-out infinite;
+}
+
+/* utility class to force logo pulse if needed */
+.logo-pulse {
+    will-change: transform;
+    animation: bpm-blink 0.48s ease-in-out infinite;
+}
+
+/* Big countdown overlay */
+.countdown-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+}
+.countdown-overlay.active { display: flex; }
+.count-number {
+    font-family: var(--title-font);
+    font-size: 18vw;
+    color: white;
+    text-shadow: 0 0 30px rgba(255,255,255,0.2), 0 0 60px var(--primary-glow);
+    transform: scale(0.2);
+    opacity: 0;
+}
+@keyframes countdown-pop {
+    0% { transform: scale(0.2); opacity: 0; filter: blur(6px); }
+    30% { transform: scale(1.15); opacity: 1; filter: blur(0px); }
+    60% { transform: scale(0.95); opacity: 0.9; }
+    100% { transform: scale(0.2); opacity: 0; }
 }
 
 .subtitle {
@@ -130,6 +165,15 @@ body {
 @keyframes glow-pulse {
     from { text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
     to { text-shadow: 0 0 30px var(--primary-glow), 0 0 60px var(--primary-glow); }
+}
+
+/* BPM pulse animation (scale up/down) for 125 BPM -> 60/125 ≈ 0.48s per beat
+   Produces a natural inhale/exhale size change rather than a hard blink. */
+@keyframes bpm-blink {
+    0%   { transform: scale(1); }
+    25%  { transform: scale(1.08); }
+    50%  { transform: scale(0.96); }
+    100% { transform: scale(1); }
 }
 
 .menu-buttons {
@@ -661,6 +705,37 @@ textarea#player-question:focus {
     box-shadow: var(--shadow-strong), 0 0 40px var(--primary-glow);
     max-height: 80vh;
     overflow-y: auto;
+}
+
+#persistent-status-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    background: var(--panel-bg);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--primary-color);
+    box-shadow: var(--shadow-strong);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+#matchmaking-status {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+#match-found-modal .modal-content {
+    text-align: center;
+}
+
+#match-found-countdown {
+    font-size: 3rem;
+    font-family: var(--title-font);
+    color: var(--primary-color);
+    margin-top: 1rem;
 }
 
 .modal-header {
