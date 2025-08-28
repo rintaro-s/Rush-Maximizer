@@ -32,6 +32,11 @@ AI「1860年（万延元年）3月には大老の井伊直弼が江戸城桜田�
 - 正確な出題や誘導が求められるから、自然に覚えちゃう。
 - 最近多い、「一問一答」は得意だが、「説明ができない」人向け
 - 3 人でオンライン対戦 or BOT対戦 or RTAモード。「AI に一番早く正解させた人」が勝ち！
+<img width="1620" height="915" alt="Screenshot from 2025-08-28 15-25-34" src="https://github.com/user-attachments/assets/4166fc72-a6f1-4f14-890d-bf039d3d8b0c" />
+
+
+<img width="1620" height="915" alt="image" src="https://github.com/user-attachments/assets/612958da-7566-4588-9665-5fc4b83a08e9" />
+
 
 
 ## 5. 使用環境と技術
