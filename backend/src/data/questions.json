@@ -247,16 +247,16 @@
     {
         "id": 38,
         "prompt": "水が沸騰する温度（摂氏）",
-        "answers": ["100度"],
+        "answers": ["100度","100℃"],
         "category": "理科",
         "difficulty": "easy"
     },
     {
         "id": 39,
-        "prompt": "重力加速度の記号",
-        "answers": ["g"],
+        "prompt": "元素記号Hで表される元素",
+        "answers": ["水素"],
         "category": "理科",
-        "difficulty": "hard"
+        "difficulty": "normal"
     },
     {
         "id": 40,
@@ -372,10 +372,10 @@
     },
     {
         "id": 76,
-        "prompt": "日本の標準時子午線が通る都市",
-        "answers": ["明石市"],
+        "prompt": "伊勢神宮や赤福、松阪牛などがある県",
+        "answers": ["三重県"],
         "category": "地理",
-        "difficulty": "normal"
+        "difficulty": "hard"
     },
     {
         "id": 77,
@@ -408,7 +408,7 @@
     {
         "id": 91,
         "prompt": "コンピュータが理解できる2進数で表される言語",
-        "answers": ["機械語"],
+        "answers": ["機械語","アセンブリ言語","低級言語"],
         "category": "情報",
         "difficulty": "normal"
     },
@@ -527,14 +527,14 @@
     {
         "id": 108,
         "prompt": "データを圧縮してファイルサイズを小さくする技術",
-        "answers": ["データ圧縮"],
+        "answers": ["データ圧縮","圧縮"],
         "category": "情報",
         "difficulty": "normal"
     },
     {
         "id": 109,
         "prompt": "コンピュータのOSで、Apple社が開発したもの",
-        "answers": ["macOS"],
+        "answers": ["mac", "macOS"],
         "category": "情報",
         "difficulty": "normal"
     },
@@ -554,8 +554,8 @@
     },
     {
         "id": 112,
-        "prompt": "データの正当性を確認するための技術",
-        "answers": ["ハッシュ関数", "デジタル署名"],
+        "prompt": "コンピュータの基本的な動作を制御する",
+        "answers": ["OS", "オペレーティングシステム"],
         "category": "情報",
         "difficulty": "hard"
     },

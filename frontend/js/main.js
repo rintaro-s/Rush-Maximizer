@@ -15,20 +15,75 @@ class GameManager {
         this.questionsPerGame = 10;
         this.currentMode = 'solo';
         this.isMatchmaking = false;
-    this.isProcessingAI = false;
-    this.isLocked = false; // when true, user input is disabled (e.g., during countdown)
-    this.hasUsedPass = false; // whether player has used pass this game
-    this.allowPass = true;
+        this.isProcessingAI = false;
+        this.isLocked = false;
+        this.hasUsedPass = false;
+        this.allowPass = true;
         this.matchmakingStatus = {};
         this.lobbyPollInterval = null;
         this.serverStatsInterval = null;
         this.heartbeatInterval = null;
+        this.currentGameId = null;
+        this.gameStateInterval = null;
+        this._hasSubmittedDone = false;
+        this._vsCountdownVisible = false;
+        
+        // Mobile detection and optimization
+        this.isMobile = this.detectMobile();
+        this.isTouch = 'ontouchstart' in window;
+        
         this.el = {};
         this.cacheElements();
         this.attachEventListeners();
         this.loadSettings();
         this.initUI();
         this.setupAudioUnlock();
+        
+        if (this.isMobile) {
+            this.initMobileOptimizations();
+            try { this.updateVh(); window.addEventListener('resize', () => this.updateVh()); } catch (e) {}
+        }
+    }
+
+    detectMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+               window.innerWidth <= 900;
+    }
+
+    initMobileOptimizations() {
+        // Prevent zoom on double tap
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        });
+
+        // Prevent iOS zoom on input focus
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            if (input.style.fontSize !== '16px') {
+                input.style.fontSize = '16px';
+            }
+        });
+
+        // Add mobile-specific body class
+        document.body.classList.add('mobile-device');
+
+        // Optimize viewport for mobile
+        let viewport = document.querySelector('meta[name=viewport]');
+        if (!viewport) {
+            viewport = document.createElement('meta');
+            viewport.name = 'viewport';
+            document.head.appendChild(viewport);
+        }
+        viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    }
+
+    updateVh() {
+        try {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        } catch (e) {}
     }
 
     // Workaround for browser autoplay policies: wait for first user gesture to unlock audio
@@ -171,29 +226,97 @@ class GameManager {
         safeAdd(this.el.backToMenuBtn, 'click', this.goBackToMenu);
         safeAdd(this.el.submitQuestionBtn, 'click', this.submitQuestion);
         safeAdd(this.el.clearQuestionBtn, 'click', this.clearQuestion);
-        safeAdd(this.el.playerQuestion, 'keydown', (e) => {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) this.submitQuestion();
-        });
+        
+        // Mobile-optimized input handling
+        if (this.isMobile) {
+            // Use touchend for better mobile responsiveness
+            const mobileElements = [
+                this.el.submitQuestionBtn,
+                this.el.clearQuestionBtn,
+                this.el.connectServerBtn
+            ];
+            
+            mobileElements.forEach(el => {
+                if (el) {
+                    el.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        el.click();
+                    });
+                }
+            });
+            
+            // Simplified keyboard handling for mobile
+            safeAdd(this.el.playerQuestion, 'keydown', (e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    this.submitQuestion();
+                }
+            });
+        } else {
+            // Desktop keyboard shortcuts
+            safeAdd(this.el.playerQuestion, 'keydown', (e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) this.submitQuestion();
+            });
+        }
 
         // New UI element event listeners
         const newPlayerTextarea = document.querySelector('.player-textarea');
         if (newPlayerTextarea) {
-            newPlayerTextarea.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) this.submitQuestion();
-            });
+            if (this.isMobile) {
+                newPlayerTextarea.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && e.ctrlKey) {
+                        e.preventDefault();
+                        this.submitQuestion();
+                    }
+                });
+            } else {
+                newPlayerTextarea.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) this.submitQuestion();
+                });
+            }
         }
 
         const newSubmitBtn = document.querySelector('.btn-submit');
         if (newSubmitBtn) {
             newSubmitBtn.addEventListener('click', () => this.submitQuestion());
+            if (this.isMobile) {
+                newSubmitBtn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.submitQuestion();
+                });
+            }
         }
 
         const newClearBtn = document.querySelector('.btn-clear');
         if (newClearBtn) {
             newClearBtn.addEventListener('click', () => this.clearQuestion());
         }
-    const passBtn = document.getElementById('pass-btn') || document.querySelector('.pass-btn');
-    if (passBtn) passBtn.addEventListener('click', () => this.passQuestion());
+        
+        const passBtn = document.getElementById('pass-btn') || document.querySelector('.pass-btn');
+        if (passBtn) passBtn.addEventListener('click', () => this.passQuestion());
+
+        // Mobile input focus handling: ensure AI output is visible when keyboard opens
+        try {
+            if (this.isMobile && this.el.playerQuestion) {
+                this.el.playerQuestion.addEventListener('focus', () => {
+                    setTimeout(() => {
+                        const ai = document.getElementById('ai-output');
+                        if (ai) ai.scrollIntoView({behavior:'smooth', block:'center'});
+                        // reduce game content height to viewport when keyboard open
+                        document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+                        // add helper class so CSS can expand AI box when keyboard is visible
+                        document.body.classList.add('keyboard-open');
+                    }, 250);
+                });
+                this.el.playerQuestion.addEventListener('blur', () => {
+                    setTimeout(() => {
+                        // restore vh
+                        this.updateVh();
+                        document.body.classList.remove('keyboard-open');
+                    }, 200);
+                });
+            }
+        } catch (e) {}
 
         document.querySelectorAll('.modal .close-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.closeParentModal(e.target));
@@ -342,6 +465,8 @@ class GameManager {
             
             this.startHeartbeat();
             this.startServerStatsPolling();
+            // if user had a pending matchmaking intent saved (reload during matchmaking), try to resume it
+            try { this.restorePendingMatch(); } catch(e) { console.warn('restorePendingMatch err', e); }
 
         } catch (e) {
             if (this.el.connectionStatus) this.el.connectionStatus.textContent = `接続失敗: ${e.message}`;
@@ -592,7 +717,9 @@ class GameManager {
     this.matchmakingStatus = { type: 'random', rule: rule };
     this.disableMatchButtons(true);
     this.showPersistentStatusUI();
-    this.startLobbyPolling({ rule });
+    const params = { rule };
+    this.persistPendingMatch(params);
+    this.startLobbyPolling(params);
     }
 
     async createRoom() {
@@ -613,7 +740,9 @@ class GameManager {
             this.matchmakingStatus = { type: 'room', roomId: data.room_id };
             this.disableMatchButtons(true);
             this.showPersistentStatusUI();
-            this.startLobbyPolling({ roomId: data.room_id });
+            const params = { roomId: data.room_id };
+            this.persistPendingMatch(params);
+            this.startLobbyPolling(params);
             this.closeModal('room-modal');
         } catch (e) {
             this.showNotification(`ルーム作成失敗: ${e.message}`, 'error');
@@ -629,7 +758,9 @@ class GameManager {
         this.matchmakingStatus = { type: 'room', roomId: roomId };
     this.disableMatchButtons(true);
     this.showPersistentStatusUI();
-    this.startLobbyPolling({ roomId, password });
+    const params = { roomId, password };
+    this.persistPendingMatch(params);
+    this.startLobbyPolling(params);
         this.closeModal('room-modal');
     }
 
@@ -651,6 +782,7 @@ class GameManager {
         this.stopLobbyPolling();
         this.hidePersistentStatusUI();
         this.disableMatchButtons(false);
+    try { this.clearPendingMatch(); } catch(e){}
     }
 
     startLobbyPolling(params) {
@@ -704,6 +836,37 @@ class GameManager {
         this.lobbyPollInterval = null;
     }
 
+    // Persist pending matchmaking intent so reloads can be reconciled with server state.
+    persistPendingMatch(params) {
+        try {
+            localStorage.setItem('pendingMatch', JSON.stringify(params || {}));
+        } catch (e) {}
+    }
+
+    clearPendingMatch() {
+        try { localStorage.removeItem('pendingMatch'); } catch(e){}
+    }
+
+    restorePendingMatch() {
+        try {
+            const raw = localStorage.getItem('pendingMatch');
+            if (!raw) return;
+            const obj = JSON.parse(raw);
+            if (!obj) return;
+            // Only attempt restore if we have player and server info
+            if (!this.playerId || !this.gameServerUrl) return;
+            // show UI and resume polling to reconcile with server
+            this.isMatchmaking = true;
+            this.matchmakingStatus = { ...(this.matchmakingStatus || {}), ...obj };
+            this.disableMatchButtons(true);
+            this.showPersistentStatusUI();
+            // resume polling with the saved params
+            this.startLobbyPolling(obj);
+        } catch (e) {
+            console.warn('restorePendingMatch failed', e);
+        }
+    }
+
     showPersistentStatusUI() {
     if (this.el.persistentStatusContainer) this.el.persistentStatusContainer.style.display = 'flex';
     // ensure cancel button is enabled when showing
@@ -747,9 +910,10 @@ class GameManager {
     }
 
     async handleMatchFound(gameData) {
-        this.isMatchmaking = false;
+    this.isMatchmaking = false;
         this.stopLobbyPolling();
         this.hidePersistentStatusUI();
+    try { this.clearPendingMatch(); } catch(e){}
         this.stopTimer();
         // Determine countdown seconds. If server provided a start_at timestamp, sync to it.
         let countdown = 5;
@@ -770,6 +934,10 @@ class GameManager {
         this.questions = gameData.questions.map(q => ({ ...q, answers: [] }));
         // Use the shared countdown routine
         this.startGameWithCountdown('vs', countdown);
+        // Start polling game state (server provides game_id)
+        if (gameData.game_id) {
+            try { this.startGameStatePolling(gameData.game_id); } catch(e) { console.warn('startGameStatePolling failed', e); }
+        }
     }
 
     resetGameState() {
@@ -808,15 +976,23 @@ class GameManager {
                 else if (typeof q.answer === 'string' && q.answer.trim().length) answers = [q.answer.trim()];
 
                 let assignedText = '';
-                if (this.currentMode === 'vs') {
-                    assignedText = '???';
-                } else if (answers && answers.length) {
+                // Always show the target to players (shared questions in multiplayer).
+                if (answers && answers.length) {
                     assignedText = answers.join(' / ');
                 } else {
                     assignedText = q.prompt || q.question || q.text || q.id || '';
                 }
                 this.el.targetAnswer.textContent = assignedText;
                 // assign text to target element
+                // If text overflows on small screens, enable marquee animation
+                try {
+                    const ta = this.el.targetAnswer;
+                    if (ta && ta.scrollWidth > ta.clientWidth) {
+                        ta.classList.add('marquee');
+                    } else if (ta) {
+                        ta.classList.remove('marquee');
+                    }
+                } catch (e) {}
             } catch (dbgErr) {
                 console.error('[GameManager] showQuestion debug error', dbgErr);
             }
@@ -918,7 +1094,19 @@ class GameManager {
             this.setAIStatus('正解！', '#00ff88');
             this.showNotification('正解！', 'success');
             if (typeof this.playSE === 'function') this.playSE('seikai.mp3');
-            setTimeout(() => this.nextQuestion(), 1500);
+            setTimeout(async () => {
+                // When correct in multiplayer VS, mark as done and notify server if this is final
+                if (this.currentMode === 'vs') {
+                    // mark submitted done once when we've finished all questions or if server rules require
+                    // here we treat answering a question correctly as finishing the run
+                    try {
+                        await this.submitGameDone({ correct: true, score_delta: 100, done: true });
+                    } catch (e) {
+                        console.warn('submitGameDone failed:', e);
+                    }
+                }
+                this.nextQuestion();
+            }, 1500);
         } else {
             this.score = Math.max(0, this.score - 10);
             this.setAIStatus('不正解', '#ff4757');
@@ -934,6 +1122,10 @@ class GameManager {
 
     endGame() {
         this.stopTimer();
+        // If in a multiplayer game and not yet submitted, send final done flag
+        if (this.currentMode === 'vs' && this.currentGameId && !this._hasSubmittedDone) {
+            try { this.submitGameDone({ correct: false, score_delta: 0, done: true }); } catch (e) { console.warn(e); }
+        }
         // stop gameplay BGM when game ends
         try { this.stopBGM(); } catch (e) {}
         const timeTaken = this.initialTimeLimit - this.timeLimit;
@@ -964,6 +1156,114 @@ class GameManager {
                 this.goBackToMenu();
             }
         }, 1000);
+    }
+
+    // Multiplayer: submit that this player finished (or update score)
+    async submitGameDone({ correct = false, score_delta = 0, done = false } = {}) {
+        if (!this.currentGameId || !this.playerId || !this.gameServerUrl) {
+            throw new Error('ゲーム情報が不十分です');
+        }
+        try {
+            const payload = { player_id: this.playerId, session_token: this.sessionToken, correct, score_delta, done };
+            const res = await fetch(`${this.gameServerUrl}/game/${encodeURIComponent(this.currentGameId)}/submit_answer`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            });
+            if (!res.ok) {
+                const txt = await res.text().catch(()=>'');
+                throw new Error(`submit failed: ${res.status} ${txt}`);
+            }
+            const j = await res.json();
+            if (done) this._hasSubmittedDone = true;
+            // If server indicates finished right away, handle state
+            if (j && j.finished) {
+                // fetch final state and show results
+                try { await this.fetchAndHandleGameState(); } catch(e){}
+            }
+            return j;
+        } catch (e) {
+            console.warn('submitGameDone error', e);
+            throw e;
+        }
+    }
+
+    // Start polling the game state for a multiplayer game
+    startGameStatePolling(gameId) {
+        this.stopGameStatePolling();
+        if (!gameId) return;
+        this.currentGameId = gameId;
+        // immediately fetch once
+        this.fetchAndHandleGameState();
+        this.gameStateInterval = setInterval(() => this.fetchAndHandleGameState(), 1000);
+    }
+
+    stopGameStatePolling() {
+        if (this.gameStateInterval) clearInterval(this.gameStateInterval);
+        this.gameStateInterval = null;
+        this.currentGameId = null;
+        this._vsCountdownVisible = false;
+        const vsEl = document.getElementById('vs-countdown-small');
+        if (vsEl) vsEl.style.display = 'none';
+    }
+
+    async fetchAndHandleGameState() {
+        if (!this.currentGameId || !this.gameServerUrl) return;
+        try {
+            const res = await fetch(`${this.gameServerUrl}/game/${encodeURIComponent(this.currentGameId)}/state`);
+            if (!res.ok) throw new Error(`state fetch failed: ${res.status}`);
+            const st = await res.json();
+            this.handleGameStateResponse(st);
+        } catch (e) {
+            console.warn('fetchAndHandleGameState error', e);
+        }
+    }
+
+    handleGameStateResponse(state) {
+        if (!state) return;
+        // update HUD scores if present
+        if (state.scores && typeof state.scores === 'object') {
+            // if there's a UI element for other players, update it (simple implementation)
+            const vsEl = document.getElementById('vs-countdown-small');
+            // If first_finish_at exists, compute remaining seconds (server uses epoch seconds)
+            if (state.first_finish_at) {
+                const nowSec = Date.now() / 1000;
+                const elapsed = nowSec - Number(state.first_finish_at);
+                const remaining = Math.max(0, 60 - Math.floor(elapsed));
+                if (remaining > 0) {
+                    if (vsEl) {
+                        vsEl.style.display = 'block';
+                        vsEl.textContent = `あと ${remaining } 秒で終了`; 
+                    }
+                    this._vsCountdownVisible = true;
+                } else {
+                    if (vsEl) vsEl.style.display = 'none';
+                    this._vsCountdownVisible = false;
+                }
+            } else {
+                if (vsEl) vsEl.style.display = 'none';
+            }
+        }
+
+        if (state.finished) {
+            // Stop polling and show results based on state.ranking or state.final_ranking
+            this.stopGameStatePolling();
+            // Map ranking to result modal UI
+            if (state.ranking || state.final_ranking) {
+                const ranking = state.ranking || state.final_ranking || [];
+                // Fill result modal with ranking info
+                const resultList = document.getElementById('result-ranking-list');
+                if (resultList) {
+                    resultList.innerHTML = '';
+                    ranking.forEach((p, idx) => {
+                        const row = document.createElement('div');
+                        row.className = 'result-row';
+                        row.innerHTML = `<div class="rank">#${idx+1}</div><div class="name">${p.player || p.player_id || p}</div><div class="score">${p.score||''}</div>`;
+                        resultList.appendChild(row);
+                    });
+                }
+            }
+            // show result modal
+            this.showModal('result-modal');
+        }
     }
 
     async submitScore(timeInSeconds) {
@@ -1330,7 +1630,11 @@ class GameManager {
         if (targetDisplay && this.questions.length > 0) {
             const currentQ = this.questions[this.currentQuestionIndex];
             if (currentQ) {
-                targetDisplay.textContent = this.currentMode === 'vs' ? '???' : (currentQ.answers || []).join(' / ');
+                // Always display the target locally so players can see the shared question.
+                // Previously vs mode hid the target as '???' which made multiplayer unplayable.
+                const answers = Array.isArray(currentQ.answers) && currentQ.answers.length ? currentQ.answers : (currentQ.answer ? [currentQ.answer] : []);
+                if (answers && answers.length) targetDisplay.textContent = answers.join(' / ');
+                else targetDisplay.textContent = currentQ.prompt || currentQ.question || currentQ.text || currentQ.id || '';
             }
         }
         

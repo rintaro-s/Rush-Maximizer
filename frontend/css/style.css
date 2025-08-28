@@ -460,6 +460,350 @@ body {
     height: calc(100vh - 120px);
 }
 
+/* Mobile-first UI: Completely different layout for touch devices */
+@media (max-width: 900px) {
+    /* Hide complex desktop elements on mobile */
+    .game-hud .hud-bottom { display: none; }
+    .question-history { display: none; }
+    .question-counter { display: none; }
+    .ai-analysis { display: none; }
+    
+    /* Simplified mobile HUD */
+    .game-hud {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        height: auto;
+        background: rgba(10, 10, 15, 0.95);
+        backdrop-filter: blur(10px);
+    }
+    
+    .game-hud .hud-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        min-height: 60px;
+    }
+    
+    .hud-btn.exit-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+        border-radius: 8px;
+    }
+    
+    .target-display {
+        flex: 1;
+        margin: 0 12px;
+        text-align: center;
+    }
+    
+    .target-label {
+        font-size: 0.7rem;
+        margin-bottom: 2px;
+    }
+    
+    .target-value {
+        font-size: 1.1rem !important;
+        line-height: 1.2;
+        padding: 8px;
+        background: rgba(0, 212, 255, 0.1);
+        border-radius: 6px;
+        border: 1px solid var(--primary-color);
+    }
+    
+    .hud-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .progress-ring {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .progress-text {
+        font-size: 0.7rem;
+    }
+    
+    /* Mobile game content */
+    .game-content {
+        padding-top: 80px;
+        padding-left: 12px;
+        padding-right: 12px;
+        padding-bottom: 12px;
+        height: calc(var(--vh, 1vh) * 100 - 80px);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .game-arena {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        flex: 1;
+    }
+    
+    /* Simplified mobile input area */
+    .arena-left {
+        order: 2;
+        background: var(--panel-bg);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        padding: 16px;
+    }
+    
+    .zone-header h3 {
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+        color: var(--primary-color);
+    }
+    
+    .input-area {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    textarea#player-question {
+        min-height: 100px;
+        font-size: 1rem;
+        padding: 16px;
+        border-radius: 8px;
+        border: 2px solid var(--border-color);
+        background: rgba(0, 0, 0, 0.4);
+        color: var(--text-primary);
+        resize: none;
+    }
+    
+    textarea#player-question:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+    }
+    
+    .control-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr 2fr;
+        gap: 8px;
+    }
+    
+    .control-btn {
+        padding: 16px 12px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border-radius: 8px;
+        border: 2px solid var(--border-color);
+        background: var(--panel-bg);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s;
+        min-height: 50px;
+    }
+    
+    .control-btn.submit-btn {
+        background: var(--primary-color);
+        color: #000;
+        border-color: var(--primary-color);
+    }
+    
+    .control-btn:active {
+        transform: scale(0.98);
+    }
+    
+    /* Simplified AI response area */
+    .arena-right {
+        order: 1;
+        background: var(--panel-bg);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        padding: 16px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .zone-header {
+        margin-bottom: 12px;
+    }
+    
+    .zone-header h3 {
+        font-size: 0.9rem;
+        color: var(--primary-color);
+    }
+    
+    .ai-status-indicator {
+        font-size: 0.8rem;
+    }
+    
+    #ai-output {
+        font-size: 0.9rem;
+        line-height: 1.4;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 6px;
+        min-height: 80px;
+    max-height: 120px;
+        overflow-y: auto;
+    }
+
+    /* Keep AI output above overlays when keyboard opens */
+    #ai-output {
+        position: relative;
+        z-index: 60;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* When keyboard is open, allow AI output to expand and ensure it's visible */
+    body.keyboard-open .arena-right {
+        max-height: none;
+        overflow: visible;
+    }
+    body.keyboard-open #ai-output {
+        max-height: 50vh;
+        overflow-y: auto;
+    }
+    
+    /* Mobile menu improvements */
+    .menu-container {
+        padding: 1rem;
+    }
+    
+    .game-title h1 {
+        font-size: clamp(2rem, 8vw, 3.5rem);
+        margin-bottom: 0.5rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .menu-buttons {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        max-width: 100%;
+    }
+    
+    .menu-btn {
+        padding: 1.5rem 1rem;
+        text-align: left;
+    }
+    
+    .btn-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn-text {
+        font-size: 1.1rem;
+    }
+    
+    .btn-desc {
+        font-size: 0.85rem;
+    }
+    
+    /* Mobile modals */
+    .modal .modal-content {
+        width: calc(100% - 24px);
+        height: auto;
+        max-height: 90vh;
+        border-radius: 12px;
+        padding: 20px;
+        overflow-y: auto;
+    }
+    
+    /* Startup modal mobile specific */
+    .startup-modal-content {
+        padding: 16px;
+    }
+    
+    .startup-modal-content h2 {
+        font-size: 1.3rem;
+        margin-bottom: 8px;
+    }
+    
+    .startup-modal-content input {
+        padding: 12px !important;
+        font-size: 16px !important; /* Prevents zoom on iOS */
+        border-radius: 8px !important;
+    }
+    
+    .startup-modal-content .btn {
+        padding: 12px 16px;
+        font-size: 1rem;
+    }
+    
+    /* Marquee animation for long text */
+    .target-value.marquee {
+        animation: marquee 6s linear infinite;
+    }
+    
+    @keyframes marquee {
+        0%, 20% { transform: translateX(0%); }
+        80%, 100% { transform: translateX(-30%); }
+    }
+}
+
+/* Very small phones - further simplification */
+@media (max-width: 420px) {
+    .game-title h1 { 
+        font-size: clamp(1.8rem, 8vw, 2.8rem);
+        line-height: 1.1;
+    }
+    
+    .target-value { 
+        font-size: 1rem !important;
+        padding: 6px;
+    }
+    
+    textarea#player-question { 
+        min-height: 80px;
+        font-size: 1rem;
+        padding: 12px;
+    }
+    
+    .control-buttons {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+    }
+    
+    .control-btn.submit-btn {
+        grid-column: 1 / -1;
+        order: -1;
+    }
+    
+    .hud-top {
+        padding: 8px 12px !important;
+        min-height: 50px !important;
+    }
+    
+    .startup-modal-content {
+        padding: 12px;
+        margin: 8px;
+    }
+    
+    .startup-modal-content input {
+        padding: 14px !important;
+        margin-bottom: 8px;
+    }
+    
+    /* Simplify AI output for tiny screens */
+    .arena-right {
+        max-height: 120px;
+    }
+    
+    #ai-output {
+        font-size: 0.85rem;
+        padding: 8px;
+        min-height: 60px;
+        max-height: 80px;
+    }
+}
+
 .game-grid {
     display: grid;
     grid-template-rows: 1fr 1fr;
@@ -784,6 +1128,76 @@ textarea#player-question:focus {
     overflow-y: auto;
 }
 
+/* Mobile device class for enhanced mobile styling */
+body.mobile-device {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+body.mobile-device * {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile-specific button feedback */
+@media (max-width: 900px) {
+    .control-btn:active,
+    .btn:active,
+    .menu-btn:active {
+        background-color: rgba(0, 212, 255, 0.2);
+        transform: scale(0.95);
+    }
+    
+    .control-btn.submit-btn:active {
+        background-color: rgba(0, 212, 255, 0.8);
+    }
+    
+    /* Ensure text inputs don't zoom on focus (iOS) */
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    textarea {
+        font-size: 16px !important;
+    }
+    
+    /* Simplified notifications for mobile */
+    .notification {
+        bottom: 100px;
+        left: 16px;
+        right: 16px;
+        width: auto;
+        transform: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        padding: 12px 16px;
+    }
+}
+
+/* Startup modal specific styling (responsive) */
+.startup-modal-content {
+    background: #0f1720;
+    color: #fff;
+    max-width: 520px;
+    width: calc(100% - 32px);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+
+@media (max-width: 520px) {
+    .startup-modal-content {
+        width: calc(100% - 16px);
+        padding: 12px;
+        border-radius: 8px;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+}
+
 #persistent-status-container {
     position: fixed;
     top: 20px;
@@ -798,6 +1212,18 @@ textarea#player-question:focus {
     align-items: center;
     gap: 1rem;
 }
+
+/* Result ranking list in result modal */
+#result-ranking-list .result-row {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0.5rem 0.75rem;
+    border-bottom:1px solid rgba(255,255,255,0.04);
+}
+#result-ranking-list .result-row .rank { font-weight:700; color:var(--primary-color); margin-right:8px; }
+#result-ranking-list .result-row .name { flex:1; color:var(--text-primary); }
+#result-ranking-list .result-row .score { font-family:var(--title-font); color:var(--primary-color); }
 
 /* Quick floating cancel button */
 .btn-quick-cancel {
@@ -1298,6 +1724,20 @@ body > .screen { padding-top: 84px; }
     font-weight: 700;
     color: var(--primary-color);
     text-align: center;
+}
+
+.vs-countdown-small {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.6);
+    color: var(--text-primary);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: var(--title-font);
+    font-size: 0.85rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    z-index: 8100;
 }
 
 .game-arena {

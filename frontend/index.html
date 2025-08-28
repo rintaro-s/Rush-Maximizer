@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Rush-Maximizer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,14 +15,14 @@
 
     <!-- Startup overlay: blocks the UI until the user connects to a game server and LMStudio -->
     <div id="startup-overlay" class="modal">
-        <div class="modal-content" style="width:520px;background:#0f1720;border-radius:12px;padding:20px;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,0.6);font-family:inherit;">
+    <div class="modal-content startup-modal-content">
             <h2 style="margin:0 0 8px 0;font-family: 'Orbitron', sans-serif;letter-spacing:1px">Rush-Maximizer — 接続</h2>
-            <p style="margin:0 0 16px 0;opacity:0.9">ゲームサーバーとLMStudioサーバーに接続してください。接続後にゲームを開始できます。</p>
+            <p style="margin:0 0 12px 0;opacity:0.95">ゲームサーバーとLMStudioに接続してください。</p>
             <div style="display:flex;gap:8px;margin-bottom:8px;">
-                <input id="startup-server" type="text" placeholder="ゲームサーバー (例: http://localhost:8000)" style="flex:1;padding:8px;border-radius:6px;border:1px solid #223;">
+                <input id="startup-server" type="text" placeholder="http://" style="flex:1;padding:8px;border-radius:6px;border:1px solid #223;">
             </div>
             <div style="display:flex;gap:8px;margin-bottom:8px;">
-                <input id="startup-lmserver" type="text" placeholder="LMStudio サーバー (例: http://192.168.0.64:1234)" style="flex:1;padding:8px;border-radius:6px;border:1px solid #223;">
+                <input id="startup-lmserver" type="text" placeholder="http://" style="flex:1;padding:8px;border-radius:6px;border:1px solid #223;">
             </div>
             <div style="display:flex;gap:8px;margin-bottom:12px;">
                 <input id="startup-nickname" type="text" placeholder="ニックネーム" style="flex:1;padding:8px;border-radius:6px;border:1px solid #223;">
@@ -46,7 +46,7 @@
                     <div id="minigame-score" style="position:absolute;top:8px;right:12px;color:#fff;font-size:13px;">得点: 0</div>
                 </div>
             </div>
-            <div style="margin-top:12px;font-size:12px;opacity:0.8">注意: ブラウザで開く場合は http(s) 経由で開いてください（file:// は一部機能が制限されます）。</div>
+            <div style="margin-top:10px;font-size:12px;opacity:0.85">ブラウザでは http(s) で開いてください（file:// は一部機能制限あり）。</div>
         </div>
     </div>
 
@@ -152,6 +152,7 @@
                             <span id="question-number">1</span>/<span id="total-questions">10</span>
                         </div>
                     </div>
+                    <div id="vs-countdown-small" class="vs-countdown-small" style="display:none;">残り 60</div>
                 </div>
             </div>
             <div class="hud-bottom">
@@ -251,6 +252,8 @@
                     </div>
                 </div>
                 <div class="new-achievements" id="new-achievements"></div>
+                <!-- Multiplayer ranking list populated after game finish -->
+                <div id="result-ranking-list" style="margin-top:12px;"></div>
                 <div class="result-actions">
                     <button class="btn btn-primary" id="play-again-btn">もう一度プレイ</button>
                     <button class="btn btn-secondary" id="back-to-menu-result-btn">メニューに戻る</button>

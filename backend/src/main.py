@@ -54,10 +54,54 @@ PLAYER_TIMEOUT_SECONDS = 30
 app = FastAPI()
 
 # Allow all origins for simple local development
+# Configure CORS from ALLOWED_ORIGINS env (comma-separated).
+# Supports exact origins, hostnames, and wildcard subdomains like "*.example.com".
+raw_allowed = os.getenv('ALLOWED_ORIGINS', '').strip()
+allow_credentials = False
+allow_origins = []
+allow_origin_regex = None
+if raw_allowed:
+    parts = [p.strip() for p in raw_allowed.split(',') if p.strip()]
+    regex_parts = []
+    for p in parts:
+        # try to normalize host (remove scheme/path)
+        m = re.match(r'^(https?://)?([^/]+)', p)
+        host = m.group(2) if m else p
+        # convert unicode domain to punycode when possible
+        try:
+            host_ascii = host.encode('idna').decode()
+        except Exception:
+            host_ascii = host
+
+        # wildcard subdomain like *.example.com
+        if host_ascii.startswith('*.'):
+            domain = re.escape(host_ascii[2:])
+            # allow one or more subdomain labels before domain
+            regex_parts.append(rf'^https?://([A-Za-z0-9_-]+\.)+{domain}(:\d+)?$')
+        else:
+            # if the input included scheme, preserve exact origin
+            if p.startswith('http://') or p.startswith('https://'):
+                allow_origins.append(p)
+            else:
+                # add both http and https origin variants
+                allow_origins.append(f'http://{host_ascii}')
+                allow_origins.append(f'https://{host_ascii}')
+    # enable credentials when explicit origins provided
+    allow_credentials = True
+    if regex_parts:
+        allow_origin_regex = '(' + '|'.join(regex_parts) + ')'
+
+if not raw_allowed:
+    # fallback to permissive (no credentials)
+    allow_origins = ['*']
+    allow_credentials = False
+
+print(f"CORS configured: allow_origins={allow_origins} allow_origin_regex={allow_origin_regex} credentials={'yes' if allow_credentials else 'no'}")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=allow_origins,
+    allow_origin_regex=allow_origin_regex,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -200,9 +244,43 @@ async def ask_ai(request: QuestionRequest):
     try:
         # determine LMStudio URL: prefer the one provided by the client, otherwise use env/default
         target_lm_url = request.lm_server or LMSTUDIO_API_URL
-        # normalize: if caller gave base URL without path, append the common LMStudio path
-        if 'v1' not in target_lm_url:
-            target_lm_url = target_lm_url.rstrip('/') + '/v1/chat/completions'
+        # Special rule: domains under 'りん.com' (and its punycode xn--nbks) use ?p= for port and ?a= for path
+        try:
+            from urllib.parse import urlparse, parse_qs, urlunparse
+            up = urlparse(target_lm_url)
+            host = up.hostname or ''
+            # convert unicode host to ascii punycode for comparison
+            try:
+                host_ascii = host.encode('idna').decode()
+            except Exception:
+                host_ascii = host
+            if host_ascii.endswith('りん.com') or host_ascii.endswith('xn--nbks') or host_ascii.endswith('.りん.com') or host_ascii.endswith('.xn--nbks'):
+                qs = parse_qs(up.query)
+                port_vals = qs.get('p') or qs.get('port') or []
+                a_vals = qs.get('a') or qs.get('path') or []
+                port = None
+                if port_vals:
+                    try:
+                        port = int(port_vals[0])
+                    except Exception:
+                        port = None
+                # rebuild netloc with explicit port if provided
+                netloc = up.hostname or ''
+                if port:
+                    netloc = f"{netloc}:{port}"
+                # determine base path from 'a' param or default to v1/chat/completions
+                a_path = a_vals[0] if a_vals else 'v1/chat/completions'
+                # ensure a_path doesn't start with /
+                a_path = a_path.lstrip('/')
+                target_lm_url = urlunparse((up.scheme or 'http', netloc, '/' + a_path, '', '', ''))
+            else:
+                # normalize: if caller gave base URL without path, append the common LMStudio path
+                if 'v1' not in target_lm_url:
+                    target_lm_url = target_lm_url.rstrip('/') + '/v1/chat/completions'
+        except Exception:
+            # fallback behavior
+            if 'v1' not in target_lm_url:
+                target_lm_url = target_lm_url.rstrip('/') + '/v1/chat/completions'
         print(f"Using LMStudio URL: {target_lm_url}")
         response = requests.post(target_lm_url, json=payload, timeout=30)
         response.raise_for_status()
@@ -340,7 +418,17 @@ def lobby_join(req: JoinLobbyRequest):
         random.shuffle(sampled)
         sanitized = [{'id': q.get('id'), 'prompt': (q.get('question') or q.get('prompt') or q.get('q') or q.get('text') or str(q.get('id')))} for q in sampled]
         
-        GAMES[gid] = { 'players': players_for_game, 'questions': sanitized, 'pointer': 0, 'rule': rule }
+        # track per-game runtime state: scores by player, done flags, first finisher timestamp, finished flag
+        GAMES[gid] = {
+            'players': players_for_game,
+            'questions': sanitized,
+            'pointer': 0,
+            'rule': rule,
+            'scores': {p: 0 for p in players_for_game},
+            'done': {p: False for p in players_for_game},
+            'first_finish_at': None,
+            'finished': False
+        }
         print(f"created game {gid} for players {players_for_game} with rule {rule} and {len(sanitized)} questions")
 
         # record pending game for each chosen player so they receive it on next poll
@@ -398,6 +486,72 @@ def game_question(game_id: str, player_id: str):
     prompt = q.get('question') or q.get('prompt') or q.get('q') or q.get('text') or q.get('id')
     # build safe object
     return { 'question_id': q.get('id') or ptr, 'prompt': prompt }
+
+
+@app.post('/game/{game_id}/submit_answer')
+def game_submit_answer(game_id: str, payload: dict):
+    # payload expected: { player_id, session_token, correct: true|false, score_delta: int }
+    pid = resolve_player(payload.get('player_id'), payload.get('session_token'))
+    if not pid:
+        return { 'ok': False, 'error': 'unknown_player' }
+    g = GAMES.get(game_id)
+    if not g:
+        return { 'ok': False, 'error': 'unknown_game' }
+    if g.get('finished'):
+        return { 'ok': False, 'error': 'game_already_finished' }
+    # update score if provided
+    delta = int(payload.get('score_delta') or 0)
+    if delta:
+        g['scores'][pid] = g['scores'].get(pid, 0) + delta
+    # mark player done if 'correct' is true or explicit 'done' flag
+    done_flag = payload.get('done') if 'done' in payload else bool(payload.get('correct') is True)
+    if done_flag and not g['done'].get(pid):
+        g['done'][pid] = True
+        now = int(time.time())
+        if not g.get('first_finish_at'):
+            g['first_finish_at'] = now
+        # if this was the first finisher, record time; clients should poll /game/{id}/state
+    # if all done, finalize immediately
+    if all(g['done'].get(p) for p in g['players']):
+        finalize_game(game_id)
+        return { 'ok': True, 'finished': True }
+    return { 'ok': True, 'finished': False, 'first_finish_at': g.get('first_finish_at') }
+
+
+@app.get('/game/{game_id}/state')
+def game_state(game_id: str):
+    g = GAMES.get(game_id)
+    if not g:
+        return { 'error': 'unknown_game' }
+    # if first finisher exists and 60s have passed, finalize
+    if g.get('first_finish_at') and not g.get('finished'):
+        if time.time() - g['first_finish_at'] >= 60:
+            finalize_game(game_id)
+    # compute ranking snapshot
+    scores = g.get('scores', {})
+    ranking = sorted([(p, scores.get(p,0)) for p in g['players']], key=lambda x: x[1], reverse=True)
+    return {
+        'players': g['players'],
+        'scores': scores,
+        'done': g.get('done', {}),
+        'first_finish_at': g.get('first_finish_at'),
+        'finished': g.get('finished'),
+        'ranking': [{'player': p, 'score': s} for p,s in ranking]
+    }
+
+
+def finalize_game(game_id: str):
+    g = GAMES.get(game_id)
+    if not g:
+        return
+    if g.get('finished'):
+        return
+    g['finished'] = True
+    # prepare final ranking
+    scores = g.get('scores', {})
+    ranking = sorted([(p, scores.get(p,0)) for p in g['players']], key=lambda x: x[1], reverse=True)
+    g['final_ranking'] = [{'player': p, 'score': s} for p,s in ranking]
+    g['ended_at'] = int(time.time())
 
 
 @app.get('/solo/question')
@@ -503,6 +657,18 @@ def room_join(req: RoomJoinRequest):
         sanitized = [{'id': q.get('id'), 'prompt': (q.get('question') or q.get('prompt') or q.get('q') or q.get('text') or str(q.get('id')))} for q in sampled]
         
         GAMES[gid] = {'players': players_for_game, 'questions': sanitized, 'pointer': 0, 'room': req.room_id, 'rule': rule}
+        # track per-game runtime state for room-created games
+        GAMES[gid] = {
+            'players': players_for_game,
+            'questions': sanitized,
+            'pointer': 0,
+            'room': req.room_id,
+            'rule': rule,
+            'scores': {p: 0 for p in players_for_game},
+            'done': {p: False for p in players_for_game},
+            'first_finish_at': None,
+            'finished': False
+        }
         print(f"created game {gid} from room {req.room_id} for players {players_for_game}")
         # Record pending game for each player
         for p in players_for_game:
