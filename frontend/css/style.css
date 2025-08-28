@@ -444,21 +444,7 @@ body {
 
 /* Debug overrides: when game-active, force minimal sizes so collapsed ancestors become visible.
    These are temporary and conservative; remove or tone down after debugging. */
-.game-active #game-screen,
-.game-active #game-screen .game-hud,
-.game-active #game-screen .game-arena {
-    display: block !important;
-    position: relative !important;
-    min-height: 32px !important;
-    min-width: 120px !important;
-}
-
-.game-active #game-screen .target-value {
-    min-width: 220px !important;
-    min-height: 40px !important;
-    display: inline-block !important;
-    outline: 2px solid rgba(255,0,0,0.6) !important; /* visible debug outline */
-}
+/* removed debug overrides */
 
 .target-actions {
     display: flex;

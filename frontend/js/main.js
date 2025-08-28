@@ -816,35 +816,7 @@ class GameManager {
                     assignedText = q.prompt || q.question || q.text || q.id || '';
                 }
                 this.el.targetAnswer.textContent = assignedText;
-                // Temporary forced sizing to work around collapsed layout (debugging)
-                try {
-                    this.el.targetAnswer.style.minWidth = '220px';
-                    this.el.targetAnswer.style.minHeight = '28px';
-                    this.el.targetAnswer.style.display = 'inline-block';
-                } catch (e) {}
-
-                // Debug info to help diagnose rendering/visibility issues
-                const el = this.el.targetAnswer;
-                const cs = window.getComputedStyle ? window.getComputedStyle(el) : null;
-                const rect = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
-                console.log('[GameManager] targetAnswer assigned=', JSON.stringify(assignedText), 'computedStyle=', cs ? { display: cs.display, visibility: cs.visibility, opacity: cs.opacity, color: cs.color, transform: cs.transform } : null, 'rect=', rect);
-                // Walk up parent chain to find collapsing ancestor
-                try {
-                    let node = el;
-                    const chain = [];
-                    while (node && node.nodeType === 1) {
-                        const ncs = window.getComputedStyle ? window.getComputedStyle(node) : null;
-                        const nrect = node.getBoundingClientRect ? node.getBoundingClientRect() : null;
-                        chain.push({ tag: node.tagName, id: node.id || null, class: node.className || null, display: ncs ? ncs.display : null, visibility: ncs ? ncs.visibility : null, opacity: ncs ? ncs.opacity : null, width: nrect ? nrect.width : null, height: nrect ? nrect.height : null });
-                        if (node.tagName === 'BODY') break;
-                        node = node.parentElement;
-                    }
-                    try {
-                        console.log('[GameManager] ancestor chain:', chain);
-                        console.log('[GameManager] ancestor chain JSON:\n', JSON.stringify(chain, null, 2));
-                    } catch (e) {}
-                    try { if (window.DebugVisual) window.DebugVisual.visualizeElement(this.el.targetAnswer); } catch(e){}
-                } catch (err) { console.warn('ancestor debug failed', err); }
+                // assign text to target element
             } catch (dbgErr) {
                 console.error('[GameManager] showQuestion debug error', dbgErr);
             }

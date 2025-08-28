@@ -45,6 +45,8 @@ MIN_PLAYERS = 3
 SCORES = {'solo': [], 'rta': []}  # list of { player, score, time, meta }
 DEFAULT_QUESTIONS_PER_GAME = int(os.getenv('QUESTIONS_PER_GAME', '10'))
 ROOMS = {}  # room_id -> { name, password, max_players, rule, players: [player_id], creator }
+# map player_id -> pending game_id so players who poll later can receive game info
+PLAYER_GAME_MAP = {}
 
 # --- Player activity timeout ---
 PLAYER_TIMEOUT_SECONDS = 30
@@ -296,6 +298,14 @@ def lobby_join(req: JoinLobbyRequest):
     pid = resolve_player(req.player_id, req.session_token)
     if not pid:
         return { 'error': 'unknown_player' }
+    # If a game was already created for this player, return it immediately
+    pending_gid = PLAYER_GAME_MAP.get(pid)
+    if pending_gid:
+        g = GAMES.get(pending_gid)
+        if g:
+            # deliver pending game and clear mapping for this player
+            PLAYER_GAME_MAP.pop(pid, None)
+            return { 'game_id': pending_gid, 'players': g.get('players', []), 'questions': g.get('questions', []), 'rule': g.get('rule') }
     rule = req.rule or 'classic'
     lst = WAITING_BY_RULE.setdefault(rule, [])
     # prevent duplicate entry for this player in any rule
@@ -332,6 +342,10 @@ def lobby_join(req: JoinLobbyRequest):
         
         GAMES[gid] = { 'players': players_for_game, 'questions': sanitized, 'pointer': 0, 'rule': rule }
         print(f"created game {gid} for players {players_for_game} with rule {rule} and {len(sanitized)} questions")
+
+        # record pending game for each chosen player so they receive it on next poll
+        for p in players_for_game:
+            PLAYER_GAME_MAP[p] = gid
 
         # For players in the new game, check if they were the one polling
         if pid in players_for_game:
@@ -451,6 +465,13 @@ def room_join(req: RoomJoinRequest):
     pid = resolve_player(req.player_id, req.session_token)
     if not pid:
         return {'error': 'unknown_player'}
+    # If a game was already created for this player (e.g., room filled by another poll), return it
+    pending_gid = PLAYER_GAME_MAP.get(pid)
+    if pending_gid:
+        g = GAMES.get(pending_gid)
+        if g:
+            PLAYER_GAME_MAP.pop(pid, None)
+            return { 'game_id': pending_gid, 'players': g.get('players', []), 'questions': g.get('questions', []), 'rule': g.get('rule') }
     room = ROOMS.get(req.room_id)
     if not room:
         return {'error': 'unknown_room'}
@@ -483,6 +504,9 @@ def room_join(req: RoomJoinRequest):
         
         GAMES[gid] = {'players': players_for_game, 'questions': sanitized, 'pointer': 0, 'room': req.room_id, 'rule': rule}
         print(f"created game {gid} from room {req.room_id} for players {players_for_game}")
+        # Record pending game for each player
+        for p in players_for_game:
+            PLAYER_GAME_MAP[p] = gid
         ROOMS.pop(req.room_id, None) # Clean up room
         return {'game_id': gid, 'players': players_for_game, 'questions': sanitized}
 
