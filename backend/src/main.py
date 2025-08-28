@@ -51,6 +51,15 @@ PLAYER_TIMEOUT_SECONDS = 30
 
 app = FastAPI()
 
+# Allow all origins for simple local development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Serve BGM static files placed in project-root /bgm directory at /bgm/<filename>
 # HERE is backend/src, go two levels up to reach repository root
 bgm_dir = os.path.abspath(os.path.join(HERE, '..', '..', 'bgm'))
@@ -63,18 +72,19 @@ try:
 except Exception as e:
     print(f"Failed to mount /bgm static files: {e}")
 
-FRONTEND_ORIGINS = [
-    "http://localhost:9000",
-    "http://127.0.0.1:9000",
-]
+# --- Mount Frontend ---
+# Serve the frontend directory as static files.
+# The `html=True` argument makes it serve `index.html` for root requests.
+frontend_dir = os.path.abspath(os.path.join(HERE, '..', '..', 'frontend'))
+try:
+    if os.path.isdir(frontend_dir):
+        app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+        print(f"Serving frontend from: {frontend_dir}")
+    else:
+        print(f"Frontend directory not found at {frontend_dir}. Cannot serve frontend.")
+except Exception as e:
+    print(f"Failed to mount frontend static files: {e}")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=FRONTEND_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 def cleanup_inactive_players():

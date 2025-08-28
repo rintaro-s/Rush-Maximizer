@@ -243,7 +243,10 @@ class GameManager {
     initUI() {
         this.showScreen('main-menu');
         this.showModal('startup-overlay');
-        if (this.gameServerUrl && this.el.startupServer) this.el.startupServer.value = this.gameServerUrl;
+        // Pre-fill server input but keep it visible so users can override if needed.
+        if (this.el.startupServer) {
+            this.el.startupServer.value = window.location.origin;
+        }
         if (this.lmServerUrl && this.el.startupLmserver) this.el.startupLmserver.value = this.lmServerUrl;
         if (this.nickname && this.el.startupNickname) this.el.startupNickname.value = this.nickname;
         this.updateRuleDescription();
@@ -258,10 +261,9 @@ class GameManager {
     }
 
     saveSettings() {
-        if (this.el.gameServerAddress) this.gameServerUrl = this.el.gameServerAddress.value.trim();
+        // gameServerUrl is no longer manually set
         if (this.el.lmServerAddress) this.lmServerUrl = this.el.lmServerAddress.value.trim();
         const theme = this.el.theme ? this.el.theme.value : 'dark';
-        localStorage.setItem('gameServerUrl', this.gameServerUrl);
         localStorage.setItem('lmServerUrl', this.lmServerUrl);
         localStorage.setItem('theme', theme);
         this.applyTheme(theme);
@@ -274,71 +276,50 @@ class GameManager {
     }
 
     async startupConnect() {
-        const server = this.el.startupServer ? this.el.startupServer.value.trim() : '';
+    // Prefer the value in the startup input (allows connecting to remote server),
+    // fall back to window.location.origin if empty.
+    const serverInput = this.el.startupServer ? this.el.startupServer.value.trim() : '';
+    const server = serverInput || window.location.origin;
         const lm = this.el.startupLmserver ? this.el.startupLmserver.value.trim() : '';
         const nick = this.el.startupNickname ? this.el.startupNickname.value.trim() : '';
         const force = this.el.startupForceLm ? this.el.startupForceLm.checked : false;
 
-        if (!server || !nick) {
-            return this.showNotification('ゲームサーバーとニックネームを入力してください', 'error');
+        if (!nick) {
+            return this.showNotification('ニックネームを入力してください', 'error');
         }
 
         if (this.el.connectServerBtn) this.el.connectServerBtn.disabled = true;
         if (this.el.connectionStatus) this.el.connectionStatus.textContent = 'サーバーに接続中...';
 
         try {
-            const res = await fetch(`${server}/status`);
-            if (!res.ok) throw new Error(`サーバーが応答しません (Status: ${res.status})`);
-            const info = await res.json();
-            if (this.el.connectionStatus) this.el.connectionStatus.textContent = `ゲームサーバー: OK (ID: ${info.server_id.slice(0, 8)})`;
-            this.gameServerUrl = server;
+            // Try the chosen server first. If it fails (e.g., static file server at :9000),
+            // attempt common local backend fallbacks so users don't have to edit the field.
+            // Use GameAPI helper to detect reachable server
+            const statusResult = await window.GameAPI.checkStatus(server);
+            const info = statusResult.info;
+            const chosenServer = statusResult.chosenServer || server;
+            if (this.el.connectionStatus) this.el.connectionStatus.textContent = `ゲームサーバー: OK (ID: ${info.server_id ? info.server_id.slice(0,8) : (info.message||'')})`;
+            this.gameServerUrl = chosenServer;
             this.nickname = nick;
-
-            // If we already have a stored playerId, try to validate it via heartbeat to avoid duplicate registration
-            if (this.playerId) {
-                try {
-                    const hb = await fetch(`${server}/heartbeat`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ player_id: this.playerId }) });
-                    const hbj = await hb.json();
-                    if (!hbj.ok) {
-                        // server doesn't recognize this id anymore
-                        this.playerId = null;
-                        localStorage.removeItem('playerId');
-                    } else {
-                        if (this.el.connectionStatus) this.el.connectionStatus.textContent += ' | player session restored';
-                    }
-                } catch (e) {
-                    // ignore and fall back to register
-                    this.playerId = null;
-                    localStorage.removeItem('playerId');
-                }
-            }
 
             if (lm && !force) {
                 if (this.el.connectionStatus) this.el.connectionStatus.textContent += ' | LMStudioに接続中...';
-                const probe = await fetch(`${server}/probe_lm`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ lm_server: lm }) });
-                const probej = await probe.json();
+                const probej = await window.GameAPI.probeLM(this.gameServerUrl, lm);
                 if (!probej.ok) throw new Error(`LMStudioに接続できません: ${probej.error || '不明なエラー'}`);
                 if (this.el.connectionStatus) this.el.connectionStatus.textContent = this.el.connectionStatus.textContent.replace(' | LMStudioに接続中...', ' | LMStudio: OK');
             }
             this.lmServerUrl = lm;
 
-            // read BGM preference from startup UI
             const bgmCheckbox = document.getElementById('startup-bgm-enabled');
             this.startWithBgm = bgmCheckbox ? !!bgmCheckbox.checked : true;
 
-            // Register only if we don't have a valid playerId
-            if (!this.playerId) {
-                const reg = await fetch(`${server}/register`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nickname: nick }) });
-                const regj = await reg.json();
-                if (!regj.player_id) throw new Error('プレイヤー登録に失敗しました');
-                this.playerId = regj.player_id;
-                if (regj.session_token) {
-                    this.sessionToken = regj.session_token;
-                    localStorage.setItem('sessionToken', this.sessionToken);
-                }
-            } else {
-                // restore session token if present
-                this.sessionToken = localStorage.getItem('sessionToken');
+            // Always register a new player for simplicity and robustness
+            const regj = await window.GameAPI.register(this.gameServerUrl, nick);
+            if (!regj.player_id) throw new Error('プレイヤー登録に失敗しました');
+            this.playerId = regj.player_id;
+            if (regj.session_token) {
+                this.sessionToken = regj.session_token;
+                localStorage.setItem('sessionToken', this.sessionToken);
             }
 
             localStorage.setItem('gameServerUrl', this.gameServerUrl);
@@ -346,21 +327,14 @@ class GameManager {
             localStorage.setItem('nickname', this.nickname);
             if (this.playerId) localStorage.setItem('playerId', this.playerId);
 
-            // If user chose to start with BGM, play menu BGM now (if unlocked or pending)
-            try {
-                if (this.startWithBgm) this.playBGM('menu.mp3');
-            } catch (e) {}
+            if (this.startWithBgm) this.playBGM('menu.mp3');
 
             this.showNotification('接続しました！', 'success');
-            // Close startup overlay first
             this.closeModal('startup-overlay');
 
-            // After overlay is closed, show tutorial selection (if not seen)
             const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
             if (!hasSeenTutorial) {
-                // small delay to ensure the startup overlay removal finishes and focus is correct
                 setTimeout(() => {
-                    // prefer direct class toggle to ensure visibility and z-index ordering
                     const modal = document.getElementById('tutorial-select-modal');
                     if (modal) modal.classList.add('active');
                 }, 120);
@@ -464,86 +438,36 @@ class GameManager {
     }
 
     async fetchQuestionsAndStartGame() {
-        // Prefer local questions file if available. Otherwise fall back to game server.
         try {
-            let questions = null;
+            // Since the backend now serves the frontend, we can use a relative URL.
+            console.log('[GameManager] fetching questions from', this.gameServerUrl);
+            let data = null;
             try {
-                // Try several likely locations for the local question file depending on how the frontend is served.
-                const tryPaths = ['data/questions.json', '/data/questions.json', '../data/questions.json'];
-                for (const p of tryPaths) {
-                    try {
-                        const localRes = await fetch(p);
-                        if (localRes && localRes.ok) {
-                            questions = await localRes.json();
-                            console.log('[GameManager] loaded local questions from', p, 'count=', (questions && questions.length) || (questions && questions.questions && questions.questions.length) || 0);
-                            break;
-                        }
-                    } catch (e) {
-                        // ignore this path and try next
-                    }
+                data = await window.GameAPI.fetchSoloQuestions(this.gameServerUrl, this.questionsPerGame);
+                if (data.error || !data.questions || !data.questions.length) {
+                    throw new Error(data.error || '問題の取得に失敗しました (empty)');
                 }
-            } catch (e) {
-                questions = null;
-            }
-
-            if (!questions) {
-                if (!this.gameServerUrl) return this.showNotification('ゲームサーバーに接続していません', 'error');
-                const res = await fetch(`${this.gameServerUrl}/solo/questions?n=${this.questionsPerGame}`);
-                const data = await res.json();
-                if (data.error || !data.questions || !data.questions.length) throw new Error(data.error || '問題の取得に失敗しました');
                 this.questions = data.questions;
-                this.startGame(this.currentMode);
-                return;
-            }
-
-            // Partition by difficulty
-            const easy = questions.filter(q => (q.difficulty || 'normal').toLowerCase() === 'easy');
-            const normal = questions.filter(q => (q.difficulty || 'normal').toLowerCase() === 'normal');
-            const hard = questions.filter(q => (q.difficulty || 'normal').toLowerCase() === 'hard');
-
-            const total = this.questionsPerGame || 10;
-            // weights: easy:normal:hard = 3:5:2
-            const weights = { easy: 3, normal: 5, hard: 2 };
-            const sumWeights = weights.easy + weights.normal + weights.hard;
-            const pickCounts = {
-                easy: Math.round(total * (weights.easy / sumWeights)),
-                normal: Math.round(total * (weights.normal / sumWeights)),
-                hard: Math.round(total * (weights.hard / sumWeights)),
-            };
-            // adjust to ensure sum == total
-            let allocated = pickCounts.easy + pickCounts.normal + pickCounts.hard;
-            while (allocated < total) { pickCounts.normal++; allocated++; }
-            while (allocated > total) { if (pickCounts.hard > 0) { pickCounts.hard--; } else if (pickCounts.normal > 0) { pickCounts.normal--; } else { pickCounts.easy--; } allocated--; }
-
-            const sampleFrom = (arr, n) => {
-                const out = [];
-                const clone = arr.slice();
-                for (let i = 0; i < n && clone.length; i++) {
-                    const idx = Math.floor(Math.random() * clone.length);
-                    out.push(clone.splice(idx, 1)[0]);
+            } catch (serverErr) {
+                console.warn('[GameManager] failed to fetch from server, attempting local fallback:', serverErr);
+                // Try local bundled questions as a fallback for offline/dev usage
+                try {
+                    const localRes = await fetch('data/questions.json');
+                    const localData = await localRes.json();
+                    if (localData && Array.isArray(localData) && localData.length > 0) {
+                        // If the local file is an array, assume it's the questions list
+                        this.questions = localData.slice(0, this.questionsPerGame).map(q => ({ ...q }));
+                    } else if (localData && localData.questions && Array.isArray(localData.questions)) {
+                        this.questions = localData.questions.slice(0, this.questionsPerGame).map(q => ({ ...q }));
+                    } else {
+                        throw new Error('local questions file invalid');
+                    }
+                    console.log('[GameManager] loaded questions from local data/questions.json, count=', this.questions.length);
+                } catch (localErr) {
+                    console.error('[GameManager] local fallback failed:', localErr);
+                    throw serverErr;
                 }
-                return out;
-            };
-
-            const picks = [];
-            picks.push(...sampleFrom(easy, pickCounts.easy));
-            picks.push(...sampleFrom(normal, pickCounts.normal));
-            picks.push(...sampleFrom(hard, pickCounts.hard));
-
-            // If not enough questions collected (due to small pools), fill with random questions
-            const all = questions.slice();
-            while (picks.length < total && all.length) {
-                const idx = Math.floor(Math.random() * all.length);
-                picks.push(all.splice(idx, 1)[0]);
             }
-
-            // shuffle picks
-            for (let i = picks.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [picks[i], picks[j]] = [picks[j], picks[i]];
-            }
-
-            this.questions = picks;
             this.startGame(this.currentMode);
         } catch (e) {
             this.showNotification(e.message || '問題の取得に失敗しました', 'error');
@@ -560,90 +484,13 @@ class GameManager {
     beginGame(mode) {
         this.currentMode = mode;
         this.resetGameState();
-    this.showNotification('ゲームを開始します...', 'info');
-        this.showScreen('game-screen');
-        // Ensure no modal or overlay is blocking the game screen
-        try {
-            this.closeAllModals();
-            const overlay = document.getElementById('big-countdown');
-            if (overlay) {
-                overlay.classList.remove('active');
-                overlay.style.display = 'none';
-                overlay.style.pointerEvents = 'none';
-            }
-            // aggressively hide any modal / overlay elements that might block view
-            document.querySelectorAll('.modal, .tutorial-overlay, .countdown-overlay, .tutorial-highlight, #persistent-status-container').forEach(el => {
-                try {
-                    if (el.classList) el.classList.remove('active');
-                    el.style.display = 'none';
-                    el.style.pointerEvents = 'none';
-                    el.style.zIndex = '0';
-                } catch(e){}
-            });
-            // ensure game-screen is scrolled to and on top with explicit sizing
-            const gs = document.getElementById('game-screen');
-            if (gs) {
-                // Force full-screen fixed layout for gameplay to avoid layout collapse bugs
-                gs.style.display = 'block';
-                gs.style.position = 'fixed';
-                gs.style.top = '0';
-                gs.style.left = '0';
-                gs.style.width = '100%';
-                gs.style.height = '100vh';
-                gs.style.minHeight = '100vh';
-                gs.style.zIndex = 99999;
-                gs.style.opacity = 1;
-                gs.style.pointerEvents = 'auto';
-                try { gs.scrollIntoView({ behavior: 'auto' }); } catch(e){}
-            }
+        this.showNotification('ゲームを開始します...', 'info');
+    // Mark page as game-active to allow CSS to position the game screen safely
+    document.body.classList.add('game-active');
+    this.showScreen('game-screen');
+        this.closeAllModals();
 
-            // Fallback: if the game-screen subtree appears collapsed (all descendants 0x0),
-            // avoid moving DOM nodes (which can break styles or event listeners). Instead,
-            // apply robust inline styles to the game-screen and several levels of descendants
-            // to force them visible and interactive. This reduces side-effects compared to
-            // reparenting/cloning nodes.
-            try {
-                const all = gs ? Array.from(gs.querySelectorAll('*')) : [];
-                const anyVisible = all.some(el => {
-                    try {
-                        const r = el.getBoundingClientRect();
-                        return (r.width > 0 || r.height > 0);
-                    } catch (err) { return false; }
-                });
-                if (!anyVisible && gs) {
-                    console.warn('[GameManager] detected collapsed game-screen subtree; applying ensureVisible styles');
-                    const ensureVisible = (el, depth = 0, maxDepth = 6) => {
-                        if (!el || depth > maxDepth) return;
-                        try {
-                            el.style.setProperty('display', 'block', 'important');
-                            el.style.setProperty('visibility', 'visible', 'important');
-                            el.style.setProperty('opacity', '1', 'important');
-                            // do not globally change pointer-events here to avoid capturing all clicks
-                            // avoid forcing huge z-index to prevent overlaying other UI
-                            el.style.setProperty('transform', 'none', 'important');
-                            el.style.setProperty('clip-path', 'none', 'important');
-                        } catch (err) {
-                            try { el.style.display = 'block'; el.style.visibility = 'visible'; } catch(e){}
-                        }
-                        // recurse into a few children to ensure inner content shows
-                        const children = Array.from(el.children || []).slice(0, 50);
-                        for (let i = 0; i < children.length; i++) {
-                            ensureVisible(children[i], depth + 1, maxDepth);
-                        }
-                    };
-                    // apply to the game-screen itself and its ancestors (to ensure no parent clipping)
-                    let cur = gs;
-                    let anti = 0;
-                    while (cur && anti < 6) { ensureVisible(cur, 0, 4); cur = cur.parentElement; anti++; }
-                    // nudge scroll and layout to encourage repaint
-                    try { gs.offsetHeight; document.body.offsetHeight; } catch(e){}
-                    this._reparented = false;
-                    this._reparentId = null;
-                    this._reparentedNodes = null;
-                }
-            } catch (e) { console.warn('ensureVisible fallback failed', e); }
-        } catch (e) { console.warn('beginGame overlay cleanup failed', e); }
-    console.log('[GameManager] beginGame called, mode=', mode, 'questions count=', this.questions ? this.questions.length : 0);
+        console.log('[GameManager] beginGame called, mode=', mode, 'questions count=', this.questions ? this.questions.length : 0);
         this.updateGameHUD();
         this.showQuestion();
         if (this.timeLimit > 0) {
@@ -720,6 +567,8 @@ class GameManager {
     // resume menu BGM
     try { this.playBGM('menu.mp3'); } catch (e) {}
     this.resetGameState();
+    // remove game-active class so CSS returns to menu layout
+    document.body.classList.remove('game-active');
     this.showScreen('main-menu');
     this.closeAllModals();
     }
@@ -952,16 +801,52 @@ class GameManager {
 
         console.log('[GameManager] showQuestion index=', this.currentQuestionIndex, 'question=', q);
         if (this.el.targetAnswer) {
-            // Prefer explicit answers array (solo mode). If missing, fall back to common prompt/title fields
-            const answers = q.answers || q.answers === null ? q.answers : null;
-            if (this.currentMode === 'vs') {
-                this.el.targetAnswer.textContent = '???';
-            } else if (answers && answers.length) {
-                this.el.targetAnswer.textContent = answers.join(' / ');
-            } else {
-                // Fallback: show prompt or question text so the player at least sees something
-                const fallback = q.prompt || q.question || q.text || q.id || '';
-                this.el.targetAnswer.textContent = fallback || '';
+            try {
+                // Normalize answers: prefer q.answers array, fallback to q.answer string
+                let answers = null;
+                if (Array.isArray(q.answers) && q.answers.length) answers = q.answers;
+                else if (typeof q.answer === 'string' && q.answer.trim().length) answers = [q.answer.trim()];
+
+                let assignedText = '';
+                if (this.currentMode === 'vs') {
+                    assignedText = '???';
+                } else if (answers && answers.length) {
+                    assignedText = answers.join(' / ');
+                } else {
+                    assignedText = q.prompt || q.question || q.text || q.id || '';
+                }
+                this.el.targetAnswer.textContent = assignedText;
+                // Temporary forced sizing to work around collapsed layout (debugging)
+                try {
+                    this.el.targetAnswer.style.minWidth = '220px';
+                    this.el.targetAnswer.style.minHeight = '28px';
+                    this.el.targetAnswer.style.display = 'inline-block';
+                } catch (e) {}
+
+                // Debug info to help diagnose rendering/visibility issues
+                const el = this.el.targetAnswer;
+                const cs = window.getComputedStyle ? window.getComputedStyle(el) : null;
+                const rect = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+                console.log('[GameManager] targetAnswer assigned=', JSON.stringify(assignedText), 'computedStyle=', cs ? { display: cs.display, visibility: cs.visibility, opacity: cs.opacity, color: cs.color, transform: cs.transform } : null, 'rect=', rect);
+                // Walk up parent chain to find collapsing ancestor
+                try {
+                    let node = el;
+                    const chain = [];
+                    while (node && node.nodeType === 1) {
+                        const ncs = window.getComputedStyle ? window.getComputedStyle(node) : null;
+                        const nrect = node.getBoundingClientRect ? node.getBoundingClientRect() : null;
+                        chain.push({ tag: node.tagName, id: node.id || null, class: node.className || null, display: ncs ? ncs.display : null, visibility: ncs ? ncs.visibility : null, opacity: ncs ? ncs.opacity : null, width: nrect ? nrect.width : null, height: nrect ? nrect.height : null });
+                        if (node.tagName === 'BODY') break;
+                        node = node.parentElement;
+                    }
+                    try {
+                        console.log('[GameManager] ancestor chain:', chain);
+                        console.log('[GameManager] ancestor chain JSON:\n', JSON.stringify(chain, null, 2));
+                    } catch (e) {}
+                    try { if (window.DebugVisual) window.DebugVisual.visualizeElement(this.el.targetAnswer); } catch(e){}
+                } catch (err) { console.warn('ancestor debug failed', err); }
+            } catch (dbgErr) {
+                console.error('[GameManager] showQuestion debug error', dbgErr);
             }
         }
         // ensure AI output and analysis are visible/cleared
@@ -1287,9 +1172,19 @@ class GameManager {
     }
 
     showScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        // Deactivate all screens and explicitly hide them to avoid cases where a screen
+        // remains visible on top due to CSS or body class mismatches.
+        document.querySelectorAll('.screen').forEach(s => {
+            s.classList.remove('active');
+            s.setAttribute('aria-hidden', 'true');
+            s.style.display = 'none';
+        });
         const screen = document.getElementById(screenId);
-        if (screen) screen.classList.add('active');
+        if (screen) {
+            screen.classList.add('active');
+            screen.removeAttribute('aria-hidden');
+            screen.style.display = '';
+        }
         // Play menu BGM when showing main menu. For other screens (except game-screen), stop BGM.
         try {
             if (screenId === 'main-menu') {
@@ -1301,6 +1196,8 @@ class GameManager {
         // When switching screens, clear any forced full-screen inline styles applied to game-screen
         // This ensures returning to menu restores normal layout
         if (screenId !== 'game-screen') {
+            // If leaving game-screen, also ensure body game-active class is removed
+            try { document.body.classList.remove('game-active'); } catch(e){}
             const gs = document.getElementById('game-screen');
             if (gs) {
                 gs.style.position = '';

@@ -153,6 +153,8 @@ body {
     background: rgba(0,0,0,0.6);
     z-index: 9999;
 }
+.countdown-overlay { pointer-events: none; }
+.countdown-overlay .count-number { pointer-events: auto; }
 .countdown-overlay.active { display: flex; }
 .count-number {
     font-family: var(--title-font);
@@ -387,24 +389,35 @@ body {
     text-shadow: 0 0 10px var(--primary-glow);
 }
 
-/* Emergency: ensure gameplay container is visible on top when beginGame manipulates the DOM */
-
-#game-screen, #game-screen-reparent {
+/* Gameplay active state: apply when game is running. This is safer than permanently forcing
+   inline styles or reparenting nodes. Adding a single class avoids the JS writing many
+   inline style properties which caused click-blocking bugs. */
+.game-active #game-screen {
     display: block !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100vh !important;
-    min-height: 100vh !important;
-    z-index: 1000 !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-    transform: none !important;
-    clip-path: none !important;
-    background: transparent !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100vh;
+    box-sizing: border-box;
+    z-index: 50; /* modest z-index to keep above background but below modals */
 }
+
+/* Avoid overlay/backdrop elements stealing pointer-events from gameplay controls.
+   Backdrops should only intercept clicks when a modal is open; the overlay content
+   remains interactive. */
+.modal-backdrop {
+    pointer-events: none; /* allow clicks to pass through unless modal content is shown */
+}
+.modal.active .modal-backdrop {
+    pointer-events: auto;
+}
+
+/* Big countdown overlay safety: only the central number should capture events */
+.countdown-overlay { pointer-events: none; }
+.countdown-overlay.active { pointer-events: auto; }
 
 /* Ensure interactive elements inside game-screen remain clickable */
 #game-screen button, #game-screen a, #game-screen input, #game-screen textarea,
@@ -427,6 +440,24 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
+}
+
+/* Debug overrides: when game-active, force minimal sizes so collapsed ancestors become visible.
+   These are temporary and conservative; remove or tone down after debugging. */
+.game-active #game-screen,
+.game-active #game-screen .game-hud,
+.game-active #game-screen .game-arena {
+    display: block !important;
+    position: relative !important;
+    min-height: 32px !important;
+    min-width: 120px !important;
+}
+
+.game-active #game-screen .target-value {
+    min-width: 220px !important;
+    min-height: 40px !important;
+    display: inline-block !important;
+    outline: 2px solid rgba(255,0,0,0.6) !important; /* visible debug outline */
 }
 
 .target-actions {
@@ -741,6 +772,10 @@ textarea#player-question:focus {
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(10px);
 }
+
+/* Safety: allow clicks to pass through modal backdrop while keeping modal content interactive */
+.modal { pointer-events: none; }
+.modal .modal-content { pointer-events: auto; }
 
 /* show modal when active class is present */
 .modal.active {
