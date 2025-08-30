@@ -720,6 +720,8 @@ class GameManager {
     const params = { rule };
     this.persistPendingMatch(params);
     this.startLobbyPolling(params);
+    this.showNotification('対戦モードにエントリーしました。マッチングをお待ちください。', 'info');
+    this.showScreen('main-menu');
     }
 
     async createRoom() {
@@ -744,6 +746,8 @@ class GameManager {
             this.persistPendingMatch(params);
             this.startLobbyPolling(params);
             this.closeModal('room-modal');
+            this.showNotification('ルームを作成しました。プレイヤーを待っています。', 'info');
+            this.showScreen('main-menu');
         } catch (e) {
             this.showNotification(`ルーム作成失敗: ${e.message}`, 'error');
         }
@@ -762,6 +766,8 @@ class GameManager {
     this.persistPendingMatch(params);
     this.startLobbyPolling(params);
         this.closeModal('room-modal');
+        this.showNotification('ルームに参加しました。ゲーム開始をお待ちください。', 'info');
+        this.showScreen('main-menu');
     }
 
     async cancelMatchmaking() {
@@ -788,7 +794,7 @@ class GameManager {
     startLobbyPolling(params) {
         if (this.lobbyPollInterval) clearInterval(this.lobbyPollInterval);
         
-        const poll = async () => {
+        const poll = async (retryCount = 0) => {
             if (!this.isMatchmaking) return this.stopLobbyPolling();
             try {
                 const endpoint = params.roomId ? `${this.gameServerUrl}/room/join` : `${this.gameServerUrl}/lobby/join`;
@@ -822,13 +828,17 @@ class GameManager {
                         this.el.lobbyStatus.textContent = `ロビーエラー: ${msg}`;
                     }
                 }
-                this.stopLobbyPolling();
-                this.hidePersistentStatusUI();
+                if (retryCount < 2) {
+                    setTimeout(() => poll(retryCount + 1), 2000 * (retryCount + 1)); // retry with backoff
+                } else {
+                    this.stopLobbyPolling();
+                    this.hidePersistentStatusUI();
+                }
             }
         };
 
         poll();
-        this.lobbyPollInterval = setInterval(poll, 3000);
+        this.lobbyPollInterval = setInterval(poll, 4000); // increased to 4s to reduce load
     }
 
     stopLobbyPolling() {
@@ -1159,7 +1169,7 @@ class GameManager {
     }
 
     // Multiplayer: submit that this player finished (or update score)
-    async submitGameDone({ correct = false, score_delta = 0, done = false } = {}) {
+    async submitGameDone({ correct = false, score_delta = 0, done = false } = {}, retryCount = 0) {
         if (!this.currentGameId || !this.playerId || !this.gameServerUrl) {
             throw new Error('ゲーム情報が不十分です');
         }
@@ -1182,6 +1192,10 @@ class GameManager {
             return j;
         } catch (e) {
             console.warn('submitGameDone error', e);
+            if (retryCount < 2) {
+                await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+                return this.submitGameDone({ correct, score_delta, done }, retryCount + 1);
+            }
             throw e;
         }
     }
@@ -1193,7 +1207,7 @@ class GameManager {
         this.currentGameId = gameId;
         // immediately fetch once
         this.fetchAndHandleGameState();
-        this.gameStateInterval = setInterval(() => this.fetchAndHandleGameState(), 1000);
+        this.gameStateInterval = setInterval(() => this.fetchAndHandleGameState(), 2000); // increased to 2s to reduce load
     }
 
     stopGameStatePolling() {
@@ -1205,7 +1219,7 @@ class GameManager {
         if (vsEl) vsEl.style.display = 'none';
     }
 
-    async fetchAndHandleGameState() {
+    async fetchAndHandleGameState(retryCount = 0) {
         if (!this.currentGameId || !this.gameServerUrl) return;
         try {
             const res = await fetch(`${this.gameServerUrl}/game/${encodeURIComponent(this.currentGameId)}/state`);
@@ -1214,6 +1228,9 @@ class GameManager {
             this.handleGameStateResponse(st);
         } catch (e) {
             console.warn('fetchAndHandleGameState error', e);
+            if (retryCount < 3) {
+                setTimeout(() => this.fetchAndHandleGameState(retryCount + 1), 1000 * (retryCount + 1)); // exponential backoff
+            }
         }
     }
 
@@ -1221,6 +1238,11 @@ class GameManager {
         if (!state) return;
         // update HUD scores if present
         if (state.scores && typeof state.scores === 'object') {
+            // update my score from server
+            if (this.playerId && state.scores[this.playerId] !== undefined) {
+                this.score = state.scores[this.playerId];
+                this.updateUI();
+            }
             // if there's a UI element for other players, update it (simple implementation)
             const vsEl = document.getElementById('vs-countdown-small');
             // If first_finish_at exists, compute remaining seconds (server uses epoch seconds)

@@ -42,7 +42,7 @@ def resolve_player(player_id: Optional[str] = None, session_token: Optional[str]
 WAITING_BY_RULE = {}
 GAMES = {}  # game_id -> { players: [player_id], questions: [q], pointer: int }
 MIN_PLAYERS = 3
-SCORES = {'solo': [], 'rta': []}  # list of { player, score, time, meta }
+SCORES = {'solo': [], 'rta': [], 'vs': []}  # list of { player, score, time, meta }
 DEFAULT_QUESTIONS_PER_GAME = int(os.getenv('QUESTIONS_PER_GAME', '10'))
 ROOMS = {}  # room_id -> { name, password, max_players, rule, players: [player_id], creator }
 # map player_id -> pending game_id so players who poll later can receive game info
@@ -416,7 +416,11 @@ def lobby_join(req: JoinLobbyRequest):
         qcount = min(len(ALL_QUESTIONS), qcount)
         sampled = random.sample(ALL_QUESTIONS, qcount) if qcount > 0 else []
         random.shuffle(sampled)
-        sanitized = [{'id': q.get('id'), 'prompt': (q.get('question') or q.get('prompt') or q.get('q') or q.get('text') or str(q.get('id')))} for q in sampled]
+        sanitized = []
+        for q in sampled:
+            prompt = q.get('question') or q.get('prompt') or q.get('q') or q.get('text') or str(q.get('id'))
+            answers = q.get('answers') or ([q.get('answer')] if q.get('answer') else [])
+            sanitized.append({'id': q.get('id'), 'prompt': prompt, 'answers': answers, 'answer': answers[0] if answers else None})
         
         # track per-game runtime state: scores by player, done flags, first finisher timestamp, finished flag
         GAMES[gid] = {
@@ -552,6 +556,11 @@ def finalize_game(game_id: str):
     ranking = sorted([(p, scores.get(p,0)) for p in g['players']], key=lambda x: x[1], reverse=True)
     g['final_ranking'] = [{'player': p, 'score': s} for p,s in ranking]
     g['ended_at'] = int(time.time())
+    # save scores to global SCORES for vs mode
+    for p, s in ranking:
+        nickname = PLAYERS.get(p, {}).get('nickname', '匿名')
+        rec = { 'player': nickname, 'score': s, 'time': g.get('ended_at', 0) - g.get('started_at', 0), 'meta': {'game_id': game_id} }
+        SCORES['vs'].append(rec)
 
 
 @app.get('/solo/question')
@@ -654,7 +663,11 @@ def room_join(req: RoomJoinRequest):
         qcount = min(len(ALL_QUESTIONS), qcount)
         sampled = random.sample(ALL_QUESTIONS, qcount) if qcount > 0 else []
         random.shuffle(sampled)
-        sanitized = [{'id': q.get('id'), 'prompt': (q.get('question') or q.get('prompt') or q.get('q') or q.get('text') or str(q.get('id')))} for q in sampled]
+        sanitized = []
+        for q in sampled:
+            prompt = q.get('question') or q.get('prompt') or q.get('q') or q.get('text') or str(q.get('id'))
+            answers = q.get('answers') or ([q.get('answer')] if q.get('answer') else [])
+            sanitized.append({'id': q.get('id'), 'prompt': prompt, 'answers': answers, 'answer': answers[0] if answers else None})
         
         GAMES[gid] = {'players': players_for_game, 'questions': sanitized, 'pointer': 0, 'room': req.room_id, 'rule': rule}
         # track per-game runtime state for room-created games
