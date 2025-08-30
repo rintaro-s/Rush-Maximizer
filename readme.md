@@ -49,13 +49,13 @@ http://localhost:8000
 
 ## 6. 使い方 (How to Start)
 
-このゲームを始めるには、いくつかの準備が必要だよ。
+このゲームを始めるには、いくつかの準備が必要。
 
 ### 1. LMStudioの準備
 
-このゲームは君のPCで動くAI（LLM）を使ってる。まずは[LMStudio](https://lmstudio.ai/)を公式サイトからダウンロードして、インストールしてね。
+このゲームはローカルのPCで動くAI（LLM）を使ってる。まずは[LMStudio](https://lmstudio.ai/)を公式サイトからダウンロードして、インストールしてね。
 
-インストールしたら、好きなモデル（例えば `Mistral` とか `Llama` とか）をダウンロードして、**AI Inference Server** を起動しよう。サーバーが起動すると、準備OK！
+インストールしたら、好きなモデル（LlamaやGemma等。私のおすすめは"Qwen3 30B a3b[q4_k_m]"、VRAM(GPU)15GB+RAM(CPU)10GBで動かしてる）をダウンロードして、**AI Inference Server** を起動しよう。サーバーが起動すると、準備OK！
 
 ### 2. ゲームサーバーの起動
 

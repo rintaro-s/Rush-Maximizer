@@ -21,6 +21,39 @@
         "wrong": 0,
         "accuracy": 1.0
       }
+    },
+    {
+      "player": "りん",
+      "score": 1050,
+      "time": 300,
+      "meta": {
+        "correct": 10,
+        "total": 10,
+        "wrong": 0,
+        "accuracy": 1.0
+      }
+    },
+    {
+      "player": "koko",
+      "score": 1050,
+      "time": 300,
+      "meta": {
+        "correct": 10,
+        "total": 10,
+        "wrong": 0,
+        "accuracy": 1.0
+      }
+    },
+    {
+      "player": "りん",
+      "score": 1050,
+      "time": 300,
+      "meta": {
+        "correct": 10,
+        "total": 10,
+        "wrong": 0,
+        "accuracy": 1.0
+      }
     }
   ],
   "rta": []
