@@ -89,111 +89,249 @@
     </div>
 
     <div id="main-menu" class="screen">
-        <div class="menu-container">
-            <div class="game-title">
-                <h1>RUSH MAXIMIZER</h1>
-                <p class="subtitle">AIを知識で誘導してモノにする新感覚クイズ</p>
-            </div>
-            <div class="menu-buttons">
-                <button class="menu-btn" id="solo-mode-btn">
-                    <span class="btn-icon">🎯</span>
-                    <span class="btn-text">ソロモード</span>
-                    <span class="btn-desc">時間無制限でじっくり挑戦</span>
-                </button>
-                <button class="menu-btn" id="vs-mode-btn">
-                    <span class="btn-icon">⚔️</span>
-                    <span class="btn-text">対戦モード</span>
-                    <span class="btn-desc">オンラインで対戦</span>
-                </button>
-                <button class="menu-btn" id="rta-mode-btn">
-                    <span class="btn-icon">⏱️</span>
-                    <span class="btn-text">RTAモード</span>
-                    <span class="btn-desc">10問 / 3分のタイムアタック</span>
-                </button>
-                <button class="menu-btn" id="practice-mode-btn">
-                    <span class="btn-icon">📚</span>
-                    <span class="btn-text">練習モード</span>
-                    <span class="btn-desc">好きな問題数で練習</span>
-                </button>
-            </div> <!-- /.menu-buttons -->
-            <div class="tab-content" id="server-tab" style="display:none;">
-                <div class="form-group">
-                    <label for="game-server-address">ゲームサーバーアドレス:</label>
-                    <!-- hidden duplicate removed -->
+        <div class="glassmorphism-container">
+            <div class="main-header">
+                <div class="logo-section">
+                    <h1 class="app-title">
+                        <span class="title-icon">🧠</span>
+                        <span class="title-text">Rush Maximizer</span>
+                    </h1>
+                    <p class="app-subtitle">AIを使った新感覚クイズゲーム</p>
                 </div>
-                <div class="form-group">
-                    <label for="lm-server-address">LMStudioサーバーアドレス:</label>
-                    <!-- hidden duplicate removed -->
+                
+                <div class="quick-actions">
+                    <button class="icon-btn settings-btn" onclick="gameManager.showModal('settings-modal')">
+                        <span class="icon">⚙️</span>
+                    </button>
+                    <button class="icon-btn leaderboard-btn" onclick="gameManager.showModal('leaderboard-modal')">
+                        <span class="icon">🏆</span>
+                    </button>
+                    <button class="icon-btn tutorial-btn" onclick="gameManager.showModal('tutorial-select-modal')">
+                        <span class="icon">❓</span>
+                    </button>
                 </div>
             </div>
-            <span id="server-stats">サーバー情報: 取得中...</span>
-        </div> <!-- /.menu-container -->
-    </div> <!-- /#main-menu -->
 
-    <div id="game-screen" class="screen">
-        <!-- Futuristic HUD-style header -->
-    <div class="game-hud">
-            <div class="hud-top">
-                <button id="back-to-menu-btn" class="hud-btn exit-btn">✕</button>
-                <div class="hud-center">
-                    <div class="target-display">
-                        <div class="target-label">TARGET</div>
-                        <div id="target-answer" class="target-value">江戸城無血開城</div>
-                    </div>
-                </div>
-                <div class="hud-right">
-                    <div class="progress-ring" id="progress-ring">
-                        <svg width="60" height="60">
-                            <circle cx="30" cy="30" r="25" fill="none" stroke="#333" stroke-width="4"/>
-                            <circle cx="30" cy="30" r="25" fill="none" stroke="#00d4ff" stroke-width="4" 
-                                    stroke-dasharray="157" stroke-dashoffset="157" id="progress-circle"/>
-                        </svg>
-                        <div class="progress-text">
-                            <span id="question-number">1</span>/<span id="total-questions">10</span>
+            <div class="menu-content">
+                <div class="mode-grid">
+                    <div class="mode-card" id="solo-mode-btn">
+                        <div class="card-header">
+                            <span class="mode-icon">🎯</span>
+                            <h3 class="mode-title">ソロモード</h3>
+                        </div>
+                        <p class="mode-description">時間無制限でじっくり挑戦<br>17秒/問題の新ルール</p>
+                        <div class="mode-stats">
+                            <span class="stat-badge">制限時間なし</span>
+                            <span class="stat-badge">10問</span>
                         </div>
                     </div>
-                    <div id="vs-countdown-small" class="vs-countdown-small" style="display:none;">残り 60</div>
+
+                    <div class="mode-card" id="vs-mode-btn">
+                        <div class="card-header">
+                            <span class="mode-icon">⚔️</span>
+                            <h3 class="mode-title">対戦モード</h3>
+                        </div>
+                        <p class="mode-description">オンラインで他プレイヤーと競争<br>パス3回まで可能</p>
+                        <div class="mode-stats">
+                            <span class="stat-badge">リアルタイム</span>
+                            <span class="stat-badge">マルチプレイ</span>
+                        </div>
+                    </div>
+
+                    <div class="mode-card" id="rta-mode-btn">
+                        <div class="card-header">
+                            <span class="mode-icon">⏱️</span>
+                            <h3 class="mode-title">RTAモード</h3>
+                        </div>
+                        <p class="mode-description">10問 / 3分のタイムアタック<br>時間で点数が変動</p>
+                        <div class="mode-stats">
+                            <span class="stat-badge">3分</span>
+                            <span class="stat-badge">高速</span>
+                        </div>
+                    </div>
+
+                    <div class="mode-card" id="practice-mode-btn">
+                        <div class="card-header">
+                            <span class="mode-icon">📚</span>
+                            <h3 class="mode-title">練習モード</h3>
+                        </div>
+                        <p class="mode-description">カテゴリー・難易度を選択<br>カスタム練習</p>
+                        <div class="mode-stats">
+                            <span class="stat-badge">フィルター</span>
+                            <span class="stat-badge">自由設定</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="hud-bottom">
-                <div class="hud-stats">
-                    <div class="stat-item">
-                        <span class="stat-label">MODE</span>
-                        <span class="stat-value" id="current-mode">SOLO</span>
+
+                <div class="server-info-panel">
+                    <div class="connection-status">
+                        <span class="status-indicator" id="connection-indicator"></span>
+                        <span id="server-stats">サーバー情報: 取得中...</span>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-label">SCORE</span>
-                        <span class="stat-value" id="current-score">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">ACCURACY</span>
-                        <span class="stat-value" id="accuracy">0%</span>
-                    </div>
-                    <div class="stat-item timer-wrapper">
-                        <span class="stat-label">TIME</span>
-                        <span class="stat-value" id="timer-display">05:00</span>
+                    <div class="voice-status">
+                        <button class="voice-toggle-btn" id="voice-toggle">
+                            <span class="icon">🎤</span>
+                            <span class="text">音声認識</span>
+                            <span class="status">OFF</span>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
+    </div> <!-- /#main-menu -->
 
-        <!-- Main game area -->
-            <div class="game-arena">
-            <!-- Left: Player input / history -->
-            <div class="arena-left">
-                <div class="input-zone">
-                    <div class="zone-header">
-                        <h3>YOUR STRATEGY</h3>
-                        <div class="question-counter">
-                            <span id="question-count">QUESTIONS: 0</span>
+    <div id="game-screen" class="screen">
+        <!-- New glassmorphism game layout -->
+        <div class="game-container">
+            <!-- Header with target and timers -->
+            <div class="game-header">
+                <button id="back-to-menu-btn" class="glass-btn exit-btn">
+                    <span class="icon">✕</span>
+                    <span class="text">メニュー</span>
+                </button>
+                
+                <div class="target-section">
+                    <div class="target-label">TARGET ANSWER</div>
+                    <div id="target-answer" class="target-display">江戸城無血開城</div>
+                </div>
+                
+                <div class="timer-section">
+                    <div class="timer-grid">
+                        <div class="timer-item game-timer">
+                            <span class="timer-label">GAME TIME</span>
+                            <span id="timer-display" class="timer-value">05:00</span>
+                        </div>
+                        <div class="timer-item question-timer">
+                            <span class="timer-label">QUESTION</span>
+                            <div class="timer-with-progress">
+                                <svg class="progress-circle" width="60" height="60">
+                                    <circle cx="30" cy="30" r="25" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3"/>
+                                    <circle cx="30" cy="30" r="25" fill="none" stroke="#00d4ff" stroke-width="3" 
+                                            stroke-dasharray="157" stroke-dashoffset="0" id="question-progress-circle"
+                                            transform="rotate(-90 30 30)"/>
+                                </svg>
+                                <span id="question-timer" class="timer-value overlay">17s</span>
+                            </div>
                         </div>
                     </div>
+                    <div class="progress-section">
+                        <div class="progress-info">
+                            <span id="question-number">1</span>/<span id="total-questions">10</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game stats panel -->
+            <div class="stats-panel">
+                <div class="stat-group">
+                    <div class="stat-card">
+                        <span class="stat-label">MODE</span>
+                        <span class="stat-value" id="current-mode">SOLO</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">SCORE</span>
+                        <span class="stat-value" id="current-score">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">ACCURACY</span>
+                        <span class="stat-value" id="accuracy">0%</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">QUESTIONS</span>
+                        <span class="stat-value" id="question-count">0</span>
+                    </div>
+                </div>
+                
+                <!-- Pass counter for VS mode -->
+                <div class="pass-counter" id="pass-counter" style="display: none;">
+                    <span class="pass-label">PASSES</span>
+                    <div class="pass-indicators">
+                        <span class="pass-dot active" data-pass="1"></span>
+                        <span class="pass-dot active" data-pass="2"></span>
+                        <span class="pass-dot active" data-pass="3"></span>
+                    </div>
+                </div>
+
+                <!-- Voice recognition status -->
+                <div class="voice-indicator" id="voice-indicator">
+                    <span class="voice-icon">🎤</span>
+                    <span class="voice-status">待機中</span>
+                </div>
+            </div>
+
+            <!-- Main game content -->
+            <div class="game-content">
+                <!-- Input section -->
+                <div class="input-section">
+                    <div class="input-header">
+                        <h3>戦略的質問入力</h3>
+                        <div class="input-actions">
+                            <button class="glass-btn voice-btn" id="voice-input-btn">
+                                <span class="icon">🎤</span>
+                                <span class="text">音声入力</span>
+                            </button>
+                        </div>
+                    </div>
+                    
                     <div class="input-area">
-                        <div class="question-history" id="question-history"></div>
+                        <textarea id="player-question" class="glass-input" 
+                                  placeholder="AIを正解に導く戦略的な質問を入力してください..."></textarea>
                         <div class="input-controls">
-                            <textarea id="player-question" class="question-input player-textarea" 
-                                      placeholder="AIを正解に導く戦略的な質問を入力..."></textarea>
-                            <div class="control-buttons">
+                            <button id="clear-question-btn" class="glass-btn secondary">
+                                <span class="icon">🗑️</span>
+                                <span class="text">クリア</span>
+                            </button>
+                            <button id="pass-btn" class="glass-btn warning">
+                                <span class="icon">⏭️</span>
+                                <span class="text">パス</span>
+                            </button>
+                            <button id="submit-question-btn" class="glass-btn primary">
+                                <span class="icon">🚀</span>
+                                <span class="text">送信</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Response section -->
+                <div class="ai-section">
+                    <div class="ai-header">
+                        <h3>AI応答</h3>
+                        <div class="ai-status">
+                            <span class="status-indicator" id="ai-status-indicator"></span>
+                            <span id="ai-status-text">待機中</span>
+                        </div>
+                    </div>
+                    
+                    <div class="ai-response">
+                        <div id="ai-output" class="ai-text">AIが回答を待っています...</div>
+                    </div>
+                    
+                    <div class="ai-analysis" id="ai-analysis"></div>
+                </div>
+
+                <!-- Question history sidebar -->
+                <div class="history-section">
+                    <div class="history-header">
+                        <h3>質問履歴</h3>
+                        <span class="history-count" id="history-count">0件</span>
+                    </div>
+                    <div class="question-history" id="question-history"></div>
+                </div>
+            </div>
+
+            <!-- VS Mode progress bars (hidden by default) -->
+            <div class="vs-progress-panel" id="vs-progress-panel" style="display: none;">
+                <h3>対戦状況</h3>
+                <div class="player-progress-list" id="player-progress-list">
+                    <!-- Dynamic player progress bars will be inserted here -->
+                </div>
+            </div>
+        </div>
                                 <button id="clear-question-btn" class="control-btn clear-btn">CLEAR</button>
                                 <button id="pass-btn" class="control-btn pass-btn">PASS</button>
                                 <button id="submit-question-btn" class="control-btn submit-btn">SEND</button>
@@ -277,9 +415,19 @@
                 <div class="form-group">
                     <label for="theme">テーマ:</label>
                     <select id="theme">
-                        <option value="dark">ダーク</option>
+                        <option value="glassmorphism">グラスモーフィズム</option>
+                        <option value="gaming">ゲーミング</option>
                         <option value="light">ライト</option>
                         <option value="cyberpunk">サイバーパンク</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ui-layout">UIレイアウト:</label>
+                    <select id="ui-layout">
+                        <option value="standard">標準</option>
+                        <option value="compact">コンパクト</option>
+                        <option value="wide">ワイド</option>
+                        <option value="minimal">ミニマル</option>
                     </select>
                 </div>
                 <div class="form-group checkbox-group">
@@ -355,19 +503,124 @@
 
     <!-- Practice setup modal -->
     <div id="practice-setup-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h2>練習モード設定</h2>
-            <div class="form-group">
-                <label for="practice-questions">問題数:</label>
-                <input type="number" id="practice-questions" min="1" max="100" value="10">
+        <div class="modal-content practice-setup-content">
+            <div class="modal-header">
+                <h2>練習モード設定</h2>
+                <span class="close-btn">&times;</span>
             </div>
-            <div class="form-group">
-                <label for="practice-time">制限時間（分）:</label>
-                <input type="number" id="practice-time" min="1" max="60" value="5">
+            
+            <div class="practice-tabs">
+                <button class="tab-btn active" data-tab="basic-settings">基本設定</button>
+                <button class="tab-btn" data-tab="filter-settings">フィルター</button>
+                <button class="tab-btn" data-tab="custom-questions">カスタム問題</button>
             </div>
-            <div class="result-actions">
-                <button class="btn btn-primary" id="practice-start-btn">練習を開始</button>
+
+            <div class="tab-content active" id="basic-settings">
+                <div class="form-group">
+                    <label for="practice-questions">問題数:</label>
+                    <input type="number" id="practice-questions" min="1" max="100" value="10">
+                </div>
+                <div class="form-group">
+                    <label for="practice-time">制限時間（分）:</label>
+                    <input type="number" id="practice-time" min="1" max="60" value="5">
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="practice-voice" checked>
+                    <label for="practice-voice">音声認識を有効にする</label>
+                </div>
+            </div>
+
+            <div class="tab-content" id="filter-settings" style="display: none;">
+                <div class="form-group">
+                    <label for="category-filter">カテゴリー:</label>
+                    <select id="category-filter" multiple>
+                        <option value="all" selected>すべて</option>
+                        <option value="history">歴史</option>
+                        <option value="science">科学</option>
+                        <option value="literature">文学</option>
+                        <option value="geography">地理</option>
+                        <option value="culture">文化</option>
+                        <option value="sports">スポーツ</option>
+                        <option value="entertainment">エンターテイメント</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="difficulty-filter">難易度:</label>
+                    <div class="difficulty-options">
+                        <label class="radio-option">
+                            <input type="radio" name="difficulty" value="all" checked>
+                            <span>すべて</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="difficulty" value="easy">
+                            <span>初級</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="difficulty" value="medium">
+                            <span>中級</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="difficulty" value="hard">
+                            <span>上級</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="tag-filter">タグ:</label>
+                    <div class="tag-options">
+                        <label class="checkbox-option">
+                            <input type="checkbox" value="famous">
+                            <span>有名人</span>
+                        </label>
+                        <label class="checkbox-option">
+                            <input type="checkbox" value="places">
+                            <span>地名</span>
+                        </label>
+                        <label class="checkbox-option">
+                            <input type="checkbox" value="events">
+                            <span>出来事</span>
+                        </label>
+                        <label class="checkbox-option">
+                            <input type="checkbox" value="objects">
+                            <span>物</span>
+                        </label>
+                        <label class="checkbox-option">
+                            <input type="checkbox" value="concepts">
+                            <span>概念</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="custom-questions" style="display: none;">
+                <div class="custom-options">
+                    <div class="custom-option-card">
+                        <h3>ゲーム内で作成</h3>
+                        <p>問題と答えを入力して、オリジナル問題集を作成</p>
+                        <button class="btn btn-secondary" id="create-custom-btn">問題を作成</button>
+                    </div>
+                    <div class="custom-option-card">
+                        <h3>JSONファイル読み込み</h3>
+                        <p>JSONファイルをアップロードして問題集を読み込み</p>
+                        <div class="file-upload">
+                            <input type="file" id="json-upload" accept=".json" style="display: none;">
+                            <button class="btn btn-secondary" onclick="document.getElementById('json-upload').click()">
+                                ファイルを選択
+                            </button>
+                            <span id="file-name"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="question-preview">
+                    <span id="filtered-count">利用可能な問題: 計算中...</span>
+                </div>
+                <div class="result-actions">
+                    <button class="btn btn-secondary" onclick="gameManager.closeModal('practice-setup-modal')">キャンセル</button>
+                    <button class="btn btn-primary" id="practice-start-btn">練習を開始</button>
+                </div>
             </div>
         </div>
     </div>

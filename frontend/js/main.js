@@ -27,16 +27,45 @@ class GameManager {
         this.gameStateInterval = null;
         this._hasSubmittedDone = false;
         this._vsCountdownVisible = false;
+        this._autoReturnInterval = null;
+
+        // Voice recognition properties
+        this.recognition = null;
+        this.isVoiceActive = false;
+        this.voiceEnabled = false;
+
+        // Pass counter for VS mode
+        this.passesUsed = 0;
+        this.maxPasses = 3;
+
+        // Advanced scoring and timing
+        this.questionStartTime = null;
+        this.questionTimeLimit = 17;
+        this.questionTimer = null;
+        this.pausedTime = null;
+        this.baseScore = 100;
+        this.timeBonus = 0;
         
         // Mobile detection and optimization
         this.isMobile = this.detectMobile();
         this.isTouch = 'ontouchstart' in window;
+
+        // Input validation and security
+        this.inputLimits = {
+            answer: 100,
+            nickname: 30,
+            url: 200,
+            general: 500
+        };
+        this.inputRateLimit = new Map();
+        this.maxRequestsPerMinute = 60;
         
         this.el = {};
         this.cacheElements();
         this.attachEventListeners();
         this.loadSettings();
         this.initUI();
+        this.initVoiceRecognition();
         this.setupAudioUnlock();
         
         if (this.isMobile) {
@@ -333,6 +362,16 @@ class GameManager {
         safeAdd(this.el.joinRoomBtn, 'click', this.joinRoom);
         safeAdd(this.el.cancelMatchmakingBtn, 'click', this.cancelMatchmaking);
 
+        // Voice recognition event listeners
+        const voiceToggle = document.getElementById('voice-toggle');
+        const voiceInputBtn = document.getElementById('voice-input-btn');
+        if (voiceToggle) voiceToggle.addEventListener('click', () => this.toggleVoiceRecognition());
+        if (voiceInputBtn) voiceInputBtn.addEventListener('click', () => this.toggleVoiceRecognition());
+
+        // Pass system event listener
+        const passBtnNew = document.getElementById('pass-btn');
+        if (passBtnNew) passBtnNew.addEventListener('click', () => this.usePass());
+
         // Tutorial event listeners: bind safely (retry if elements not yet present)
         const bindTutorialButtons = () => {
             const yes = document.getElementById('tutorial-yes-btn');
@@ -376,26 +415,92 @@ class GameManager {
     }
 
     loadSettings() {
-        const theme = localStorage.getItem('theme') || 'dark';
-        if (this.el.theme) this.el.theme.value = theme;
-        this.applyTheme(theme);
+        // Load theme
+        const savedTheme = localStorage.getItem('theme') || 'glassmorphism';
+        this.applyTheme(savedTheme);
+        if (this.el.theme) {
+            this.el.theme.value = savedTheme;
+        }
+        
+        // Load layout
+        const savedLayout = localStorage.getItem('uiLayout') || 'standard';
+        this.applyLayout(savedLayout);
+        const layoutSelect = document.getElementById('ui-layout');
+        if (layoutSelect) {
+            layoutSelect.value = savedLayout;
+        }
+        
+        // Load other settings
         if (this.el.gameServerAddress) this.el.gameServerAddress.value = this.gameServerUrl;
         if (this.el.lmServerAddress) this.el.lmServerAddress.value = this.lmServerUrl;
     }
 
     saveSettings() {
-        // gameServerUrl is no longer manually set
-        if (this.el.lmServerAddress) this.lmServerUrl = this.el.lmServerAddress.value.trim();
-        const theme = this.el.theme ? this.el.theme.value : 'dark';
-        localStorage.setItem('lmServerUrl', this.lmServerUrl);
-        localStorage.setItem('theme', theme);
-        this.applyTheme(theme);
-        this.showNotification('設定を保存しました');
-        this.closeModal('settings-modal');
+        try {
+            // Validate and save LM server URL
+            if (this.el.lmServerAddress) {
+                const lmUrl = this.el.lmServerAddress.value.trim();
+                if (lmUrl) {
+                    this.lmServerUrl = this.validateUrl(lmUrl);
+                } else {
+                    this.lmServerUrl = '';
+                }
+            }
+            
+            // Validate theme selection
+            const theme = this.el.theme ? this.el.theme.value : 'glassmorphism';
+            const validThemes = ['glassmorphism', 'gaming', 'light', 'cyberpunk'];
+            const selectedTheme = validThemes.includes(theme) ? theme : 'glassmorphism';
+            
+            // Validate layout selection
+            const layoutSelect = document.getElementById('ui-layout');
+            const layout = layoutSelect ? layoutSelect.value : 'standard';
+            const validLayouts = ['standard', 'compact', 'wide', 'minimal'];
+            const selectedLayout = validLayouts.includes(layout) ? layout : 'standard';
+            
+            // Save to localStorage with validation
+            localStorage.setItem('lmServerUrl', this.lmServerUrl);
+            localStorage.setItem('theme', selectedTheme);
+            localStorage.setItem('uiLayout', selectedLayout);
+            
+            this.applyTheme(selectedTheme);
+            this.applyLayout(selectedLayout);
+            this.showNotification('設定を保存しました', 'success');
+            this.closeModal('settings-modal');
+            
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            this.showNotification(this.sanitizeInput(error.message || '設定の保存に失敗しました'), 'error');
+        }
     }
 
     applyTheme(theme) {
         document.documentElement.className = theme;
+    }
+
+    applyLayout(layout) {
+        document.documentElement.setAttribute('data-layout', layout);
+    }
+
+    loadSettings() {
+        // Load theme
+        const savedTheme = localStorage.getItem('theme') || 'glassmorphism';
+        this.applyTheme(savedTheme);
+        if (this.el.theme) {
+            this.el.theme.value = savedTheme;
+        }
+        
+        // Load layout
+        const savedLayout = localStorage.getItem('uiLayout') || 'standard';
+        this.applyLayout(savedLayout);
+        const layoutSelect = document.getElementById('ui-layout');
+        if (layoutSelect) {
+            layoutSelect.value = savedLayout;
+        }
+        
+        // Load other settings
+        if (this.el.gameServerAddress) this.el.gameServerAddress.value = this.gameServerUrl;
+        if (this.el.lmServerAddress) this.el.lmServerAddress.value = this.lmServerUrl;
     }
 
     async startupConnect() {
@@ -539,6 +644,9 @@ class GameManager {
         this.currentMode = 'solo';
         this.timeLimit = 0;
         this.questionsPerGame = 10;
+        this.questionTimeLimit = 17; // 17 seconds per question
+        this.questionStartTime = null;
+        this.questionTimer = null;
         if (this.el.timerWrapper) this.el.timerWrapper.style.display = 'none';
         await this.fetchQuestionsAndStartGame();
     }
@@ -548,6 +656,9 @@ class GameManager {
         this.currentMode = 'rta';
         this.timeLimit = 180;
         this.questionsPerGame = 10;
+        this.questionTimeLimit = 17; // 17 seconds per question
+        this.questionStartTime = null;
+        this.questionTimer = null;
         if (this.el.timerWrapper) this.el.timerWrapper.style.display = 'block';
         await this.fetchQuestionsAndStartGame();
     }
@@ -557,6 +668,9 @@ class GameManager {
         this.currentMode = 'practice';
         this.questionsPerGame = this.el.practiceQuestions ? parseInt(this.el.practiceQuestions.value, 10) : 10;
         this.timeLimit = (this.el.practiceTime ? parseInt(this.el.practiceTime.value, 10) : 5) * 60;
+        this.questionTimeLimit = 17; // 17 seconds per question
+        this.questionStartTime = null;
+        this.questionTimer = null;
         this.closeModal('practice-setup-modal');
         if (this.el.timerWrapper) this.el.timerWrapper.style.display = 'block';
         this.fetchQuestionsAndStartGame();
@@ -564,40 +678,186 @@ class GameManager {
 
     async fetchQuestionsAndStartGame() {
         try {
-            // Since the backend now serves the frontend, we can use a relative URL.
+            this.showNotification('問題を読み込み中...', 'info');
             console.log('[GameManager] fetching questions from', this.gameServerUrl);
+            
             let data = null;
+            
             try {
-                data = await window.GameAPI.fetchSoloQuestions(this.gameServerUrl, this.questionsPerGame);
-                if (data.error || !data.questions || !data.questions.length) {
-                    throw new Error(data.error || '問題の取得に失敗しました (empty)');
+                // Validate server URL
+                if (!this.gameServerUrl) {
+                    throw new Error('ゲームサーバーURLが設定されていません');
                 }
-                this.questions = data.questions;
+
+                // Try to fetch from server with proper error handling
+                data = await window.GameAPI.fetchSoloQuestions(this.gameServerUrl, this.questionsPerGame);
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                if (!data.questions || !Array.isArray(data.questions) || data.questions.length === 0) {
+                    throw new Error('サーバーから有効な問題が取得できませんでした');
+                }
+
+                // Validate and clean server questions
+                const validQuestions = this.validateAndCleanQuestions(data.questions);
+                if (validQuestions.length === 0) {
+                    throw new Error('サーバーの問題データが無効です');
+                }
+
+                this.questions = validQuestions.slice(0, this.questionsPerGame);
+                console.log(`[GameManager] loaded ${this.questions.length} valid questions from server`);
+                
             } catch (serverErr) {
                 console.warn('[GameManager] failed to fetch from server, attempting local fallback:', serverErr);
+                
                 // Try local bundled questions as a fallback for offline/dev usage
                 try {
-                    const localRes = await fetch('data/questions.json');
-                    const localData = await localRes.json();
-                    if (localData && Array.isArray(localData) && localData.length > 0) {
-                        // If the local file is an array, assume it's the questions list
-                        this.questions = localData.slice(0, this.questionsPerGame).map(q => ({ ...q }));
-                    } else if (localData && localData.questions && Array.isArray(localData.questions)) {
-                        this.questions = localData.questions.slice(0, this.questionsPerGame).map(q => ({ ...q }));
-                    } else {
-                        throw new Error('local questions file invalid');
+                    const localRes = await fetch('data/questions.json', {
+                        headers: { 'Accept': 'application/json' },
+                        cache: 'no-cache'
+                    });
+                    
+                    if (!localRes.ok) {
+                        throw new Error(`ローカルファイルの読み込みに失敗: ${localRes.status}`);
                     }
-                    console.log('[GameManager] loaded questions from local data/questions.json, count=', this.questions.length);
+                    
+                    const localData = await localRes.json();
+                    let questions = [];
+                    
+                    if (Array.isArray(localData)) {
+                        questions = localData;
+                    } else if (localData && Array.isArray(localData.questions)) {
+                        questions = localData.questions;
+                    } else {
+                        throw new Error('ローカル問題ファイルの形式が無効です');
+                    }
+
+                    const validQuestions = this.validateAndCleanQuestions(questions);
+                    if (validQuestions.length === 0) {
+                        throw new Error('ローカル問題ファイルに有効な問題がありません');
+                    }
+
+                    this.questions = validQuestions.slice(0, this.questionsPerGame);
+                    console.log(`[GameManager] loaded ${this.questions.length} questions from local fallback`);
+                    this.showNotification('ローカル問題ファイルを使用します', 'warning');
+                    
                 } catch (localErr) {
                     console.error('[GameManager] local fallback failed:', localErr);
-                    throw serverErr;
+                    
+                    // Final fallback: use hardcoded questions
+                    this.questions = this.createDefaultQuestions();
+                    this.showNotification('デフォルト問題を使用します', 'warning');
+                    console.log('[GameManager] using default questions as final fallback');
                 }
             }
+
+            // Final validation
+            if (!this.questions || this.questions.length === 0) {
+                throw new Error('問題が見つかりませんでした');
+            }
+
+            this.showNotification(`${this.questions.length}問の問題を読み込みました`, 'success');
             this.startGame(this.currentMode);
+            
         } catch (e) {
-            this.showNotification(e.message || '問題の取得に失敗しました', 'error');
+            const errorMessage = e.message || '問題の取得に失敗しました';
+            this.showNotification(errorMessage, 'error');
             console.error('Failed to fetch questions:', e);
+            
+            // Don't start game if no questions available
+            if (!this.questions || this.questions.length === 0) {
+                this.goBackToMenu();
+            }
         }
+    }
+
+    validateAndCleanQuestions(questions) {
+        if (!Array.isArray(questions)) {
+            console.warn('Questions is not an array:', typeof questions);
+            return [];
+        }
+
+        const validQuestions = [];
+        
+        for (let i = 0; i < questions.length; i++) {
+            const q = questions[i];
+            
+            try {
+                // Basic validation
+                if (!q || typeof q !== 'object') {
+                    console.warn(`Question ${i} is not an object:`, q);
+                    continue;
+                }
+
+                // Ensure required fields exist
+                let answers = [];
+                if (Array.isArray(q.answers)) {
+                    answers = q.answers.filter(ans => typeof ans === 'string' && ans.trim().length > 0);
+                } else if (typeof q.answer === 'string' && q.answer.trim()) {
+                    answers = [q.answer.trim()];
+                } else if (typeof q.target === 'string' && q.target.trim()) {
+                    answers = [q.target.trim()];
+                }
+
+                if (answers.length === 0) {
+                    console.warn(`Question ${i} has no valid answers:`, q);
+                    continue;
+                }
+
+                // Create normalized question object
+                const normalizedQuestion = {
+                    id: q.id || `q_${i}`,
+                    answers: answers,
+                    prompt: (q.prompt || q.question || q.text || '').trim(),
+                    category: q.category || 'general',
+                    difficulty: q.difficulty || 'medium',
+                    tags: Array.isArray(q.tags) ? q.tags : []
+                };
+
+                // Additional validation
+                if (normalizedQuestion.answers[0].length > 100) {
+                    console.warn(`Question ${i} answer too long:`, normalizedQuestion.answers[0]);
+                    continue;
+                }
+
+                validQuestions.push(normalizedQuestion);
+                
+            } catch (error) {
+                console.warn(`Error processing question ${i}:`, error, q);
+                continue;
+            }
+        }
+
+        console.log(`Validated ${validQuestions.length}/${questions.length} questions`);
+        return validQuestions;
+    }
+
+    createDefaultQuestions() {
+        return [
+            {
+                id: 'default_1',
+                answers: ['東京'],
+                prompt: '日本の首都は？',
+                category: 'geography',
+                difficulty: 'easy'
+            },
+            {
+                id: 'default_2', 
+                answers: ['富士山'],
+                prompt: '日本で最も高い山は？',
+                category: 'geography',
+                difficulty: 'easy'
+            },
+            {
+                id: 'default_3',
+                answers: ['太平洋'],
+                prompt: '世界最大の海は？',
+                category: 'geography', 
+                difficulty: 'medium'
+            }
+        ];
     }
 
     startGame(mode) {
@@ -978,6 +1238,12 @@ class GameManager {
         }
 
         console.log('[GameManager] showQuestion index=', this.currentQuestionIndex, 'question=', q);
+        
+        // Start question timer for solo/RTA/practice modes with 17-second limit
+        if (['solo', 'rta', 'practice'].includes(this.currentMode) && this.questionTimeLimit > 0) {
+            this.startQuestionTimer();
+        }
+        
         if (this.el.targetAnswer) {
             try {
                 // Normalize answers: prefer q.answers array, fallback to q.answer string
@@ -1025,67 +1291,191 @@ class GameManager {
     }
 
     async submitQuestion() {
-        // Get text from both old and new UI elements
-        let text = '';
-        if (this.el.playerQuestion) {
-            text = this.el.playerQuestion.value.trim();
-        }
-        const newPlayerTextarea = document.querySelector('.player-textarea');
-        if (!text && newPlayerTextarea) {
-            text = newPlayerTextarea.value.trim();
-        }
-        
-        if (!text) return;
-
-        if (this.isLocked) return this.showNotification('カウントダウン中は操作できません', 'warning');
-        if (this.isProcessingAI) return this.showNotification('AI処理中はリクエストを送れません', 'warning');
-
-        const q = this.questions[this.currentQuestionIndex];
-        if (this.currentMode !== 'vs' && (q.answers || []).some(ans => text.toLowerCase().includes(ans.toLowerCase()))) {
-            return this.showNotification('質問に答えが含まれています。', 'error');
-        }
-
-        this.setAIStatus('処理中', '#ffaa00');
-        this.isProcessingAI = true;
-        if (this.el.submitQuestionBtn) this.el.submitQuestionBtn.disabled = true;
-        this.questionCount++;
-        this.appendQuestionHistory(text);
-        
-        // Clear input fields
-        if (this.el.playerQuestion) this.el.playerQuestion.value = '';
-        const clearPlayerTextarea = document.querySelector('.player-textarea');
-        if (clearPlayerTextarea) clearPlayerTextarea.value = '';
-
         try {
+            // Check if timer has already expired to prevent race condition
+            if (this.questionStartTime) {
+                const elapsed = (Date.now() - this.questionStartTime) / 1000;
+                if (elapsed >= this.questionTimeLimit) {
+                    this.showNotification('時間切れです', 'warning');
+                    return false;
+                }
+            }
+
+            // Get text from both old and new UI elements with validation
+            let text = '';
+            if (this.el.playerQuestion && this.el.playerQuestion.value) {
+                text = this.el.playerQuestion.value.trim();
+            }
+            
+            const newPlayerTextarea = document.querySelector('.player-textarea');
+            if (!text && newPlayerTextarea && newPlayerTextarea.value) {
+                text = newPlayerTextarea.value.trim();
+            }
+            
+            // Validate input
+            if (!text) {
+                this.showNotification('質問を入力してください', 'warning');
+                return false;
+            }
+
+            if (text.length > 500) {
+                this.showNotification('質問は500文字以内で入力してください', 'warning');
+                return false;
+            }
+
+            // Check system state
+            if (this.isLocked) {
+                this.showNotification('カウントダウン中は操作できません', 'warning');
+                return false;
+            }
+            
+            if (this.isProcessingAI) {
+                this.showNotification('AI処理中はリクエストを送れません', 'warning');
+                return false;
+            }
+
+            // Validate current question exists
+            if (!this.questions || this.currentQuestionIndex >= this.questions.length) {
+                this.showNotification('有効な問題が見つかりません', 'error');
+                return false;
+            }
+
+            const q = this.questions[this.currentQuestionIndex];
+            if (!q) {
+                this.showNotification('現在の問題が無効です', 'error');
+                return false;
+            }
+
+            // Check if answer is revealed in question (only for non-VS modes)
+            if (this.currentMode !== 'vs' && q.answers && Array.isArray(q.answers)) {
+                const lowerText = text.toLowerCase();
+                const hasAnswer = q.answers.some(ans => {
+                    if (typeof ans === 'string' && ans.trim()) {
+                        return lowerText.includes(ans.toLowerCase());
+                    }
+                    return false;
+                });
+                
+                if (hasAnswer) {
+                    this.showNotification('質問に答えが含まれています', 'error');
+                    return false;
+                }
+            }
+
+            // Stop voice recognition if active
+            if (this.isVoiceActive && this.recognition) {
+                try {
+                    this.recognition.stop();
+                } catch (error) {
+                    console.warn('Failed to stop voice recognition:', error);
+                }
+            }
+
+            // Pause the question timer during AI processing
+            this.pauseQuestionTimer();
+
+            // Set processing state
+            this.setAIStatus('処理中', '#ffaa00');
+            this.isProcessingAI = true;
+            if (this.el.submitQuestionBtn) this.el.submitQuestionBtn.disabled = true;
+            
+            // Update counters
+            this.questionCount++;
+            this.appendQuestionHistory(text);
+            
+            // Clear input fields
+            if (this.el.playerQuestion) this.el.playerQuestion.value = '';
+            if (newPlayerTextarea) newPlayerTextarea.value = '';
+
+            // Validate server URLs
+            if (!this.gameServerUrl || !this.lmServerUrl) {
+                throw new Error('サーバーURLが設定されていません');
+            }
+
+            const requestPayload = {
+                question: text,
+                target_answer: (q.answers && q.answers[0]) ? q.answers[0] : '',
+                lm_server: this.lmServerUrl
+            };
+
+            console.log('Submitting question:', requestPayload);
+
             const res = await fetch(`${this.gameServerUrl}/ask_ai`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question: text, target_answer: (q.answers || [])[0] || '', lm_server: this.lmServerUrl })
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(requestPayload),
+                timeout: 30000 // 30 second timeout
             });
-            if (!res.ok) throw new Error(`サーバーエラー: ${res.status}`);
-            const data = await res.json();
 
-            if (this.el.aiOutput) this.el.aiOutput.textContent = data.ai_response || '(応答なし)';
+            if (!res.ok) {
+                const errorText = await res.text().catch(() => 'レスポンスの読み取りに失敗');
+                throw new Error(`サーバーエラー: ${res.status} ${res.statusText}. ${errorText}`);
+            }
+
+            const data = await res.json();
+            
+            // Validate response data
+            if (!data || typeof data !== 'object') {
+                throw new Error('無効なレスポンス形式です');
+            }
+
+            // Update AI output safely
+            const aiResponse = data.ai_response || '(応答なし)';
+            if (this.el.aiOutput) {
+                this.el.aiOutput.textContent = aiResponse;
+            }
             
             // Update new UI element
             const aiOutputModern = document.getElementById('ai-output-modern');
-            if (aiOutputModern) aiOutputModern.textContent = data.ai_response || '(応答なし)';
+            if (aiOutputModern) {
+                aiOutputModern.textContent = aiResponse;
+            }
             
+            // Handle reasoning
             if (data.reasoning && this.el.aiAnalysis) {
-                this.el.aiAnalysis.innerHTML = `<p><b>AIの思考:</b> ${data.reasoning}</p>`;
+                const safeReasoning = String(data.reasoning).substring(0, 1000); // Limit length
+                this.el.aiAnalysis.innerHTML = `<p><b>AIの思考:</b> ${safeReasoning}</p>`;
             }
+            
+            // Handle validation
             if (data.valid === false) {
-                this.showNotification(`不正な質問: ${data.invalid_reason || 'ルール違反'}`, 'error');
+                const invalidReason = data.invalid_reason || 'ルール違反';
+                this.showNotification(`不正な質問: ${invalidReason}`, 'error');
             }
 
-            let isCorrect = this.checkAnswer(data.ai_response, q.answers);
-            if (data.valid === false) isCorrect = false;
+            // Check answer
+            let isCorrect = false;
+            if (data.valid !== false && q.answers) {
+                isCorrect = this.checkAnswer(aiResponse, q.answers);
+            }
+            
+            // Clear timer after AI response is received - question answered
+            this.clearQuestionTimer();
+            
             this.handleAnswerResult(isCorrect);
+            return true;
 
-        } catch (e) {
+        } catch (error) {
+            console.error('Submit question error:', error);
             this.setAIStatus('エラー', '#ff4757');
-            this.showNotification(e.message, 'error');
+            
+            // Resume timer on error so user can try again
+            this.resumeQuestionTimer();
+            
+            let errorMessage = 'エラーが発生しました';
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                errorMessage = 'サーバーに接続できません';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            this.showNotification(errorMessage, 'error');
+            return false;
         } finally {
+            // Always reset processing state
             this.isProcessingAI = false;
             if (this.el.submitQuestionBtn) this.el.submitQuestionBtn.disabled = false;
         }
@@ -1098,6 +1488,8 @@ class GameManager {
     }
 
     handleAnswerResult(isCorrect) {
+        // Timer is already cleared in submitQuestion after AI response
+        
         if (isCorrect) {
             this.score += 100;
             this.correctAnswers++;
@@ -1126,12 +1518,14 @@ class GameManager {
     }
 
     nextQuestion() {
+        this.clearQuestionTimer();
         this.currentQuestionIndex++;
         this.showQuestion();
     }
 
     endGame() {
         this.stopTimer();
+        this.clearQuestionTimer();
         // If in a multiplayer game and not yet submitted, send final done flag
         if (this.currentMode === 'vs' && this.currentGameId && !this._hasSubmittedDone) {
             try { this.submitGameDone({ correct: false, score_delta: 0, done: true }); } catch (e) { console.warn(e); }
@@ -1816,6 +2210,549 @@ class GameManager {
     closeTutorialSelect() {
         this.closeModal('tutorial-select-modal');
         localStorage.setItem('hasSeenTutorial', 'true');
+    }
+
+    // Voice Recognition System
+    initVoiceRecognition() {
+        try {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                console.warn('Speech recognition not supported');
+                this.voiceEnabled = false;
+                this.updateVoiceUI();
+                return;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            this.recognition = new SpeechRecognition();
+            
+            this.recognition.continuous = false;
+            this.recognition.interimResults = false;
+            this.recognition.lang = 'ja-JP';
+            this.recognition.maxAlternatives = 1;
+
+            this.recognition.onstart = () => {
+                try {
+                    this.isVoiceActive = true;
+                    this.updateVoiceUI();
+                    this.showNotification('音声認識を開始しました', 'info');
+                } catch (error) {
+                    console.error('Voice recognition start error:', error);
+                }
+            };
+
+            this.recognition.onresult = (event) => {
+                try {
+                    if (!event.results || !event.results[0] || !event.results[0][0]) {
+                        this.showNotification('音声が認識できませんでした', 'warning');
+                        return;
+                    }
+                    
+                    const transcript = event.results[0][0].transcript;
+                    if (transcript && transcript.trim()) {
+                        const playerQuestion = document.getElementById('player-question');
+                        if (playerQuestion) {
+                            // Safely update input with validation
+                            const cleanTranscript = transcript.trim().substring(0, 500); // Limit length
+                            playerQuestion.value = cleanTranscript;
+                            playerQuestion.focus();
+                            this.showNotification(`音声入力: ${cleanTranscript}`, 'success');
+                        } else {
+                            this.showNotification('入力フィールドが見つかりません', 'error');
+                        }
+                    } else {
+                        this.showNotification('音声が認識できませんでした', 'warning');
+                    }
+                } catch (error) {
+                    console.error('Voice recognition result error:', error);
+                    this.showNotification('音声認識処理中にエラーが発生しました', 'error');
+                }
+            };
+
+            this.recognition.onerror = (event) => {
+                try {
+                    console.error('Speech recognition error:', event.error);
+                    this.isVoiceActive = false;
+                    this.updateVoiceUI();
+                    
+                    let errorMessage = '音声認識エラーが発生しました';
+                    switch (event.error) {
+                        case 'no-speech':
+                            errorMessage = '音声が検出されませんでした';
+                            break;
+                        case 'audio-capture':
+                            errorMessage = 'マイクにアクセスできません';
+                            break;
+                        case 'not-allowed':
+                            errorMessage = 'マイクの使用が許可されていません';
+                            break;
+                        case 'network':
+                            errorMessage = 'ネットワークエラーが発生しました';
+                            break;
+                        default:
+                            errorMessage = `音声認識エラー: ${event.error}`;
+                    }
+                    this.showNotification(errorMessage, 'error');
+                } catch (error) {
+                    console.error('Voice recognition error handler failed:', error);
+                }
+            };
+
+            this.recognition.onend = () => {
+                try {
+                    this.isVoiceActive = false;
+                    this.updateVoiceUI();
+                } catch (error) {
+                    console.error('Voice recognition end error:', error);
+                }
+            };
+
+            this.voiceEnabled = true;
+            console.log('Voice recognition initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize voice recognition:', error);
+            this.voiceEnabled = false;
+            this.updateVoiceUI();
+        }
+    }
+
+    toggleVoiceRecognition() {
+        try {
+            if (!this.voiceEnabled || !this.recognition) {
+                this.showNotification('音声認識はサポートされていません', 'warning');
+                return false;
+            }
+
+            if (this.isVoiceActive) {
+                try {
+                    this.recognition.stop();
+                    this.showNotification('音声認識を停止しました', 'info');
+                } catch (error) {
+                    console.error('Failed to stop voice recognition:', error);
+                    this.isVoiceActive = false;
+                    this.updateVoiceUI();
+                }
+            } else {
+                try {
+                    // Check if already processing AI request
+                    if (this.isProcessingAI) {
+                        this.showNotification('AI処理中は音声認識を開始できません', 'warning');
+                        return false;
+                    }
+                    
+                    // Check microphone permissions
+                    if (navigator.permissions) {
+                        navigator.permissions.query({ name: 'microphone' }).then((result) => {
+                            if (result.state === 'denied') {
+                                this.showNotification('マイクの使用が拒否されています。ブラウザの設定を確認してください', 'error');
+                                return false;
+                            }
+                        }).catch(() => {
+                            // Permission API not supported, continue anyway
+                        });
+                    }
+                    
+                    this.recognition.start();
+                } catch (error) {
+                    console.error('Failed to start voice recognition:', error);
+                    let errorMessage = '音声認識の開始に失敗しました';
+                    
+                    if (error.name === 'InvalidStateError') {
+                        errorMessage = '音声認識が既に実行中です';
+                    } else if (error.name === 'NotAllowedError') {
+                        errorMessage = 'マイクの使用が許可されていません';
+                    }
+                    
+                    this.showNotification(errorMessage, 'error');
+                    return false;
+                }
+            }
+            return true;
+        } catch (error) {
+            console.error('Voice recognition toggle failed:', error);
+            this.showNotification('音声認識の切り替えに失敗しました', 'error');
+            return false;
+        }
+    }
+
+    updateVoiceUI() {
+        const voiceToggle = document.getElementById('voice-toggle');
+        const voiceIndicator = document.getElementById('voice-indicator');
+        const voiceInputBtn = document.getElementById('voice-input-btn');
+
+        if (voiceToggle) {
+            const statusSpan = voiceToggle.querySelector('.status');
+            if (this.isVoiceActive) {
+                voiceToggle.classList.add('active');
+                if (statusSpan) statusSpan.textContent = 'ON';
+            } else {
+                voiceToggle.classList.remove('active');
+                if (statusSpan) statusSpan.textContent = this.voiceEnabled ? 'OFF' : 'N/A';
+            }
+        }
+
+        if (voiceIndicator) {
+            const statusSpan = voiceIndicator.querySelector('.voice-status');
+            if (this.isVoiceActive) {
+                voiceIndicator.classList.add('active');
+                if (statusSpan) statusSpan.textContent = '録音中';
+            } else {
+                voiceIndicator.classList.remove('active');
+                if (statusSpan) statusSpan.textContent = '待機中';
+            }
+        }
+
+        if (voiceInputBtn) {
+            if (this.isVoiceActive) {
+                voiceInputBtn.classList.add('active');
+                const textSpan = voiceInputBtn.querySelector('.text');
+                if (textSpan) textSpan.textContent = '録音停止';
+            } else {
+                voiceInputBtn.classList.remove('active');
+                const textSpan = voiceInputBtn.querySelector('.text');
+                if (textSpan) textSpan.textContent = '音声入力';
+            }
+        }
+    }
+
+    // Pass system for VS mode
+    initPassSystem() {
+        this.passesUsed = 0;
+        this.updatePassUI();
+    }
+
+    usePass() {
+        if (this.currentMode !== 'vs') {
+            this.showNotification('パス機能は対戦モードでのみ利用できます', 'warning');
+            return;
+        }
+
+        if (this.passesUsed >= this.maxPasses) {
+            this.showNotification('パス回数の上限に達しました。リタイアしますか？', 'warning');
+            this.showRetireOption();
+            return;
+        }
+
+        this.passesUsed++;
+        this.updatePassUI();
+        this.showNotification(`パスしました (${this.passesUsed}/${this.maxPasses})`, 'info');
+        
+        // Move to next question
+        this.nextQuestion();
+    }
+
+    updatePassUI() {
+        const passCounter = document.getElementById('pass-counter');
+        if (!passCounter) return;
+
+        const passButton = document.getElementById('pass-btn');
+        const passDots = passCounter.querySelectorAll('.pass-dot');
+
+        // Update pass dots
+        passDots.forEach((dot, index) => {
+            if (index < this.passesUsed) {
+                dot.classList.add('used');
+                dot.classList.remove('active');
+            } else {
+                dot.classList.remove('used');
+                dot.classList.add('active');
+            }
+        });
+
+        // Update pass button
+        if (passButton) {
+            if (this.passesUsed >= this.maxPasses) {
+                const textSpan = passButton.querySelector('.text');
+                if (textSpan) textSpan.textContent = 'リタイア';
+                passButton.classList.add('retire');
+            } else {
+                const textSpan = passButton.querySelector('.text');
+                if (textSpan) textSpan.textContent = `パス (${this.maxPasses - this.passesUsed})`;
+                passButton.classList.remove('retire');
+            }
+        }
+
+        // Show/hide pass counter based on mode
+        if (this.currentMode === 'vs') {
+            passCounter.style.display = 'flex';
+        } else {
+            passCounter.style.display = 'none';
+        }
+    }
+
+    showRetireOption() {
+        const confirmRetire = confirm('パス回数の上限に達しました。リタイアしますか？');
+        if (confirmRetire) {
+            this.retireFromGame();
+        }
+    }
+
+    retireFromGame() {
+        this.showNotification('ゲームからリタイアしました', 'info');
+        // Submit retirement to server if in multiplayer
+        if (this.currentMode === 'vs' && this.currentGameId) {
+            this.submitGameDone({ correct: false, score_delta: -50, done: true, retired: true });
+        }
+        this.endGame();
+    }
+
+    // Question timer functions for 17-second limit
+    startQuestionTimer() {
+        this.clearQuestionTimer();
+        this.questionStartTime = Date.now();
+        
+        this.questionTimer = setTimeout(() => {
+            this.handleQuestionTimeout();
+        }, this.questionTimeLimit * 1000);
+        
+        // Update visual timer if there's a display element
+        this.updateQuestionTimerDisplay();
+    }
+
+    clearQuestionTimer() {
+        if (this.questionTimer) {
+            clearTimeout(this.questionTimer);
+            this.questionTimer = null;
+        }
+        this.questionStartTime = null;
+        this.pausedTime = null;
+    }
+
+    pauseQuestionTimer() {
+        if (this.questionTimer && this.questionStartTime) {
+            // Calculate elapsed time and pause
+            this.pausedTime = Date.now() - this.questionStartTime;
+            clearTimeout(this.questionTimer);
+            this.questionTimer = null;
+            console.log(`[Timer] Paused at ${this.pausedTime}ms`);
+        }
+    }
+
+    resumeQuestionTimer() {
+        if (this.pausedTime !== null && this.questionTimeLimit) {
+            // Resume from where we left off
+            this.questionStartTime = Date.now() - this.pausedTime;
+            const remainingMs = (this.questionTimeLimit * 1000) - this.pausedTime;
+            
+            if (remainingMs > 0) {
+                this.questionTimer = setTimeout(() => {
+                    this.handleQuestionTimeout();
+                }, remainingMs);
+                console.log(`[Timer] Resumed with ${remainingMs}ms remaining`);
+            } else {
+                // Time already expired during pause
+                this.handleQuestionTimeout();
+            }
+            
+            this.pausedTime = null;
+            this.updateQuestionTimerDisplay();
+        }
+    }
+
+    updateQuestionTimerDisplay() {
+        if (!this.questionStartTime || !this.questionTimeLimit) return;
+        
+        // Check if timer is paused
+        if (this.pausedTime !== null) {
+            // Show paused state
+            const remaining = Math.max(0, this.questionTimeLimit - (this.pausedTime / 1000));
+            const percentage = (remaining / this.questionTimeLimit) * 100;
+            
+            const timerDisplay = document.getElementById('question-timer');
+            if (timerDisplay) {
+                timerDisplay.textContent = `${Math.ceil(remaining)}s ⏸️`;
+                timerDisplay.classList.add('paused');
+            }
+            
+            const progressCircle = document.getElementById('question-progress-circle');
+            if (progressCircle) {
+                const circumference = 2 * Math.PI * 25;
+                const offset = circumference - (percentage / 100) * circumference;
+                progressCircle.style.strokeDashoffset = offset;
+                progressCircle.style.stroke = '#ffaa00'; // Orange for paused
+            }
+            return;
+        }
+        
+        const elapsed = (Date.now() - this.questionStartTime) / 1000;
+        const remaining = Math.max(0, this.questionTimeLimit - elapsed);
+        const percentage = (remaining / this.questionTimeLimit) * 100;
+        
+        // Update timer display element if it exists
+        const timerDisplay = document.getElementById('question-timer');
+        if (timerDisplay) {
+            timerDisplay.textContent = `${Math.ceil(remaining)}s`;
+            timerDisplay.classList.remove('paused');
+            
+            // Add visual urgency when time is running low
+            if (remaining <= 5) {
+                timerDisplay.classList.add('urgent');
+            } else {
+                timerDisplay.classList.remove('urgent');
+            }
+        }
+        
+        // Update circular progress if it exists
+        const progressCircle = document.getElementById('question-progress-circle');
+        if (progressCircle) {
+            const circumference = 2 * Math.PI * 25; // radius = 25
+            const offset = circumference - (percentage / 100) * circumference;
+            progressCircle.style.strokeDashoffset = offset;
+            
+            // Change color based on remaining time
+            if (remaining <= 5) {
+                progressCircle.style.stroke = '#ff4757';
+            } else if (remaining <= 10) {
+                progressCircle.style.stroke = '#ffaa00';
+            } else {
+                progressCircle.style.stroke = '#00d4ff';
+            }
+        }
+        
+        // Continue updating if timer is still running (not paused)
+        if (remaining > 0 && this.questionTimer && this.pausedTime === null) {
+            setTimeout(() => this.updateQuestionTimerDisplay(), 100);
+        }
+    }
+
+    handleQuestionTimeout() {
+        this.clearQuestionTimer();
+        this.showNotification('時間切れです！問題のヒントが表示されます。', 'warning');
+        
+        // Show prompt from current question
+        const q = this.questions[this.currentQuestionIndex];
+        if (q && q.prompt) {
+            if (this.el.aiOutput) {
+                this.el.aiOutput.textContent = `ヒント（問題文）: ${q.prompt}`;
+            }
+            const aiOutputModern = document.getElementById('ai-output-modern');
+            if (aiOutputModern) {
+                aiOutputModern.textContent = `ヒント（問題文）: ${q.prompt}`;
+            }
+            this.setAIStatus('ヒント表示', '#ffaa00');
+        } else if (q && q.answers && q.answers.length > 0) {
+            // Fallback to partial answer hint if no prompt
+            const hint = q.answers[0].slice(0, Math.ceil(q.answers[0].length / 2)) + '...';
+            if (this.el.aiOutput) {
+                this.el.aiOutput.textContent = `ヒント: ${hint}`;
+            }
+            const aiOutputModern = document.getElementById('ai-output-modern');
+            if (aiOutputModern) {
+                aiOutputModern.textContent = `ヒント: ${hint}`;
+            }
+            this.setAIStatus('ヒント表示', '#ffaa00');
+        }
+        
+        // Auto-advance to next question after showing hint for 5 seconds
+        setTimeout(() => {
+            this.showNotification('次の問題に進みます', 'info');
+            this.nextQuestion();
+        }, 5000);
+    }
+
+    // Input validation and security utilities
+    validateInput(input, type = 'general') {
+        if (!input) return '';
+        
+        const str = String(input);
+        const limit = this.inputLimits[type] || this.inputLimits.general;
+        
+        // Length validation
+        if (str.length > limit) {
+            throw new Error(`入力が長すぎます（最大${limit}文字）`);
+        }
+        
+        return str.trim();
+    }
+
+    sanitizeInput(input) {
+        if (!input) return '';
+        
+        const str = String(input);
+        
+        // Remove potential XSS characters and control characters
+        return str
+            .replace(/[<>]/g, '') // Remove < and >
+            .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+            .replace(/\s+/g, ' ') // Normalize whitespace
+            .trim();
+    }
+
+    checkRateLimit(identifier = 'default') {
+        const now = Date.now();
+        const windowStart = now - 60000; // 1 minute window
+        
+        if (!this.inputRateLimit.has(identifier)) {
+            this.inputRateLimit.set(identifier, []);
+        }
+        
+        const requests = this.inputRateLimit.get(identifier);
+        
+        // Remove old requests outside the window
+        const recentRequests = requests.filter(time => time > windowStart);
+        
+        if (recentRequests.length >= this.maxRequestsPerMinute) {
+            throw new Error('リクエストが多すぎます。少し待ってからお試しください。');
+        }
+        
+        recentRequests.push(now);
+        this.inputRateLimit.set(identifier, recentRequests);
+        
+        return true;
+    }
+
+    validateUrl(url) {
+        if (!url || typeof url !== 'string') {
+            throw new Error('有効なURLを入力してください');
+        }
+
+        try {
+            const validatedUrl = new URL(url);
+            
+            // Only allow http and https protocols
+            if (!['http:', 'https:'].includes(validatedUrl.protocol)) {
+                throw new Error('HTTPまたはHTTPSのURLのみサポートされています');
+            }
+            
+            return validatedUrl.toString();
+        } catch (e) {
+            throw new Error('無効なURL形式です');
+        }
+    }
+
+    validateNickname(nickname) {
+        if (!nickname || typeof nickname !== 'string') {
+            throw new Error('ニックネームを入力してください');
+        }
+
+        const cleaned = this.sanitizeInput(nickname);
+        const validated = this.validateInput(cleaned, 'nickname');
+        
+        if (validated.length < 1) {
+            throw new Error('ニックネームは1文字以上である必要があります');
+        }
+        
+        if (validated.length > 30) {
+            throw new Error('ニックネームは30文字以下である必要があります');
+        }
+        
+        // Check for inappropriate content (basic)
+        const inappropriate = ['admin', 'system', 'bot', 'null', 'undefined'];
+        if (inappropriate.some(word => validated.toLowerCase().includes(word))) {
+            throw new Error('そのニックネームは使用できません');
+        }
+        
+        return validated;
+    }
+
+    validateAnswer(answer) {
+        if (!answer || typeof answer !== 'string') {
+            return '';
+        }
+
+        const cleaned = this.sanitizeInput(answer);
+        const validated = this.validateInput(cleaned, 'answer');
+        
+        return validated;
     }
 }
 
