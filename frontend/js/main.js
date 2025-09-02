@@ -40,7 +40,7 @@ class GameManager {
 
         // Advanced scoring and timing
         this.questionStartTime = null;
-        this.questionTimeLimit = 17;
+        this.questionTimeLimit = 25;
         this.questionTimer = null;
         this.pausedTime = null;
         this.baseScore = 100;
@@ -644,7 +644,7 @@ class GameManager {
         this.currentMode = 'solo';
         this.timeLimit = 0;
         this.questionsPerGame = 10;
-        this.questionTimeLimit = 17; // 17 seconds per question
+        this.questionTimeLimit = 25; // 25 seconds per question
         this.questionStartTime = null;
         this.questionTimer = null;
         if (this.el.timerWrapper) this.el.timerWrapper.style.display = 'none';
@@ -656,7 +656,7 @@ class GameManager {
         this.currentMode = 'rta';
         this.timeLimit = 180;
         this.questionsPerGame = 10;
-        this.questionTimeLimit = 17; // 17 seconds per question
+        this.questionTimeLimit = 25; // 25 seconds per question
         this.questionStartTime = null;
         this.questionTimer = null;
         if (this.el.timerWrapper) this.el.timerWrapper.style.display = 'block';
@@ -664,16 +664,68 @@ class GameManager {
     }
 
     startPracticeMode() {
-    this.cleanupMatchmakingBeforeLocalStart();
+        this.cleanupMatchmakingBeforeLocalStart();
         this.currentMode = 'practice';
-        this.questionsPerGame = this.el.practiceQuestions ? parseInt(this.el.practiceQuestions.value, 10) : 10;
-        this.timeLimit = (this.el.practiceTime ? parseInt(this.el.practiceTime.value, 10) : 5) * 60;
-        this.questionTimeLimit = 17; // 17 seconds per question
+        
+        // Read practice settings from the modal
+        const practiceSettings = this.getPracticeSettings();
+        console.log('[Practice] Starting with settings:', practiceSettings);
+        
+        this.questionsPerGame = practiceSettings.questionsPerGame;
+        this.timeLimit = practiceSettings.timeLimit;
+        this.questionTimeLimit = 25; // 25 seconds per question
         this.questionStartTime = null;
         this.questionTimer = null;
+        
+        // Store practice filters for question fetching
+        this.practiceFilters = practiceSettings.filters;
+        
         this.closeModal('practice-setup-modal');
         if (this.el.timerWrapper) this.el.timerWrapper.style.display = 'block';
         this.fetchQuestionsAndStartGame();
+    }
+
+    getPracticeSettings() {
+        const settings = {
+            questionsPerGame: 10,
+            timeLimit: 300, // 5 minutes default
+            filters: {}
+        };
+        
+        try {
+            // Read question count
+            if (this.el.practiceQuestions) {
+                settings.questionsPerGame = parseInt(this.el.practiceQuestions.value, 10) || 10;
+            }
+            
+            // Read time limit
+            if (this.el.practiceTime) {
+                settings.timeLimit = (parseInt(this.el.practiceTime.value, 10) || 5) * 60;
+            }
+            
+            // Read difficulty filter
+            const difficultyRadio = document.querySelector('input[name="difficulty"]:checked');
+            if (difficultyRadio) {
+                settings.filters.difficulty = difficultyRadio.value;
+            }
+            
+            // Read category filter
+            const categoryRadio = document.querySelector('input[name="category"]:checked');
+            if (categoryRadio) {
+                settings.filters.category = categoryRadio.value;
+            }
+            
+            // Read question length filter
+            const lengthRadio = document.querySelector('input[name="questionLength"]:checked');
+            if (lengthRadio) {
+                settings.filters.questionLength = lengthRadio.value;
+            }
+            
+        } catch (error) {
+            console.warn('[Practice] Error reading settings:', error);
+        }
+        
+        return settings;
     }
 
     async fetchQuestionsAndStartGame() {
@@ -947,15 +999,80 @@ class GameManager {
     }
 
     goBackToMenu() {
-    // clear any auto-return timer if active
-    try { if (this._autoReturnInterval) { clearInterval(this._autoReturnInterval); this._autoReturnInterval = null; } } catch (e) {}
-    // resume menu BGM
-    try { this.playBGM('menu.mp3'); } catch (e) {}
-    this.resetGameState();
-    // remove game-active class so CSS returns to menu layout
-    document.body.classList.remove('game-active');
-    this.showScreen('main-menu');
-    this.closeAllModals();
+        // Clear any auto-return timer if active
+        try { 
+            if (this._autoReturnInterval) { 
+                clearInterval(this._autoReturnInterval); 
+                this._autoReturnInterval = null; 
+            } 
+        } catch (e) {}
+        
+        // Stop all game timers and processes
+        this.stopAllTimers();
+        this.clearQuestionTimer();
+        this.isProcessingAI = false;
+        this.isLocked = false;
+        
+        // Stop voice recognition if active
+        if (this.isVoiceActive && this.recognition) {
+            try {
+                this.recognition.stop();
+                this.isVoiceActive = false;
+            } catch (error) {
+                console.warn('Failed to stop voice recognition:', error);
+            }
+        }
+        
+        // Resume menu BGM
+        try { this.playBGM('menu.mp3'); } catch (e) {}
+        
+        // Reset game state completely
+        this.resetGameState();
+        
+        // Remove game-active class so CSS returns to menu layout
+        document.body.classList.remove('game-active');
+        
+        // Show menu and close all modals
+        this.showScreen('main-menu');
+        this.closeAllModals();
+        
+        // Reset UI elements
+        this.setAIStatus('待機中', '#808080');
+        if (this.el.submitQuestionBtn) this.el.submitQuestionBtn.disabled = false;
+    }
+
+    stopAllTimers() {
+        // Stop main game timer
+        if (this.timer) {
+            clearInterval(this.timer);
+            this.timer = null;
+        }
+        
+        // Stop question timer
+        this.clearQuestionTimer();
+        
+        // Stop any polling intervals
+        if (this.lobbyPollInterval) {
+            clearInterval(this.lobbyPollInterval);
+            this.lobbyPollInterval = null;
+        }
+        
+        if (this.serverStatsInterval) {
+            clearInterval(this.serverStatsInterval);
+            this.serverStatsInterval = null;
+        }
+        
+        if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+            this.heartbeatInterval = null;
+        }
+        
+        if (this.gameStateInterval) {
+            clearInterval(this.gameStateInterval);
+            this.gameStateInterval = null;
+        }
+        
+        console.log('[Timer] All timers stopped');
     }
 
     updateRuleDescription() {
@@ -1452,8 +1569,8 @@ class GameManager {
                 isCorrect = this.checkAnswer(aiResponse, q.answers);
             }
             
-            // Clear timer after AI response is received - question answered
-            this.clearQuestionTimer();
+            // Resume timer after AI response is received - only pause during processing
+            this.resumeQuestionTimer();
             
             this.handleAnswerResult(isCorrect);
             return true;
@@ -2000,8 +2117,65 @@ class GameManager {
         if (!parent) return;
         parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+        
+        // Handle practice setup modal tabs
+        if (parent.closest('#practice-setup-modal')) {
+            this.handlePracticeTabSwitch(btn);
+        }
+        
         if (parent.closest('#leaderboard-modal')) {
             this.showLeaderboard();
+        }
+    }
+
+    handlePracticeTabSwitch(btn) {
+        const modal = document.getElementById('practice-setup-modal');
+        if (!modal) return;
+        
+        const selectedTab = btn.dataset.tab;
+        console.log('[Practice] Tab switched to:', selectedTab);
+        
+        // Show/hide tab content based on selection
+        modal.querySelectorAll('.tab-content').forEach(content => {
+            content.style.display = 'none';
+        });
+        
+        const activeContent = modal.querySelector(`[data-tab-content="${selectedTab}"]`);
+        if (activeContent) {
+            activeContent.style.display = 'block';
+        }
+        
+        // Initialize default settings if needed
+        this.initializePracticeSettings(selectedTab);
+    }
+
+    initializePracticeSettings(tabType) {
+        try {
+            switch(tabType) {
+                case 'difficulty':
+                    // Set default difficulty if none selected
+                    const difficultyRadios = document.querySelectorAll('input[name="difficulty"]');
+                    if (difficultyRadios.length > 0 && !Array.from(difficultyRadios).some(r => r.checked)) {
+                        difficultyRadios[0].checked = true;
+                    }
+                    break;
+                case 'category':
+                    // Set default category if none selected
+                    const categoryRadios = document.querySelectorAll('input[name="category"]');
+                    if (categoryRadios.length > 0 && !Array.from(categoryRadios).some(r => r.checked)) {
+                        categoryRadios[0].checked = true;
+                    }
+                    break;
+                case 'length':
+                    // Set default length if none selected
+                    const lengthRadios = document.querySelectorAll('input[name="questionLength"]');
+                    if (lengthRadios.length > 0 && !Array.from(lengthRadios).some(r => r.checked)) {
+                        lengthRadios[0].checked = true;
+                    }
+                    break;
+            }
+        } catch (error) {
+            console.warn('[Practice] Error initializing settings:', error);
         }
     }
 

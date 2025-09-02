@@ -949,10 +949,32 @@ body.glassmorphism::before {
     hyphens: auto;
     line-height: 1.4;
     min-height: 2.8rem;
+    max-height: 6rem; /* 長文対応のための最大高さ制限 */
     display: flex;
     align-items: center;
     justify-content: center;
     white-space: pre-wrap;
+    overflow-y: auto; /* 長文の場合にスクロール可能にする */
+    scrollbar-width: thin; /* Firefox用 */
+    scrollbar-color: var(--primary-color) transparent; /* Firefox用 */
+}
+
+/* WebKitブラウザ用のスクロールバー */
+.target-display::-webkit-scrollbar {
+    width: 6px;
+}
+
+.target-display::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.target-display::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 3px;
+}
+
+.target-display::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
 }
 
 .timer-section {
@@ -2718,15 +2740,75 @@ body.mobile-device * {
     position: fixed;
     left: 50%;
     transform: translateX(-50%);
-    bottom: 24px;
+    bottom: 120px; /* Moved higher to avoid notification area */
     z-index: 12000;
-    background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
-    color: #000;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 999px;
+    background: linear-gradient(135deg, #ff4757, #ff6b7a);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 16px 32px;
+    border-radius: 50px;
     font-weight: 800;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    font-size: 16px;
+    box-shadow: 
+        0 8px 32px rgba(255, 71, 87, 0.5),
+        0 4px 16px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: pulseBorder 2s infinite;
+}
+
+.btn-quick-cancel:hover {
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 
+        0 12px 40px rgba(255, 71, 87, 0.7),
+        0 6px 20px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, #ff3742, #ff5a6b);
+}
+
+/* Enhanced persistent status container */
+#persistent-status-container {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 12px 20px;
+    border-radius: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+#persistent-status-container #cancel-matchmaking-btn {
+    background: linear-gradient(135deg, #ff4757, #ff6b7a);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-left: 12px;
+    transition: all 0.3s ease;
+}
+
+#persistent-status-container #cancel-matchmaking-btn:hover {
+    background: linear-gradient(135deg, #ff3742, #ff5a6b);
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+}
+
+@keyframes pulseBorder {
+    0%, 100% {
+        border-color: rgba(255, 255, 255, 0.3);
+        box-shadow: 
+            0 8px 32px rgba(255, 71, 87, 0.5),
+            0 4px 16px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    50% {
+        border-color: rgba(255, 255, 255, 0.6);
+        box-shadow: 
+            0 8px 32px rgba(255, 71, 87, 0.7),
+            0 4px 16px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
 }
 
 /* Waiting count badge inside persistent status */
