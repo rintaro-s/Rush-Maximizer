@@ -711,6 +711,20 @@
                 </div>
             </div>
             <div id="room-status" class="room-status"></div>
+        </div>
+    </div>
+
+    <!-- Connection Error Modal -->
+    <div id="connection-error-modal" class="modal">
+        <div class="modal-content" style="max-width:400px;text-align:center;">
+            <h3 style="color:#ff6b6b;margin-bottom:16px;">サーバー未接続</h3>
+            <p style="margin-bottom:20px;opacity:0.9;">ゲームを開始するには、まずサーバーに接続してください。</p>
+            <div style="display:flex;gap:10px;justify-content:center;">
+                <button class="btn btn-primary" onclick="gameManager.closeModal('connection-error-modal'); gameManager.showModal('startup-overlay');">接続設定へ</button>
+                <button class="btn btn-secondary" onclick="gameManager.closeModal('connection-error-modal');">閉じる</button>
+            </div>
+        </div>
+    </div>
 
     <script src="js/config.js"></script>
     <script src="js/debugger.js"></script>

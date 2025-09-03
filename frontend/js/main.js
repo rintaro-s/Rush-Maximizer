@@ -40,6 +40,10 @@ class GameManager {
         this.currentHighlight = null;
         this.tutorialKeyHandler = null;
         this.tutorialTimeout = null;
+
+        // Server connection state
+        this.isServerConnected = false;
+        this.connectionEstablishedTime = null;
         
         // Mobile detection and optimization
         this.isMobile = this.detectMobile();
@@ -70,17 +74,35 @@ class GameManager {
 
         // Initialize application flow
         this.initializeAppFlow();
+
+        // Debug: Check if cancel button is properly cached
+        console.log('[Debug] cancelMatchmakingBtn cached:', !!this.el.cancelMatchmakingBtn);
+
+        // Handle page unload - cancel matchmaking if active
+        window.addEventListener('beforeunload', () => {
+            if (this.isMatchmaking) {
+                console.log('[App] Page unloading with active matchmaking - cancelling...');
+                this.cancelMatchmakingOnUnload();
+            }
+        });
     }
 
     initUI() {
         // Initialize UI state - don't show any screens yet
         // The initializeAppFlow() will handle the proper flow
+
+        // Disable game mode buttons initially (server not connected yet)
+        this.disableGameModeButtons();
+
         console.log('[App] UI initialized');
     }
 
     // Main application flow controller
     initializeAppFlow() {
         console.log('[App] Starting application flow...');
+
+        // Clear any pending matchmaking state from previous sessions
+        this.clearPendingMatchOnStartup();
 
         // Ensure tutorial elements are hidden at startup
         const tutorialModal = document.getElementById('tutorial-select-modal');
@@ -106,6 +128,18 @@ class GameManager {
     onServerConnected() {
         console.log('[App] Server connected, checking tutorial status...');
 
+        // Mark server as connected
+        this.isServerConnected = true;
+
+        // Record connection time for delay enforcement
+        this.connectionEstablishedTime = Date.now();
+
+        // Update connection status UI
+        const connectionIndicator = document.getElementById('connection-indicator');
+        const serverStats = document.getElementById('server-stats');
+        if (connectionIndicator) connectionIndicator.classList.add('connected');
+        if (serverStats) serverStats.textContent = 'サーバー情報: 接続済み';
+
         // Now check if user has seen tutorial before (after server connection)
         const hasSeenTutorial = localStorage.getItem('hasSeenTutorial') === 'true';
 
@@ -130,7 +164,101 @@ class GameManager {
             // Go directly to main menu for returning users
             this.closeModal('startup-overlay');
             this.showScreen('main-menu');
+
+            // Enable game mode buttons after 5 second delay
+            setTimeout(() => {
+                console.log('[App] Enabling game mode buttons after connection delay');
+                this.enableGameModeButtons();
+            }, 5000);
         }
+    }
+
+    // Handle game mode button clicks with server connection and delay checks
+    handleGameModeClick(mode) {
+        // Must be connected
+        if (!this.isServerConnected) {
+            console.warn(`[${mode.toUpperCase()}] Cannot start ${mode} mode - server not connected`);
+            this.showModal('connection-error-modal');
+            return;
+        }
+
+        // Determine the button for this mode and check its disabled state
+        const btnMap = {
+            solo: this.el.soloModeBtn,
+            vs: this.el.vsModeBtn,
+            rta: this.el.rtaModeBtn,
+            practice: this.el.practiceModeBtn
+        };
+
+        const btn = btnMap[mode];
+        if (btn && btn.disabled) {
+            // If we have a recorded connection time, show remaining seconds; otherwise show generic message
+            if (this.connectionEstablishedTime) {
+                const timeSince = Date.now() - this.connectionEstablishedTime;
+                if (timeSince < 5000) {
+                    const remainingTime = Math.ceil((5000 - timeSince) / 1000);
+                    this.showNotification(`サーバー接続後${remainingTime}秒待ってください`, 'warning');
+                    return;
+                }
+            }
+
+            this.showNotification('接続処理が完了していません。しばらくお待ちください', 'warning');
+            return;
+        }
+
+        // Execute the appropriate action based on mode
+        switch (mode) {
+            case 'solo':
+                this.startSoloMode();
+                break;
+            case 'vs':
+                this.showModal('match-select-modal');
+                break;
+            case 'rta':
+                this.startRtaMode();
+                break;
+            case 'practice':
+                this.showModal('practice-setup-modal');
+                break;
+            default:
+                console.error(`Unknown game mode: ${mode}`);
+        }
+    }
+
+    // Disable game mode buttons when server is not connected
+    disableGameModeButtons() {
+        const buttons = [
+            this.el.soloModeBtn,
+            this.el.vsModeBtn,
+            this.el.rtaModeBtn,
+            this.el.practiceModeBtn
+        ];
+
+        buttons.forEach(btn => {
+            if (btn) {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+        });
+    }
+
+    // Enable game mode buttons after server connection and delay
+    enableGameModeButtons() {
+        const buttons = [
+            this.el.soloModeBtn,
+            this.el.vsModeBtn,
+            this.el.rtaModeBtn,
+            this.el.practiceModeBtn
+        ];
+
+        buttons.forEach(btn => {
+            if (btn) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        });
     }
 
     // Called when user chooses to start tutorial
@@ -163,6 +291,12 @@ class GameManager {
 
         this.showScreen('main-menu');
         localStorage.setItem('hasSeenTutorial', 'true');
+
+        // Enable game mode buttons after 5 second delay
+        setTimeout(() => {
+            console.log('[App] Enabling game mode buttons after tutorial skip');
+            this.enableGameModeButtons();
+        }, 5000);
     }
 
     // Called when tutorial is completed
@@ -267,10 +401,18 @@ class GameManager {
     async testServerConnection() {
         try {
             // Test game server connection
-            const gameServerResponse = await fetch(`${this.gameServerUrl}/health`, {
-                method: 'GET',
-                signal: AbortSignal.timeout(5000)
-            });
+            // Use AbortController for broader compatibility (AbortSignal.timeout may not exist)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            let gameServerResponse;
+            try {
+                gameServerResponse = await fetch(`${this.gameServerUrl}/health`, {
+                    method: 'GET',
+                    signal: controller.signal
+                });
+            } finally {
+                clearTimeout(timeoutId);
+            }
 
             if (!gameServerResponse.ok) {
                 console.warn('[App] Game server health check failed');
@@ -280,19 +422,26 @@ class GameManager {
             // Test LM Studio connection if provided and not forced to skip
             if (this.lmServerUrl && !this.el.startupForceLm?.checked) {
                 try {
-                    const lmResponse = await fetch(`${this.lmServerUrl}/health`, {
-                        method: 'GET',
-                        signal: AbortSignal.timeout(5000)
-                    });
+                    const lmController = new AbortController();
+                    const lmTimeout = setTimeout(() => lmController.abort(), 5000);
+                    try {
+                        const lmResponse = await fetch(`${this.lmServerUrl}/health`, {
+                            method: 'GET',
+                            signal: lmController.signal
+                        });
 
-                    if (!lmResponse.ok) {
-                        console.warn('[App] LM Studio health check failed, but continuing');
+                        if (!lmResponse.ok) {
+                            console.warn('[App] LM Studio health check failed, but continuing');
+                        }
+                    } finally {
+                        clearTimeout(lmTimeout);
                     }
                 } catch (lmError) {
                     console.warn('[App] LM Studio connection failed, but continuing:', lmError);
                 }
             }
 
+            console.log('[App] testServerConnection: game server reachable');
             return true;
         } catch (error) {
             console.error('[App] Server connection test failed:', error);
@@ -544,10 +693,10 @@ class GameManager {
         };
 
         safeAdd(this.el.connectServerBtn, 'click', this.startupConnect);
-        safeAdd(this.el.soloModeBtn, 'click', this.startSoloMode);
-        safeAdd(this.el.vsModeBtn, 'click', () => this.showModal('match-select-modal'));
-        safeAdd(this.el.rtaModeBtn, 'click', this.startRtaMode);
-        safeAdd(this.el.practiceModeBtn, 'click', () => this.showModal('practice-setup-modal'));
+        safeAdd(this.el.soloModeBtn, 'click', () => this.handleGameModeClick('solo'));
+        safeAdd(this.el.vsModeBtn, 'click', () => this.handleGameModeClick('vs'));
+        safeAdd(this.el.rtaModeBtn, 'click', () => this.handleGameModeClick('rta'));
+        safeAdd(this.el.practiceModeBtn, 'click', () => this.handleGameModeClick('practice'));
         safeAdd(this.el.settingsMainBtn, 'click', () => this.showModal('settings-modal'));
         safeAdd(this.el.leaderboardBtn, 'click', this.showLeaderboard);
         safeAdd(this.el.achievementsBtn, 'click', () => this.showModal('achievements-modal'));
@@ -660,6 +809,7 @@ class GameManager {
         safeAdd(this.el.createRoomBtn, 'click', this.createRoom);
         safeAdd(this.el.joinRoomBtn, 'click', this.joinRoom);
         safeAdd(this.el.cancelMatchmakingBtn, 'click', this.cancelMatchmaking);
+        console.log('[App] Cancel matchmaking button listener attached:', !!this.el.cancelMatchmakingBtn);
 
         // Voice recognition event listeners
         const voiceToggle = document.getElementById('voice-toggle');
@@ -874,7 +1024,12 @@ class GameManager {
             if (this.startWithBgm) this.playBGM('menu.mp3');
 
             this.showNotification('接続しました！', 'success');
-            this.closeModal('startup-overlay');
+            // Mark app as connected and run post-connection flow (sets isServerConnected, UI, tutorial flow)
+            try {
+                this.onServerConnected();
+            } catch (e) {
+                console.warn('[Startup] onServerConnected failed:', e);
+            }
 
             const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
             console.log('[Startup] hasSeenTutorial:', hasSeenTutorial);
@@ -900,8 +1055,7 @@ class GameManager {
             
             this.startHeartbeat();
             this.startServerStatsPolling();
-            // if user had a pending matchmaking intent saved (reload during matchmaking), try to resume it
-            try { this.restorePendingMatch(); } catch(e) { console.warn('restorePendingMatch err', e); }
+            // Removed automatic matchmaking resume on connection - user must manually start matchmaking
 
         } catch (e) {
             if (this.el.connectionStatus) this.el.connectionStatus.textContent = `接続失敗: ${e.message}`;
@@ -969,8 +1123,15 @@ class GameManager {
     }
 
     async startSoloMode() {
-    // clear any leftover matchmaking to ensure solo starts clean
-    this.cleanupMatchmakingBeforeLocalStart();
+        // Check if server is connected before starting game
+        if (!this.isServerConnected) {
+            console.warn('[Solo] Cannot start solo mode - server not connected');
+            this.showModal('connection-error-modal');
+            return;
+        }
+
+        // clear any leftover matchmaking to ensure solo starts clean
+        this.cleanupMatchmakingBeforeLocalStart();
         this.currentMode = 'solo';
         this.timeLimit = 0;
         this.questionsPerGame = 10;
@@ -979,10 +1140,15 @@ class GameManager {
         this.questionTimer = null;
         if (this.el.timerWrapper) this.el.timerWrapper.style.display = 'none';
         await this.fetchQuestionsAndStartGame();
-    }
+    }    async startRtaMode() {
+        // Check if server is connected before starting game
+        if (!this.isServerConnected) {
+            console.warn('[RTA] Cannot start RTA mode - server not connected');
+            this.showModal('connection-error-modal');
+            return;
+        }
 
-    async startRtaMode() {
-    this.cleanupMatchmakingBeforeLocalStart();
+        this.cleanupMatchmakingBeforeLocalStart();
         this.currentMode = 'rta';
         this.timeLimit = 180;
         this.questionsPerGame = 10;
@@ -994,6 +1160,13 @@ class GameManager {
     }
 
     startPracticeMode() {
+        // Check if server is connected before starting game
+        if (!this.isServerConnected) {
+            console.warn('[Practice] Cannot start practice mode - server not connected');
+            this.showModal('connection-error-modal');
+            return;
+        }
+
         this.cleanupMatchmakingBeforeLocalStart();
         this.currentMode = 'practice';
         
@@ -1432,22 +1605,36 @@ class GameManager {
     }
 
     joinRandomMatch() {
-    if (this.isMatchmaking) return this.showNotification('すでにエントリー中です', 'warning');
-    const rule = this.el.randomRuleSelect ? this.el.randomRuleSelect.value : 'classic';
-    this.closeModal('random-match-modal');
-    this.isMatchmaking = true;
-    this.matchmakingStatus = { type: 'random', rule: rule };
-    this.disableMatchButtons(true);
-    this.showPersistentStatusUI();
-    const params = { rule };
-    this.persistPendingMatch(params);
-    this.startLobbyPolling(params);
-    this.showNotification('対戦モードにエントリーしました。マッチングをお待ちください。', 'info');
-    this.showScreen('main-menu');
+        // Check if server is connected before starting matchmaking
+        if (!this.isServerConnected) {
+            console.warn('[Matchmaking] Cannot join random match - server not connected');
+            this.showModal('connection-error-modal');
+            return;
+        }
+
+        if (this.isMatchmaking) return this.showNotification('すでにエントリー中です', 'warning');
+        const rule = this.el.randomRuleSelect ? this.el.randomRuleSelect.value : 'classic';
+        this.closeModal('random-match-modal');
+        this.isMatchmaking = true;
+        this.matchmakingStatus = { type: 'random', rule: rule };
+        this.disableMatchButtons(true);
+        this.showPersistentStatusUI();
+        const params = { rule };
+        this.persistPendingMatch(params);
+        this.startLobbyPolling(params);
+        this.showNotification('対戦モードにエントリーしました。マッチングをお待ちください。', 'info');
+        this.showScreen('main-menu');
     }
 
     async createRoom() {
-    if (this.isMatchmaking) return this.showNotification('すでにエントリー中です', 'warning');
+        // Check if server is connected before creating room
+        if (!this.isServerConnected) {
+            console.warn('[Room] Cannot create room - server not connected');
+            this.showModal('connection-error-modal');
+            return;
+        }
+
+        if (this.isMatchmaking) return this.showNotification('すでにエントリー中です', 'warning');
         const name = this.el.roomName ? this.el.roomName.value : '';
         const password = this.el.roomPassword ? this.el.roomPassword.value : '';
         const max_players = this.el.roomMax ? parseInt(this.el.roomMax.value, 10) : 3;
@@ -1476,23 +1663,32 @@ class GameManager {
     }
 
     joinRoom() {
-    if (this.isMatchmaking) return this.showNotification('すでにエントリー中です', 'warning');
+        // Check if server is connected before joining room
+        if (!this.isServerConnected) {
+            console.warn('[Room] Cannot join room - server not connected');
+            this.showModal('connection-error-modal');
+            return;
+        }
+
+        if (this.isMatchmaking) return this.showNotification('すでにエントリー中です', 'warning');
         const roomId = this.el.joinRoomId ? this.el.joinRoomId.value.trim() : '';
         const password = this.el.joinRoomPassword ? this.el.joinRoomPassword.value.trim() : '';
         if (!roomId) return this.showNotification('ルームIDを入力してください', 'error');
         this.isMatchmaking = true;
         this.matchmakingStatus = { type: 'room', roomId: roomId };
-    this.disableMatchButtons(true);
-    this.showPersistentStatusUI();
-    const params = { roomId, password };
-    this.persistPendingMatch(params);
-    this.startLobbyPolling(params);
+        this.disableMatchButtons(true);
+        this.showPersistentStatusUI();
+        const params = { roomId, password };
+        this.persistPendingMatch(params);
+        this.startLobbyPolling(params);
         this.closeModal('room-modal');
         this.showNotification('ルームに参加しました。ゲーム開始をお待ちください。', 'info');
         this.showScreen('main-menu');
     }
 
     async cancelMatchmaking() {
+        console.log('[Cancel] cancelMatchmaking called, isMatchmaking:', this.isMatchmaking);
+
         if (!this.isMatchmaking) {
             console.log('[Cancel] Not currently matchmaking');
             return this.showNotification('現在マッチング中ではありません', 'warning');
@@ -1500,9 +1696,14 @@ class GameManager {
 
         console.log('[Cancel] Cancelling matchmaking...');
         const cancelBtn = document.getElementById('cancel-matchmaking-btn');
+        console.log('[Cancel] Cancel button element:', cancelBtn);
+
         if (cancelBtn) {
             cancelBtn.disabled = true;
             cancelBtn.textContent = 'キャンセル中...';
+            console.log('[Cancel] Button disabled and text changed');
+        } else {
+            console.error('[Cancel] Cancel button not found!');
         }
 
         try {
@@ -1542,12 +1743,78 @@ class GameManager {
         console.log('[Cancel] Matchmaking cancelled successfully');
     }
 
+    // Synchronous matchmaking cancellation for page unload
+    cancelMatchmakingOnUnload() {
+        if (!this.isMatchmaking) {
+            console.log('[Unload] No active matchmaking to cancel');
+            return;
+        }
+
+        console.log('[Unload] Cancelling matchmaking on page unload...');
+
+        try {
+            // Try synchronous server notification (limited time available)
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${this.gameServerUrl}/lobby/leave`, false); // synchronous
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({ player_id: this.playerId }));
+
+            if (xhr.status === 200) {
+                console.log('[Unload] Successfully notified server about leaving');
+            } else {
+                console.warn('[Unload] Server notification failed:', xhr.status);
+            }
+        } catch (e) {
+            console.error('[Unload] Failed to notify server:', e);
+        }
+
+        // Clean up local state
+        this.isMatchmaking = false;
+        this.matchmakingStatus = {};
+        this.stopLobbyPolling();
+        this.hidePersistentStatusUI();
+        this.disableMatchButtons(false);
+
+        try {
+            this.clearPendingMatch();
+        } catch (e) {
+            console.warn('[Unload] Failed to clear pending match:', e);
+        }
+
+        console.log('[Unload] Matchmaking cancelled on page unload');
+    }
+
     startLobbyPolling(params) {
         if (this.lobbyPollInterval) clearInterval(this.lobbyPollInterval);
 
         let consecutiveErrors = 0;
         const maxConsecutiveErrors = 3;
         let pollCount = 0;
+
+        // Ensure we have a valid playerId before starting polling. If missing, attempt a one-time re-registration.
+        const ensurePlayerId = async () => {
+            if (this.playerId) return true;
+            try {
+                console.log('[Lobby] playerId missing, attempting re-registration...');
+                if (!this.gameServerUrl || !this.nickname) {
+                    throw new Error('playerIdがなく、再登録に必要な情報が不足しています');
+                }
+                const regj = await window.GameAPI.register(this.gameServerUrl, this.nickname);
+                if (!regj || !regj.player_id) throw new Error('再登録に失敗しました');
+                this.playerId = regj.player_id;
+                if (regj.session_token) {
+                    this.sessionToken = regj.session_token;
+                    localStorage.setItem('sessionToken', this.sessionToken);
+                }
+                localStorage.setItem('playerId', this.playerId);
+                console.log('[Lobby] Re-registration successful, playerId:', this.playerId);
+                return true;
+            } catch (re) {
+                console.error('[Lobby] Re-registration failed:', re);
+                this.showNotification('プレイヤーIDが無効です。再接続してください。', 'error');
+                return false;
+            }
+        };
 
         const poll = async () => {
             if (!this.isMatchmaking) {
@@ -1622,11 +1889,22 @@ class GameManager {
             }
         };
 
-        // Initial poll
-        poll();
-
-        // Set up interval polling with shorter interval for better responsiveness
-        this.lobbyPollInterval = setInterval(poll, 3000); // 3 seconds for better responsiveness
+        // Initial poll - ensure player id first
+        ensurePlayerId().then(ok => {
+            if (ok) {
+                poll();
+                // Set up interval polling with shorter interval for better responsiveness
+                this.lobbyPollInterval = setInterval(poll, 3000); // 3 seconds for better responsiveness
+            } else {
+                console.error('[Lobby] Cannot start polling without a valid playerId');
+                this.isMatchmaking = false;
+                this.hidePersistentStatusUI();
+                this.disableMatchButtons(false);
+            }
+        }).catch(err => {
+            console.error('[Lobby] ensurePlayerId check failed:', err);
+            this.isMatchmaking = false;
+        });
     }
 
     stopLobbyPolling() {
@@ -1643,6 +1921,19 @@ class GameManager {
 
     clearPendingMatch() {
         try { localStorage.removeItem('pendingMatch'); } catch(e){}
+    }
+
+    // Clear pending matchmaking state on application startup
+    clearPendingMatchOnStartup() {
+        try {
+            const raw = localStorage.getItem('pendingMatch');
+            if (raw) {
+                console.log('[Startup] Clearing pending matchmaking state from previous session');
+                localStorage.removeItem('pendingMatch');
+            }
+        } catch (e) {
+            console.warn('[Startup] Failed to clear pending match on startup:', e);
+        }
     }
 
     restorePendingMatch() {
@@ -1777,7 +2068,10 @@ class GameManager {
             }
         }
         if (this.el.matchFoundCountdown) this.el.matchFoundCountdown.textContent = countdown;
-        this.questions = gameData.questions.map(q => ({ ...q, answers: [] }));
+    // Preserve provided answers from the server. Previously answers were being
+    // cleared here which caused client-side answer checking to always fail
+    // in VS mode (no answers => checkAnswer() never matches).
+    this.questions = gameData.questions.map(q => ({ ...q }));
         // Use the shared countdown routine
         this.startGameWithCountdown('vs', countdown);
         // Start polling game state (server provides game_id)
@@ -4000,6 +4294,12 @@ class GameManager {
         // Use the new flow controller
         this.onTutorialCompleted();
 
+        // Enable game mode buttons after 5 second delay
+        setTimeout(() => {
+            console.log('[Tutorial] Enabling game mode buttons after tutorial completion');
+            this.enableGameModeButtons();
+        }, 5000);
+
         console.log('[Tutorial] Tutorial completed successfully');
     }
 
@@ -4458,8 +4758,60 @@ class GameManager {
 
     async processVoskAudio(audioBlob) {
         try {
+            // Convert any input audio Blob (webm/opus) to 16kHz mono WAV for Vosk
+            const arrayBuffer = await audioBlob.arrayBuffer();
+            const ac = new (window.AudioContext || window.webkitAudioContext)();
+            const decoded = await ac.decodeAudioData(arrayBuffer);
+
+            // downmix to mono
+            const chanData = decoded.numberOfChannels > 1 ? decoded.getChannelData(0) : decoded.getChannelData(0);
+            // resample to 16000
+            const targetRate = 16000;
+            const srcRate = decoded.sampleRate;
+            const srcLength = chanData.length;
+            const targetLength = Math.round(srcLength * targetRate / srcRate);
+            const resampled = new Float32Array(targetLength);
+            for (let i = 0; i < targetLength; i++) {
+                const srcIndex = i * srcRate / targetRate;
+                const i0 = Math.floor(srcIndex);
+                const i1 = Math.min(i0 + 1, srcLength - 1);
+                const t = srcIndex - i0;
+                resampled[i] = (1 - t) * chanData[i0] + t * chanData[i1];
+            }
+
+            // PCM16 encode
+            const wavBuffer = new ArrayBuffer(44 + resampled.length * 2);
+            const view = new DataView(wavBuffer);
+            /* RIFF header */
+            function writeString(view, offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + resampled.length * 2, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true); // PCM chunk size
+            view.setUint16(20, 1, true); // PCM format
+            view.setUint16(22, 1, true); // mono
+            view.setUint32(24, targetRate, true); // sample rate
+            view.setUint32(28, targetRate * 2, true); // byte rate (sampleRate * blockAlign)
+            view.setUint16(32, 2, true); // block align
+            view.setUint16(34, 16, true); // bits per sample
+            writeString(view, 36, 'data');
+            view.setUint32(40, resampled.length * 2, true);
+            // write PCM samples
+            let offset = 44;
+            for (let i = 0; i < resampled.length; i++, offset += 2) {
+                let s = Math.max(-1, Math.min(1, resampled[i]));
+                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            }
+
+            const wavBlob = new Blob([view], { type: 'audio/wav' });
+
             const formData = new FormData();
-            formData.append('audio', audioBlob, 'recording.webm');
+            formData.append('audio', wavBlob, 'recording.wav');
 
             const response = await fetch(`${this.voiceServerUrl}/recognize`, {
                 method: 'POST',
@@ -4467,7 +4819,8 @@ class GameManager {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const text = await response.text().catch(() => '');
+                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${text}`);
             }
 
             const result = await response.json();

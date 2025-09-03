@@ -50,12 +50,39 @@ def load_model():
 def convert_audio_to_wav(audio_data, sample_rate=16000):
     """Convert audio data to WAV format required by Vosk"""
     try:
+        # Validate input data
+        if audio_data is None:
+            logger.error("Audio data is None")
+            return None
+
+        if isinstance(audio_data, bytes) and len(audio_data) == 0:
+            logger.error("Audio data is empty bytes")
+            return None
+
+        if not isinstance(audio_data, bytes) and len(audio_data) == 0:
+            logger.error("Audio data array is empty")
+            return None
+
         # Convert to numpy array if needed
         if isinstance(audio_data, bytes):
             # Assume 16-bit PCM
+            if len(audio_data) < 2:
+                logger.error(f"Audio data too small: {len(audio_data)} bytes")
+                return None
             audio_np = np.frombuffer(audio_data, dtype=np.int16)
         else:
             audio_np = np.array(audio_data, dtype=np.int16)
+
+        # Validate buffer size
+        if len(audio_np) == 0:
+            logger.error("Converted audio array is empty")
+            return None
+
+        if len(audio_np) < 100:  # Minimum viable audio chunk
+            logger.warning(f"Audio buffer very small: {len(audio_np)} samples")
+            # Pad with silence if too small
+            silence = np.zeros(100 - len(audio_np), dtype=np.int16)
+            audio_np = np.concatenate([audio_np, silence])
 
         # Convert to float32 and normalize
         audio_float = audio_np.astype(np.float32) / 32768.0
@@ -65,6 +92,9 @@ def convert_audio_to_wav(audio_data, sample_rate=16000):
             # Simple resampling (in production, use better resampling)
             ratio = 16000 / sample_rate
             new_length = int(len(audio_float) * ratio)
+            if new_length <= 0:
+                logger.error(f"Invalid resampled length: {new_length}")
+                return None
             indices = np.linspace(0, len(audio_float) - 1, new_length)
             audio_float = np.interp(indices, np.arange(len(audio_float)), audio_float)
 
@@ -116,11 +146,26 @@ def recognize_speech():
                 'success': False
             }), 400
 
+        # Validate minimum audio size (at least 0.1 seconds at 16kHz 16-bit = 3200 bytes)
+        if len(audio_data) < 3200:
+            logger.warning(f"Audio file too small: {len(audio_data)} bytes")
+            return jsonify({
+                'error': 'Audio file too small (minimum 0.1 seconds required)',
+                'success': False
+            }), 400
+
         # Convert audio to WAV format
         wav_data = convert_audio_to_wav(audio_data)
         if wav_data is None:
             return jsonify({
                 'error': 'Audio conversion failed',
+                'success': False
+            }), 400
+
+        # Validate WAV data size
+        if len(wav_data) < 100:
+            return jsonify({
+                'error': 'Converted audio too small',
                 'success': False
             }), 400
 
@@ -169,11 +214,27 @@ def recognize_stream():
                 'success': False
             }), 400
 
+        # Validate minimum audio size for streaming
+        if len(audio_data) < 1000:  # Smaller threshold for streaming chunks
+            logger.warning(f"Streaming audio chunk too small: {len(audio_data)} bytes")
+            return jsonify({
+                'error': 'Audio chunk too small',
+                'success': False
+            }), 400
+
+        # Convert audio to WAV format for consistent processing
+        wav_data = convert_audio_to_wav(audio_data)
+        if wav_data is None:
+            return jsonify({
+                'error': 'Audio conversion failed',
+                'success': False
+            }), 400
+
         # Create recognizer
         rec = vosk.KaldiRecognizer(model, 16000)
 
         # Process audio
-        if rec.AcceptWaveform(audio_data):
+        if rec.AcceptWaveform(wav_data):
             result = json.loads(rec.Result())
         else:
             result = json.loads(rec.PartialResult())
@@ -236,7 +297,27 @@ def handle_audio_data(data):
         if not audio_b64:
             return
 
-        audio_data = base64.b64decode(audio_b64)
+        try:
+            audio_data = base64.b64decode(audio_b64)
+        except Exception as e:
+            logger.error(f"Base64 decode error: {e}")
+            emit('error', {'message': 'Invalid audio data format'})
+            return
+
+        # Validate audio data size
+        if len(audio_data) == 0:
+            logger.warning("Received empty audio data")
+            return
+
+        if len(audio_data) < 100:  # Very small chunk
+            logger.warning(f"Audio chunk too small: {len(audio_data)} bytes")
+            return
+
+        # Convert audio to WAV format for consistent processing
+        wav_data = convert_audio_to_wav(audio_data)
+        if wav_data is None:
+            logger.warning("Audio conversion failed for WebSocket data")
+            return
 
         # Create recognizer if not exists (per connection)
         if not hasattr(handle_audio_data, 'recognizer'):
@@ -245,7 +326,7 @@ def handle_audio_data(data):
         rec = handle_audio_data.recognizer
 
         # Process audio chunk
-        if rec.AcceptWaveform(audio_data):
+        if rec.AcceptWaveform(wav_data):
             result = json.loads(rec.Result())
             text = result.get('text', '').strip()
             if text:
