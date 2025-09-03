@@ -103,9 +103,7 @@
                     <button class="icon-btn settings-btn" onclick="gameManager.showModal('settings-modal')">
                         <span class="icon">⚙️</span>
                     </button>
-                    <button class="icon-btn leaderboard-btn" onclick="gameManager.showModal('leaderboard-modal')">
-                        <span class="icon">🏆</span>
-                    </button>
+                    <!-- Leaderboard removed -->
                     <button class="icon-btn tutorial-btn" onclick="gameManager.showModal('tutorial-select-modal')">
                         <span class="icon">❓</span>
                     </button>
@@ -233,7 +231,7 @@
                         <span class="stat-value" id="current-mode">SOLO</span>
                     </div>
                     <div class="stat-card">
-                        <span class="stat-label">SCORE</span>
+                        <span class="stat-label">CORRECT</span>
                         <span class="stat-value" id="current-score">0</span>
                     </div>
                     <div class="stat-card">
@@ -341,22 +339,7 @@
                 </div>
             </div>
 
-            <!-- Right: AI response -->
-            <div class="arena-right">
-                <div class="ai-zone">
-                    <div class="zone-header">
-                        <h3>AI RESPONSE</h3>
-                        <div class="ai-status-indicator">
-                            <div class="status-dot" id="ai-status-dot"></div>
-                            <span id="ai-status">WAITING</span>
-                        </div>
-                    </div>
-                    <div class="ai-output-container">
-                        <div id="ai-output" class="ai-text">AIが回答を待っています...</div>
-                        <div id="ai-analysis" class="ai-analysis"></div>
-                    </div>
-                </div>
-            </div>
+            <!-- Removed legacy duplicated AI response panel -->
         </div>
     </div>
 
@@ -368,7 +351,7 @@
             </div>
             <div class="result-body">
                 <div class="final-score">
-                    <span class="score-label">最終スコア</span>
+                    <span class="score-label">正解数</span>
                     <span class="score-number" id="final-score">0</span>
                 </div>
                 <div class="result-stats">
@@ -390,8 +373,7 @@
                     </div>
                 </div>
                 <div class="new-achievements" id="new-achievements"></div>
-                <!-- Multiplayer ranking list populated after game finish -->
-                <div id="result-ranking-list" style="margin-top:12px;"></div>
+                <!-- Ranking removed -->
                 <div class="result-actions">
                     <button class="btn btn-primary" id="play-again-btn">もう一度プレイ</button>
                     <button class="btn btn-secondary" id="back-to-menu-result-btn">メニューに戻る</button>
@@ -453,21 +435,7 @@
         </div>
     </div>
 
-    <div id="leaderboard-modal" class="modal">
-        <div class="modal-content leaderboard-content">
-            <div class="modal-header">
-                <h2>ランキング</h2>
-                <span class="close-btn">&times;</span>
-            </div>
-            <div class="leaderboard-tabs">
-                <button class="tab-btn active" data-board="solo">ソロ</button>
-                <button class="tab-btn" data-board="rta">RTA</button>
-            </div>
-            <div class="leaderboard-content">
-                <div id="leaderboard-list"></div>
-            </div>
-        </div>
-    </div>
+    <!-- Leaderboard removed -->
 
     <div id="achievements-modal" class="modal">
         <div class="modal-content achievements-content">

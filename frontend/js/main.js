@@ -596,7 +596,7 @@ class GameManager {
             mainMenu: document.getElementById('main-menu'),
             gameScreen: document.getElementById('game-screen'),
             settingsModal: document.getElementById('settings-modal'),
-            leaderboardModal: document.getElementById('leaderboard-modal'),
+            // leaderboardModal removed (ranking廃止)
             achievementsModal: document.getElementById('achievements-modal'),
             resultModal: document.getElementById('result-modal'),
             tutorialSelectModal: document.getElementById('tutorial-select-modal'),
@@ -623,7 +623,6 @@ class GameManager {
             vsModeBtn: document.getElementById('vs-mode-btn'),
             rtaModeBtn: document.getElementById('rta-mode-btn'),
             practiceModeBtn: document.getElementById('practice-mode-btn'),
-            leaderboardBtn: document.getElementById('leaderboard-btn'),
             achievementsBtn: document.getElementById('achievements-btn'),
             settingsMainBtn: document.getElementById('settings-main-btn'),
             backToMenuBtn: document.getElementById('back-to-menu-btn'),
@@ -657,7 +656,7 @@ class GameManager {
             theme: document.getElementById('theme'),
             gameServerAddress: document.getElementById('game-server-address'),
             lmServerAddress: document.getElementById('lm-server-address'),
-            leaderboardList: document.getElementById('leaderboard-list'),
+            // leaderboardList removed (ranking廃止)
             matchRandomBtn: document.getElementById('match-random-btn'),
             matchCustomBtn: document.getElementById('match-custom-btn'),
             randomRuleSelect: document.getElementById('random-rule-select'),
@@ -698,7 +697,7 @@ class GameManager {
         safeAdd(this.el.rtaModeBtn, 'click', () => this.handleGameModeClick('rta'));
         safeAdd(this.el.practiceModeBtn, 'click', () => this.handleGameModeClick('practice'));
         safeAdd(this.el.settingsMainBtn, 'click', () => this.showModal('settings-modal'));
-        safeAdd(this.el.leaderboardBtn, 'click', this.showLeaderboard);
+    // leaderboard button removed
         safeAdd(this.el.achievementsBtn, 'click', () => this.showModal('achievements-modal'));
         safeAdd(this.el.backToMenuBtn, 'click', this.goBackToMenu);
         safeAdd(this.el.submitQuestionBtn, 'click', this.submitQuestion);
@@ -2402,18 +2401,16 @@ class GameManager {
         }
         // stop gameplay BGM when game ends
         try { this.stopBGM(); } catch (e) {}
-        const timeTaken = this.initialTimeLimit - this.timeLimit;
-        if (this.el.finalScore) this.el.finalScore.textContent = this.score;
+    const timeTaken = this.initialTimeLimit - this.timeLimit;
+    // Show correct count instead of score
+    if (this.el.finalScore) this.el.finalScore.textContent = String(this.correctAnswers);
         if (this.el.resultCorrect) this.el.resultCorrect.textContent = `${this.correctAnswers} / ${this.questions.length}`;
         if (this.el.resultQuestions) this.el.resultQuestions.textContent = this.questionCount;
         const accuracy = this.questions.length > 0 ? Math.round((this.correctAnswers / this.questions.length) * 100) : 0;
         if (this.el.resultAccuracy) this.el.resultAccuracy.textContent = `${accuracy}%`;
         if (this.el.resultTime) this.el.resultTime.textContent = this.formatTime(timeTaken);
         this.showModal('result-modal');
-        // submit score for non-practice modes
-        if (this.currentMode !== 'practice') {
-            this.submitScore(timeTaken);
-        }
+    // Do not submit scores anymore (ranking廃止)
 
         // start auto-return countdown (15s) and update UI element if present
         try { if (this._autoReturnInterval) clearInterval(this._autoReturnInterval); } catch (e) {}
@@ -2530,77 +2527,14 @@ class GameManager {
         }
 
         if (state.finished) {
-            // Stop polling and show results based on state.ranking or state.final_ranking
             this.stopGameStatePolling();
-            // Map ranking to result modal UI
-            if (state.ranking || state.final_ranking) {
-                const ranking = state.ranking || state.final_ranking || [];
-                // Fill result modal with ranking info
-                const resultList = document.getElementById('result-ranking-list');
-                if (resultList) {
-                    resultList.innerHTML = '';
-                    ranking.forEach((p, idx) => {
-                        const row = document.createElement('div');
-                        row.className = 'result-row';
-                        row.innerHTML = `<div class="rank">#${idx+1}</div><div class="name">${p.player || p.player_id || p}</div><div class="score">${p.score||''}</div>`;
-                        resultList.appendChild(row);
-                    });
-                }
-            }
-            // show result modal
             this.showModal('result-modal');
         }
     }
 
     async submitScore(timeInSeconds) {
-        if (!this.playerId) return;
-        try {
-            const payload = {
-                player_id: this.playerId,
-                session_token: this.sessionToken,
-                mode: this.currentMode,
-                correct_count: this.correctAnswers,
-                total_questions: this.questions.length,
-                time_seconds: timeInSeconds,
-                client_raw_score: this.score
-            };
-            const res = await fetch(`${this.gameServerUrl}/scores/submit`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!res.ok) throw new Error(`Score submit failed: ${res.status}`);
-
-            // Fetch updated scores and show leaderboard with highlight
-            try {
-                const res2 = await fetch(`${this.gameServerUrl}/scores/all`);
-                if (res2.ok) {
-                    const json = await res2.json();
-                    const scores = (json && json.scores && json.scores[this.currentMode]) || [];
-                    this.showModal('leaderboard-modal');
-                    // populate leaderboard list
-                    if (this.el.leaderboardList) {
-                        this.el.leaderboardList.innerHTML = '';
-                        // sort by score desc
-                        scores.sort((a,b) => (b.score||0) - (a.score||0));
-                        scores.forEach((item, i) => {
-                            const row = document.createElement('div');
-                            row.className = 'leaderboard-item';
-                            if (item.player === (localStorage.getItem('nickname') || this.nickname)) {
-                                row.classList.add('leaderboard-self');
-                            }
-                            row.innerHTML = `<div class="rank">#${i+1}</div><div class="player-name">${item.player}</div><div class="player-score">${item.score}</div>`;
-                            this.el.leaderboardList.appendChild(row);
-                        });
-                    }
-                }
-            } catch (e) {
-                console.warn('Failed to fetch latest scores:', e);
-            }
-
-        } catch (e) {
-            console.error('Score submission failed:', e);
-        }
+        // Ranking廃止: no-op for backward compatibility
+        return;
     }
 
     // Simple audio manager for BGM
@@ -2655,47 +2589,18 @@ class GameManager {
     // SE再生用メソッド
     playSE(fileName) {
         if (!this.se) {
-            this.se = new Audio();
-            this.se.volume = 0.7;
-        }
-        const url = (this.gameServerUrl || '') + `/bgm/${fileName}`;
-        console.log('playSE url=', url, 'gameServerUrl=', this.gameServerUrl);
-        this.se.src = url;
-        this.se.loop = false;
-        this.se.currentTime = 0;
-        this.se.play().catch(e => {
-            console.warn('SE play failed:', e);
-        });
-    }
-
-    stopBGM() {
-        if (this.audio) {
-            try { this.audio.pause(); } catch (e) {}
-        }
-    }
-
-    updateUI() {
-        if (this.el.currentScore) this.el.currentScore.textContent = this.score;
-        if (this.el.totalScore) this.el.totalScore.textContent = this.score;
-        if (this.el.correctCount) this.el.correctCount.textContent = this.correctAnswers;
-        if (this.el.questionCount) this.el.questionCount.textContent = `質問回数: ${this.questionCount}`;
-        const accuracy = this.correctAnswers > 0 && this.questionCount > 0 ? Math.round((this.correctAnswers / this.questionCount) * 100) : 0;
-        if (this.el.accuracy) this.el.accuracy.textContent = `${accuracy}%`;
-        const progress = this.questions.length > 0 ? ((this.currentQuestionIndex) / this.questions.length) * 100 : 0;
-        if (this.el.progressFill) this.el.progressFill.style.width = `${progress}%`;
-    }
-
-    startTimer() {
-        this.stopTimer();
-        this.initialTimeLimit = this.timeLimit;
-        if (this.el.timerDisplay) this.el.timerDisplay.textContent = this.formatTime(this.timeLimit);
-        this.timer = setInterval(() => {
-            this.timeLimit--;
-            if (this.el.timerDisplay) this.el.timerDisplay.textContent = this.formatTime(this.timeLimit);
-            if (this.timeLimit <= 0) {
-                this.endGame();
+            try {
+                this.se = new Audio();
+            } catch (e) {
+                return; // audio unsupported
             }
-        }, 1000);
+        }
+        try {
+            const url = (this.gameServerUrl || '') + `/bgm/${fileName}`;
+            this.se.src = url;
+            this.se.currentTime = 0;
+            this.se.play().catch(() => {});
+        } catch (e) {}
     }
 
     stopTimer() {
@@ -2704,29 +2609,8 @@ class GameManager {
     }
 
     async showLeaderboard() {
-        this.showModal('leaderboard-modal');
-        const activeTab = document.querySelector('#leaderboard-modal .tab-btn.active');
-        const mode = activeTab ? activeTab.dataset.board : 'solo';
-        if (!this.gameServerUrl) return;
-        try {
-            const res = await fetch(`${this.gameServerUrl}/scores/top?mode=${mode}`);
-            const data = await res.json();
-            if (this.el.leaderboardList) {
-                this.el.leaderboardList.innerHTML = '';
-                if (data.top && data.top.length > 0) {
-                    data.top.forEach((item, i) => {
-                        const row = document.createElement('div');
-                        row.className = 'leaderboard-item';
-                        row.innerHTML = `<div class="rank">#${i + 1}</div><div class="player-name">${item.player}</div><div class="player-score">${item.score}</div>`;
-                        this.el.leaderboardList.appendChild(row);
-                    });
-                } else {
-                    this.el.leaderboardList.innerHTML = '<p style="text-align:center;opacity:0.8;">まだ記録がありません。</p>';
-                }
-            }
-        } catch (e) {
-            if (this.el.leaderboardList) this.el.leaderboardList.innerHTML = '<p style="text-align:center;color:red;">ランキングの読み込みに失敗しました。</p>';
-        }
+        // Ranking廃止: no-op
+        return;
     }
 
     showScreen(screenId) {
@@ -2876,9 +2760,7 @@ class GameManager {
             this.handlePracticeTabSwitch(btn);
         }
         
-        if (parent.closest('#leaderboard-modal')) {
-            this.showLeaderboard();
-        }
+    // Leaderboard tabs removed
     }
 
     handlePracticeTabSwitch(btn) {
