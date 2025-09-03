@@ -168,6 +168,10 @@ try:
             # basic validation
             if isinstance(stored, dict):
                 SCORES = stored
+                # ensure expected modes exist
+                for _mode in ('solo', 'rta', 'vs'):
+                    if _mode not in SCORES or not isinstance(SCORES.get(_mode), list):
+                        SCORES[_mode] = []
             else:
                 print('scores.json content invalid, starting fresh')
 except Exception as e:
@@ -560,7 +564,10 @@ def finalize_game(game_id: str):
     for p, s in ranking:
         nickname = PLAYERS.get(p, {}).get('nickname', '匿名')
         rec = { 'player': nickname, 'score': s, 'time': g.get('ended_at', 0) - g.get('started_at', 0), 'meta': {'game_id': game_id} }
-        SCORES['vs'].append(rec)
+        try:
+            SCORES.setdefault('vs', []).append(rec)
+        except Exception as e:
+            print(f'Warning: failed to append vs score record: {e}. SCORES structure: {type(SCORES)}')
 
 
 @app.get('/solo/question')
