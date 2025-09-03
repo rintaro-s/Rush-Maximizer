@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: #0a0a0f;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #3a3a55;
+        }
+        .test-btn {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Rush-Maximizer Tutorial Test</h1>
+
+    <div class="test-section">
+        <h2>チュートリアル機能テスト</h2>
+        <p>以下のボタンでチュートリアルの各機能をテストできます。</p>
+
+        <button class="test-btn" onclick="testTutorialStart()">📚 チュートリアル開始</button>
+        <button class="test-btn" onclick="testTutorialStep()">👆 次のステップ</button>
+        <button class="test-btn" onclick="testTutorialEnd()">🏁 チュートリアル終了</button>
+        <button class="test-btn" onclick="testHighlight()">💡 ハイライトテスト</button>
+        <button class="test-btn" onclick="testNotification()">🔔 通知テスト</button>
+    </div>
+
+    <div class="test-section">
+        <h2>テスト要素</h2>
+        <div id="test-input" style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">
+            <label>質問入力テスト:</label>
+            <input type="text" id="question-input" placeholder="ここに質問を入力..." style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #555;">
+        </div>
+
+        <div id="test-ai" style="background: rgba(0,255,136,0.1); padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #00ff88;">
+            <strong>🤖 AI回答テスト:</strong>
+            <p id="ai-response">AIの回答がここに表示されます</p>
+        </div>
+
+        <div id="test-target" style="background: rgba(255,170,0,0.1); padding: 15px; border-radius: 8px; margin: 10px 0; border: 2px solid #ffaa00; text-align: center;">
+            <div style="font-weight: bold; margin-bottom: 10px;">🎯 TARGET ANSWER</div>
+            <div>慶応4年（1868年）に起こった、日本史上最大級の内戦</div>
+        </div>
+    </div>
+
+    <!-- Tutorial overlay (copied from main app) -->
+    <div id="tutorial-overlay" class="tutorial-overlay" style="display: none;">
+        <div class="tutorial-content">
+            <div id="tutorial-counter" class="tutorial-step-counter"></div>
+            <h3 id="tutorial-title">チュートリアル</h3>
+            <p id="tutorial-description">チュートリアルを開始します...</p>
+            <div class="tutorial-actions">
+                <button id="tutorial-prev-btn" class="btn btn-secondary" style="display:none;">← 前へ</button>
+                <button id="tutorial-next-btn" class="btn btn-primary">次へ →</button>
+                <button id="tutorial-skip-btn" class="btn btn-secondary">スキップ</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Simple test functions
+        function testTutorialStart() {
+            if (window.gameManager && gameManager.startTutorial) {
+                gameManager.startTutorial();
+            } else {
+                alert('GameManager not found. Please check if main.js is loaded correctly.');
+            }
+        }
+
+        function testTutorialStep() {
+            if (window.gameManager && gameManager.nextTutorialStep) {
+                gameManager.nextTutorialStep();
+            } else {
+                alert('GameManager not found');
+            }
+        }
+
+        function testTutorialEnd() {
+            if (window.gameManager && gameManager.endTutorial) {
+                gameManager.endTutorial();
+            } else {
+                alert('GameManager not found');
+            }
+        }
+
+        function testHighlight() {
+            if (window.gameManager && gameManager.highlightElement) {
+                gameManager.highlightElement('#test-input');
+                setTimeout(() => gameManager.highlightElement('#test-ai'), 2000);
+                setTimeout(() => gameManager.highlightElement('#test-target'), 4000);
+            } else {
+                alert('GameManager not found');
+            }
+        }
+
+        function testNotification() {
+            if (window.gameManager && gameManager.showNotification) {
+                gameManager.showNotification('これはテスト通知です！', 'success');
+            } else {
+                alert('GameManager not found');
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Tutorial test page loaded');
+
+            // Check if GameManager is available
+            setTimeout(() => {
+                if (window.gameManager) {
+                    console.log('✅ GameManager found');
+                } else {
+                    console.log('❌ GameManager not found');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

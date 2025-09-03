@@ -1,0 +1,35 @@
+# Exclude unnecessary files from Docker build context
+.git/
+.gitignore
+README.md
+readme.md
+.env
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.vscode/
+.idea/
+*.log
+*.tmp
+node_modules/
+frontend/node_modules/
+backend/__pycache__/
+frontend/__pycache__/
+tutorial_test.html
+docker_install.sh
+
+# Keep only necessary files
+!models/
+!backend/requirements.txt
+!backend/src/
+!voice_server.py
+!Dockerfile*
+!docker-compose.yml

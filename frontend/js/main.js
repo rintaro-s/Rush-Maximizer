@@ -34,17 +34,12 @@ class GameManager {
         this.isVoiceActive = false;
         this.voiceEnabled = false;
 
-        // Pass counter for VS mode
-        this.passesUsed = 0;
-        this.maxPasses = 3;
-
-        // Advanced scoring and timing
-        this.questionStartTime = null;
-        this.questionTimeLimit = 25;
-        this.questionTimer = null;
-        this.pausedTime = null;
-        this.baseScore = 100;
-        this.timeBonus = 0;
+        // Tutorial properties
+        this.tutorialStep = 0;
+        this.tutorialSteps = null;
+        this.currentHighlight = null;
+        this.tutorialKeyHandler = null;
+        this.tutorialTimeout = null;
         
         // Mobile detection and optimization
         this.isMobile = this.detectMobile();
@@ -71,6 +66,310 @@ class GameManager {
         if (this.isMobile) {
             this.initMobileOptimizations();
             try { this.updateVh(); window.addEventListener('resize', () => this.updateVh()); } catch (e) {}
+        }
+
+        // Initialize application flow
+        this.initializeAppFlow();
+    }
+
+    initUI() {
+        // Initialize UI state - don't show any screens yet
+        // The initializeAppFlow() will handle the proper flow
+        console.log('[App] UI initialized');
+    }
+
+    // Main application flow controller
+    initializeAppFlow() {
+        console.log('[App] Starting application flow...');
+
+        // Ensure tutorial elements are hidden at startup
+        const tutorialModal = document.getElementById('tutorial-select-modal');
+        const tutorialOverlay = document.getElementById('tutorial-overlay');
+
+        if (tutorialModal) {
+            tutorialModal.style.display = 'none';
+            tutorialModal.classList.remove('active');
+        }
+
+        if (tutorialOverlay) {
+            tutorialOverlay.style.display = 'none';
+            tutorialOverlay.classList.remove('active');
+        }
+
+        // Always start with startup overlay for server connection
+        this.showModal('startup-overlay');
+
+        console.log('[App] Application flow initialized - waiting for server connection');
+    }
+
+    // Called when server connection is successful
+    onServerConnected() {
+        console.log('[App] Server connected, checking tutorial status...');
+
+        // Now check if user has seen tutorial before (after server connection)
+        const hasSeenTutorial = localStorage.getItem('hasSeenTutorial') === 'true';
+
+        if (!hasSeenTutorial) {
+            console.log('[App] First time user detected - showing tutorial selection');
+            this.isFirstTimeUser = true;
+            // Show tutorial selection for first-time users
+            this.closeModal('startup-overlay');
+
+            // Show tutorial select modal
+            const tutorialModal = document.getElementById('tutorial-select-modal');
+            if (tutorialModal) {
+                tutorialModal.style.display = 'flex';
+                tutorialModal.classList.add('active');
+            }
+
+            // Bind tutorial buttons when modal is shown
+            setTimeout(() => this.bindTutorialButtons(), 100);
+        } else {
+            console.log('[App] Returning user - going directly to main menu');
+            this.isFirstTimeUser = false;
+            // Go directly to main menu for returning users
+            this.closeModal('startup-overlay');
+            this.showScreen('main-menu');
+        }
+    }
+
+    // Called when user chooses to start tutorial
+    startTutorialFlow() {
+        console.log('[App] Starting tutorial flow...');
+
+        // Close tutorial select modal
+        const tutorialModal = document.getElementById('tutorial-select-modal');
+        if (tutorialModal) {
+            tutorialModal.style.display = 'none';
+            tutorialModal.classList.remove('active');
+        }
+
+        // Bind tutorial buttons before starting tutorial
+        this.bindTutorialButtons();
+
+        this.startTutorial();
+    }
+
+    // Called when user chooses to skip tutorial
+    skipTutorialFlow() {
+        console.log('[App] Skipping tutorial, going to main menu...');
+
+        // Close tutorial select modal
+        const tutorialModal = document.getElementById('tutorial-select-modal');
+        if (tutorialModal) {
+            tutorialModal.style.display = 'none';
+            tutorialModal.classList.remove('active');
+        }
+
+        this.showScreen('main-menu');
+        localStorage.setItem('hasSeenTutorial', 'true');
+    }
+
+    // Called when tutorial is completed
+    onTutorialCompleted() {
+        console.log('[App] Tutorial completed, going to main menu...');
+        this.showScreen('main-menu');
+        localStorage.setItem('hasSeenTutorial', 'true');
+    }
+
+    // Server connection and startup flow
+    startupConnect() {
+        console.log('[App] Starting server connection process...');
+
+        const serverUrl = this.el.startupServer?.value?.trim();
+        const lmServerUrl = this.el.startupLmserver?.value?.trim();
+        const nickname = this.el.startupNickname?.value?.trim();
+        const forceLm = this.el.startupForceLm?.checked;
+
+        // Validate inputs
+        if (!serverUrl) {
+            this.showNotification('ゲームサーバーのURLを入力してください', 'error');
+            return;
+        }
+
+        if (!nickname) {
+            this.showNotification('ニックネームを入力してください', 'error');
+            return;
+        }
+
+        // Validate URLs
+        try {
+            new URL(serverUrl);
+            if (lmServerUrl) {
+                new URL(lmServerUrl);
+            }
+        } catch (e) {
+            this.showNotification('有効なURLを入力してください', 'error');
+            return;
+        }
+
+        // Save settings
+        localStorage.setItem('gameServerUrl', serverUrl);
+        if (lmServerUrl) {
+            localStorage.setItem('lmServerUrl', lmServerUrl);
+        }
+        localStorage.setItem('nickname', nickname);
+
+        // Update game manager properties
+        this.gameServerUrl = serverUrl;
+        this.lmServerUrl = lmServerUrl || '';
+        this.nickname = nickname;
+
+        // Update connection status
+        if (this.el.connectionStatus) {
+            this.el.connectionStatus.textContent = '接続中...';
+        }
+
+        // Disable connect button during connection
+        if (this.el.connectServerBtn) {
+            this.el.connectServerBtn.disabled = true;
+            this.el.connectServerBtn.textContent = '接続中...';
+        }
+
+        // Test server connection
+        this.testServerConnection().then(success => {
+            if (success) {
+                console.log('[App] Server connection successful');
+                this.showNotification('サーバーに接続しました！', 'success');
+
+                // Proceed to next step in the flow
+                this.onServerConnected();
+            } else {
+                console.error('[App] Server connection failed');
+                this.showNotification('サーバー接続に失敗しました', 'error');
+
+                // Re-enable connect button
+                if (this.el.connectServerBtn) {
+                    this.el.connectServerBtn.disabled = false;
+                    this.el.connectServerBtn.textContent = '接続して開始';
+                }
+
+                if (this.el.connectionStatus) {
+                    this.el.connectionStatus.textContent = '接続失敗';
+                }
+            }
+        }).catch(error => {
+            console.error('[App] Connection test error:', error);
+            this.showNotification('接続テスト中にエラーが発生しました', 'error');
+
+            // Re-enable connect button
+            if (this.el.connectServerBtn) {
+                this.el.connectServerBtn.disabled = false;
+                this.el.connectServerBtn.textContent = '接続して開始';
+            }
+
+            if (this.el.connectionStatus) {
+                this.el.connectionStatus.textContent = 'エラー';
+            }
+        });
+    }
+
+    async testServerConnection() {
+        try {
+            // Test game server connection
+            const gameServerResponse = await fetch(`${this.gameServerUrl}/health`, {
+                method: 'GET',
+                signal: AbortSignal.timeout(5000)
+            });
+
+            if (!gameServerResponse.ok) {
+                console.warn('[App] Game server health check failed');
+                return false;
+            }
+
+            // Test LM Studio connection if provided and not forced to skip
+            if (this.lmServerUrl && !this.el.startupForceLm?.checked) {
+                try {
+                    const lmResponse = await fetch(`${this.lmServerUrl}/health`, {
+                        method: 'GET',
+                        signal: AbortSignal.timeout(5000)
+                    });
+
+                    if (!lmResponse.ok) {
+                        console.warn('[App] LM Studio health check failed, but continuing');
+                    }
+                } catch (lmError) {
+                    console.warn('[App] LM Studio connection failed, but continuing:', lmError);
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error('[App] Server connection test failed:', error);
+            return false;
+        }
+    }
+
+    // Bind tutorial buttons safely
+    bindTutorialButtons() {
+        console.log('[Tutorial] Binding tutorial buttons...');
+
+        // Remove existing event listeners first to prevent duplicates
+        const yes = document.getElementById('tutorial-yes-btn');
+        const no = document.getElementById('tutorial-no-btn');
+        const prev = document.getElementById('tutorial-prev-btn');
+        const next = document.getElementById('tutorial-next-btn');
+        const skip = document.getElementById('tutorial-skip-btn');
+
+        console.log('[Tutorial] Found elements:', {
+            yes: !!yes,
+            no: !!no,
+            prev: !!prev,
+            next: !!next,
+            skip: !!skip
+        });
+
+        // Check if skip button should be shown
+        if (skip) {
+            const shouldShow = this.checkIfDevelopmentEnvironment();
+            skip.style.display = shouldShow ? 'inline-block' : 'none';
+            console.log('[Tutorial] Skip button', shouldShow ? 'enabled' : 'hidden',
+                       'for', shouldShow ? 'development' : 'production', 'environment');
+        }
+
+        // Bind event listeners
+        if (yes) {
+            // Remove existing listener
+            yes.removeEventListener('click', this._tutorialYesHandler);
+            // Create new handler
+            this._tutorialYesHandler = () => {
+                console.log('[Tutorial] Yes button clicked, starting tutorial flow');
+                this.startTutorialFlow();
+            };
+            yes.addEventListener('click', this._tutorialYesHandler);
+        } else {
+            console.error('[Tutorial] Yes button not found');
+        }
+
+        if (no) {
+            // Remove existing listener
+            no.removeEventListener('click', this._tutorialNoHandler);
+            // Create new handler
+            this._tutorialNoHandler = () => {
+                console.log('[Tutorial] No button clicked, skipping tutorial');
+                this.skipTutorialFlow();
+            };
+            no.addEventListener('click', this._tutorialNoHandler);
+        } else {
+            console.error('[Tutorial] No button not found');
+        }
+
+        if (prev) {
+            prev.removeEventListener('click', this._tutorialPrevHandler);
+            this._tutorialPrevHandler = () => this.previousTutorialStep();
+            prev.addEventListener('click', this._tutorialPrevHandler);
+        }
+
+        if (next) {
+            next.removeEventListener('click', this._tutorialNextHandler);
+            this._tutorialNextHandler = () => this.nextTutorialStep();
+            next.addEventListener('click', this._tutorialNextHandler);
+        }
+
+        if (skip) {
+            skip.removeEventListener('click', this._tutorialSkipHandler);
+            this._tutorialSkipHandler = () => this.endTutorial();
+            skip.addEventListener('click', this._tutorialSkipHandler);
         }
     }
 
@@ -371,35 +670,47 @@ class GameManager {
         // Pass system event listener
         const passBtnNew = document.getElementById('pass-btn');
         if (passBtnNew) passBtnNew.addEventListener('click', () => this.usePass());
+    }
 
-        // Tutorial event listeners: bind safely (retry if elements not yet present)
-        const bindTutorialButtons = () => {
-            const yes = document.getElementById('tutorial-yes-btn');
-            const no = document.getElementById('tutorial-no-btn');
-            const prev = document.getElementById('tutorial-prev-btn');
-            const next = document.getElementById('tutorial-next-btn');
-            const skip = document.getElementById('tutorial-skip-btn');
-            if (yes) yes.addEventListener('click', () => this.startTutorial());
-            if (no) no.addEventListener('click', () => this.closeTutorialSelect());
-            if (prev) prev.addEventListener('click', () => this.previousTutorialStep());
-            if (next) next.addEventListener('click', () => this.nextTutorialStep());
-            if (skip) skip.addEventListener('click', () => this.endTutorial());
-            // if not all found, retry shortly (max 5 attempts)
-            return !!(yes && no && prev && next && skip);
-        };
-        let tutorialBindAttempts = 0;
-        const tryBindTutorial = () => {
-            tutorialBindAttempts++;
-            const ok = bindTutorialButtons();
-            if (!ok && tutorialBindAttempts < 6) {
-                setTimeout(tryBindTutorial, 200);
-            }
-        };
-        tryBindTutorial();
+    checkIfDevelopmentEnvironment() {
+        // Check various development indicators
+        const hostname = window.location.hostname;
+        const protocol = window.location.protocol;
+        const searchParams = new URLSearchParams(window.location.search);
 
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => this.switchTab(btn));
-        });
+        // Local development
+        if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
+            return true;
+        }
+
+        // Development protocol (file://)
+        if (protocol === 'file:') {
+            return true;
+        }
+
+        // Development query parameter
+        if (searchParams.has('dev') || searchParams.has('debug') || searchParams.has('tutorial')) {
+            return true;
+        }
+
+        // Check for development tools
+        if (window.__DEV__ || window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+            return true;
+        }
+
+        // Check user agent for development indicators
+        const userAgent = navigator.userAgent.toLowerCase();
+        if (userAgent.includes('electron') || userAgent.includes('nwjs')) {
+            return true;
+        }
+
+        // Check for common development ports
+        const port = window.location.port;
+        if (port === '3000' || port === '8080' || port === '8000' || port === '5000') {
+            return true;
+        }
+
+        return false;
     }
 
     initUI() {
@@ -412,6 +723,11 @@ class GameManager {
         if (this.lmServerUrl && this.el.startupLmserver) this.el.startupLmserver.value = this.lmServerUrl;
         if (this.nickname && this.el.startupNickname) this.el.startupNickname.value = this.nickname;
         this.updateRuleDescription();
+
+        // Tab switching functionality
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.switchTab(btn));
+        });
     }
 
     loadSettings() {
@@ -561,11 +877,25 @@ class GameManager {
             this.closeModal('startup-overlay');
 
             const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
+            console.log('[Startup] hasSeenTutorial:', hasSeenTutorial);
+
             if (!hasSeenTutorial) {
+                console.log('[Startup] Showing tutorial select modal');
                 setTimeout(() => {
                     const modal = document.getElementById('tutorial-select-modal');
-                    if (modal) modal.classList.add('active');
+                    if (modal) {
+                        modal.classList.add('active');
+                        console.log('[Startup] Tutorial select modal activated');
+                    } else {
+                        console.error('[Startup] Tutorial select modal not found');
+                    }
                 }, 120);
+            } else {
+                console.log('[Startup] Tutorial already seen, showing main menu');
+                // Ensure main menu is visible
+                setTimeout(() => {
+                    this.showScreen('main-menu');
+                }, 100);
             }
             
             this.startHeartbeat();
@@ -1036,6 +1366,21 @@ class GameManager {
         this.showScreen('main-menu');
         this.closeAllModals();
         
+        // Cancel matchmaking if active
+        if (this.isMatchmaking) {
+            console.log('[Menu] Cancelling active matchmaking');
+            this.isMatchmaking = false;
+            this.matchmakingStatus = {};
+            this.stopLobbyPolling();
+            this.hidePersistentStatusUI();
+            this.disableMatchButtons(false);
+            try {
+                this.clearPendingMatch();
+            } catch (e) {
+                console.warn('[Menu] Failed to clear pending match:', e);
+            }
+        }
+        
         // Reset UI elements
         this.setAIStatus('待機中', '#808080');
         if (this.el.submitQuestionBtn) this.el.submitQuestionBtn.disabled = false;
@@ -1148,74 +1493,140 @@ class GameManager {
     }
 
     async cancelMatchmaking() {
-        if (!this.isMatchmaking) return this.showNotification('現在マッチング中ではありません', 'warning');
+        if (!this.isMatchmaking) {
+            console.log('[Cancel] Not currently matchmaking');
+            return this.showNotification('現在マッチング中ではありません', 'warning');
+        }
+
+        console.log('[Cancel] Cancelling matchmaking...');
         const cancelBtn = document.getElementById('cancel-matchmaking-btn');
-        if (cancelBtn) { cancelBtn.disabled = true; cancelBtn.textContent = 'キャンセル中...'; }
+        if (cancelBtn) {
+            cancelBtn.disabled = true;
+            cancelBtn.textContent = 'キャンセル中...';
+        }
+
         try {
-            await fetch(`${this.gameServerUrl}/lobby/leave`, {
+            // Try to notify server about leaving
+            const response = await fetch(`${this.gameServerUrl}/lobby/leave`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ player_id: this.playerId })
             });
+
+            if (response.ok) {
+                console.log('[Cancel] Successfully left lobby');
+            } else {
+                console.warn('[Cancel] Server responded with error:', response.status);
+            }
         } catch (e) {
-            console.error('Failed to leave lobby:', e);
-            this.showNotification('キャンセルに失敗しました。ネットワークを確認してください。', 'error');
+            console.error('[Cancel] Failed to leave lobby:', e);
+            // Don't show error notification for network issues during cancel
+            // as the local state will still be cleaned up
         }
+
+        // Always clean up local state regardless of server response
+        console.log('[Cancel] Cleaning up local matchmaking state');
         this.isMatchmaking = false;
+        this.matchmakingStatus = {};
         this.stopLobbyPolling();
         this.hidePersistentStatusUI();
         this.disableMatchButtons(false);
-    try { this.clearPendingMatch(); } catch(e){}
+
+        try {
+            this.clearPendingMatch();
+        } catch (e) {
+            console.warn('[Cancel] Failed to clear pending match:', e);
+        }
+
+        this.showNotification('マッチングをキャンセルしました', 'info');
+        console.log('[Cancel] Matchmaking cancelled successfully');
     }
 
     startLobbyPolling(params) {
         if (this.lobbyPollInterval) clearInterval(this.lobbyPollInterval);
-        
-        const poll = async (retryCount = 0) => {
-            if (!this.isMatchmaking) return this.stopLobbyPolling();
+
+        let consecutiveErrors = 0;
+        const maxConsecutiveErrors = 3;
+        let pollCount = 0;
+
+        const poll = async () => {
+            if (!this.isMatchmaking) {
+                console.log('[Lobby] Stopping polling - matchmaking cancelled');
+                return this.stopLobbyPolling();
+            }
+
+            pollCount++;
+            console.log(`[Lobby] Poll attempt #${pollCount}`);
+
             try {
                 const endpoint = params.roomId ? `${this.gameServerUrl}/room/join` : `${this.gameServerUrl}/lobby/join`;
-                const payload = params.roomId 
+                const payload = params.roomId
                     ? { player_id: this.playerId, room_id: params.roomId, password: params.password || '' }
                     : { player_id: this.playerId, rule: params.rule };
-                
-                const res = await fetch(endpoint, { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
+
+                console.log('[Lobby] Sending request to:', endpoint, 'with payload:', payload);
+
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(payload)
                 });
-                const data = await res.json();
 
-                if (data.error) throw new Error(data.error);
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                }
+
+                const data = await res.json();
+                console.log('[Lobby] Received response:', data);
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Reset error counter on successful response
+                consecutiveErrors = 0;
 
                 if (data.game_id) {
+                    console.log('[Lobby] Match found! Game ID:', data.game_id);
                     this.handleMatchFound(data);
                 } else if (data.waiting) {
+                    console.log('[Lobby] Still waiting, updating status');
                     this.matchmakingStatus = { ...this.matchmakingStatus, ...data };
                     this.updatePersistentStatusUI();
+                } else {
+                    console.warn('[Lobby] Unexpected response format:', data);
                 }
+
             } catch (e) {
+                consecutiveErrors++;
                 const msg = e && e.message ? e.message : String(e);
+                console.error(`[Lobby] Error (attempt ${consecutiveErrors}/${maxConsecutiveErrors}):`, msg);
+
                 this.showNotification(`ロビー接続エラー: ${msg}`, 'error');
+
                 if (this.el.lobbyStatus) {
-                    // give user a friendly hint if it's a network/CORS issue
                     if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('CORS')) {
                         this.el.lobbyStatus.textContent = 'サーバーに接続できません（CORS設定またはサーバーが停止している可能性があります）。';
                     } else {
                         this.el.lobbyStatus.textContent = `ロビーエラー: ${msg}`;
                     }
                 }
-                if (retryCount < 2) {
-                    setTimeout(() => poll(retryCount + 1), 2000 * (retryCount + 1)); // retry with backoff
-                } else {
+
+                if (consecutiveErrors >= maxConsecutiveErrors) {
+                    console.error('[Lobby] Too many consecutive errors, stopping polling');
                     this.stopLobbyPolling();
                     this.hidePersistentStatusUI();
+                    this.isMatchmaking = false;
+                    this.showNotification('マッチングを中止しました。サーバー接続に問題があります。', 'error');
                 }
             }
         };
 
+        // Initial poll
         poll();
-        this.lobbyPollInterval = setInterval(poll, 4000); // increased to 4s to reduce load
+
+        // Set up interval polling with shorter interval for better responsiveness
+        this.lobbyPollInterval = setInterval(poll, 3000); // 3 seconds for better responsiveness
     }
 
     stopLobbyPolling() {
@@ -1237,20 +1648,46 @@ class GameManager {
     restorePendingMatch() {
         try {
             const raw = localStorage.getItem('pendingMatch');
-            if (!raw) return;
+            if (!raw) {
+                console.log('[Restore] No pending match found in localStorage');
+                return;
+            }
+
             const obj = JSON.parse(raw);
-            if (!obj) return;
-            // Only attempt restore if we have player and server info
-            if (!this.playerId || !this.gameServerUrl) return;
-            // show UI and resume polling to reconcile with server
-            this.isMatchmaking = true;
-            this.matchmakingStatus = { ...(this.matchmakingStatus || {}), ...obj };
-            this.disableMatchButtons(true);
-            this.showPersistentStatusUI();
-            // resume polling with the saved params
-            this.startLobbyPolling(obj);
+            if (!obj) {
+                console.log('[Restore] Invalid pending match data');
+                return;
+            }
+
+            console.log('[Restore] Found pending match:', obj);
+
+            // Wait for player ID and server URL to be available
+            const waitForConnection = () => {
+                if (this.playerId && this.gameServerUrl) {
+                    console.log('[Restore] Connection ready, resuming matchmaking');
+                    this.isMatchmaking = true;
+                    this.matchmakingStatus = { ...(this.matchmakingStatus || {}), ...obj };
+                    this.disableMatchButtons(true);
+                    this.showPersistentStatusUI();
+                    this.showNotification('マッチングを再開しました', 'info');
+                    this.startLobbyPolling(obj);
+                } else {
+                    console.log('[Restore] Waiting for connection...');
+                    setTimeout(waitForConnection, 1000);
+                }
+            };
+
+            // Start waiting immediately
+            waitForConnection();
+
         } catch (e) {
-            console.warn('restorePendingMatch failed', e);
+            console.warn('[Restore] restorePendingMatch failed:', e);
+            // Clean up corrupted data
+            try {
+                localStorage.removeItem('pendingMatch');
+            } catch (cleanupError) {
+                console.warn('[Restore] Failed to clean up corrupted data:', cleanupError);
+            }
         }
     }
 
@@ -1277,21 +1714,43 @@ class GameManager {
             if (this.el.persistentStatusContainer) this.el.persistentStatusContainer.style.display = 'none';
             return;
         }
+
         const { type, rule, current_players, max_players, position, total_waiting } = this.matchmakingStatus;
         let statusText = '';
+
         if (type === 'random') {
-            statusText = `マッチング中 (${this.getModeName(rule)}) — 順位: ${position || '?'} / 待機人数: ${total_waiting || '?'} `;
+            const modeName = this.getModeName(rule) || 'ランダム';
+            const queuePosition = position ? `${position}位` : '確認中...';
+            const waitingCount = total_waiting ? `${total_waiting}人待機中` : '待機人数確認中...';
+            statusText = `マッチング中 (${modeName}) — ${queuePosition} / ${waitingCount}`;
         } else if (type === 'room') {
-            statusText = `ルーム待機中: ${current_players || '?'} / ${max_players || '?'} `;
+            const current = current_players || 0;
+            const max = max_players || '?';
+            statusText = `ルーム待機中: ${current} / ${max} 人`;
+        } else {
+            statusText = 'マッチング準備中...';
         }
-        if (this.el.matchmakingStatus) this.el.matchmakingStatus.textContent = statusText;
+
+        if (this.el.matchmakingStatus) {
+            this.el.matchmakingStatus.textContent = statusText;
+        }
+
         // update cancel button label when player is first in queue
         const cancel = document.getElementById('cancel-matchmaking-btn');
         if (cancel) {
-            if (position === 1) cancel.textContent = 'キャンセル（あなたが先頭）';
-            else cancel.textContent = 'キャンセル';
+            if (position === 1) {
+                cancel.textContent = 'キャンセル（あなたが先頭）';
+            } else {
+                cancel.textContent = 'キャンセル';
+            }
         }
-        // update waiting badge
+
+        // Show persistent status container
+        if (this.el.persistentStatusContainer) {
+            this.el.persistentStatusContainer.style.display = 'flex';
+        }
+
+        // Update waiting badge
         const badge = document.querySelector('#persistent-status-container .waiting-badge');
         if (badge) badge.textContent = String(total_waiting || '?');
     }
@@ -2239,23 +2698,377 @@ class GameManager {
 
     // Tutorial system methods
     startTutorial() {
+        console.log('[Tutorial] Starting tutorial...');
         this.tutorialStep = 0;
-        // Steps updated to match left=player, right=AI layout and include demo flags
+        // Comprehensive tutorial with detailed explanations, visual elements, and interactive demos
         this.tutorialSteps = [
-            { title: "Rush Maximizerへようこそ！", description: "これはAIと対戦する質問ゲームです。AIよりも早く正解を見つけましょう！", highlight: null },
-            { title: "ターゲットの確認", description: "画面上部に表示されるTARGETを確認してください。これが目標の答えです。", highlight: ".target-display" },
-            { title: "質問の入力 (デモ)", description: "左側の入力欄に質問を入力する様子をデモします。Ctrl+Enterで送信できます。", highlight: ".player-textarea", demo: 'input', demoText: 'このキャラクターの名前は何ですか？' },
-            { title: "AIの回答 (デモ)", description: "右側にAIの応答が表示される様子をデモします。実際のプレイではここで判定が行われます。", highlight: "#ai-output", demo: 'ai', demoText: 'それは「江戸城無血開城」として知られています。説明: ...' },
-            { title: "プログレス表示", description: "右上の円形ゲージで現在の進行状況を確認できます。", highlight: ".progress-ring" },
-            { title: "チュートリアル完了", description: "基本操作は以上です。さあ、AIとの知的バトルを楽しみましょう！", highlight: null }
+            {
+                title: "🎮 Rush Maximizerへようこそ！",
+                description: `
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div style="font-size: 3rem; margin: 20px 0;">🎯🤖⚡</div>
+                        <h3 style="color: #00d4ff; margin: 10px 0;">AIと対戦する高速質問ゲーム</h3>
+                    </div>
+
+                    <div style="background: rgba(0, 212, 255, 0.1); padding: 15px; border-radius: 10px; margin: 15px 0;">
+                        <strong>🎯 ゲームの目的:</strong><br>
+                        AIよりも早く、少ない質問でターゲットとなる答えを特定する
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
+                        <div style="background: rgba(0, 255, 136, 0.1); padding: 10px; border-radius: 8px;">
+                            <strong>✅ 勝利条件:</strong><br>
+                            • 正確な答えを導き出す<br>
+                            • 時間内に回答する<br>
+                            • 効率的な質問をする
+                        </div>
+                        <div style="background: rgba(255, 107, 53, 0.1); padding: 10px; border-radius: 8px;">
+                            <strong>❌ 敗北条件:</strong><br>
+                            • 時間切れになる<br>
+                            • 誤った結論を出す<br>
+                            • 質問が非効率的
+                        </div>
+                    </div>
+                `,
+                highlight: null,
+                icon: "🎮",
+                duration: 8000
+            },
+            {
+                title: "🎯 ターゲットの確認方法",
+                description: `
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <strong>📍 ターゲット表示位置:</strong> 画面上部の青い枠内<br>
+                        <strong>📝 内容:</strong> あなたが特定すべき答え<br>
+                        <strong>🔍 特徴:</strong> 長文の場合は自動でスクロール可能
+                    </div>
+
+                    <div style="border: 2px solid #00d4ff; border-radius: 10px; padding: 15px; margin: 15px 0; background: rgba(0, 212, 255, 0.05);">
+                        <div style="text-align: center; font-weight: bold; margin-bottom: 10px;">サンプルターゲット:</div>
+                        <div style="background: rgba(0, 212, 255, 0.1); padding: 10px; border-radius: 5px; font-family: monospace;">
+                            慶応4年（1868年）に起こった、日本史上最大級の内戦
+                        </div>
+                    </div>
+
+                    <div style="color: #ffaa00; font-weight: bold;">
+                        💡 ヒント: ターゲットをよく読み、質問の方向性を決めることが重要です！
+                    </div>
+                `,
+                highlight: ".target-display",
+                icon: "🎯",
+                demo: 'target',
+                duration: 6000
+            },
+            {
+                title: "📝 質問の入力テクニック",
+                description: `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div style="background: rgba(0, 255, 136, 0.1); padding: 12px; border-radius: 8px;">
+                            <strong>✅ 良い質問例:</strong><br>
+                            • 「これは何年に起こりましたか？」<br>
+                            • 「どこの出来事ですか？」<br>
+                            • 「誰が関与していますか？」
+                        </div>
+                        <div style="background: rgba(255, 71, 87, 0.1); padding: 12px; border-radius: 8px;">
+                            <strong>❌ 避ける質問:</strong><br>
+                            • 「はいですか？いいえですか？」<br>
+                            • 「これのことですか？」<br>
+                            • 「わかりません」
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; margin: 15px 0;">
+                        <strong>⌨️ 便利なショートカット:</strong><br>
+                        • <kbd>Ctrl</kbd> + <kbd>Enter</kbd>: 質問を送信<br>
+                        • <kbd>Tab</kbd>: 次の入力欄に移動<br>
+                        • <kbd>音声ボタン</kbd>: 音声入力開始
+                    </div>
+
+                    <div style="border: 2px solid #00d4ff; border-radius: 10px; padding: 15px; margin: 15px 0;">
+                        <strong>🎯 効率的な質問のポイント:</strong><br>
+                        1. ターゲットのカテゴリを特定する<br>
+                        2. 時系列・場所・人物を絞り込む<br>
+                        3. 可能性を2分割する質問をする
+                    </div>
+                `,
+                highlight: ".player-textarea",
+                icon: "📝",
+                demo: 'input',
+                demoText: 'この出来事は江戸時代に起こりましたか？',
+                duration: 10000
+            },
+            {
+                title: "🤖 AI回答の分析方法",
+                description: `
+                    <div style="background: rgba(0, 212, 255, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <strong>🔍 AI回答の読み方:</strong><br>
+                        • 事実に基づいた正確な情報<br>
+                        • 文脈を考慮した詳細な説明<br>
+                        • 関連する背景情報も含む
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+                        <div style="background: rgba(0, 255, 136, 0.1); padding: 12px; border-radius: 8px;">
+                            <strong>📊 回答の活用:</strong><br>
+                            • 新しい手がかりを得る<br>
+                            • 誤った仮説を排除<br>
+                            • 次の質問の方向性を決める
+                        </div>
+                        <div style="background: rgba(255, 170, 0, 0.1); padding: 12px; border-radius: 8px;">
+                            <strong>⚠️ 注意点:</strong><br>
+                            • 回答中はタイマーが停止<br>
+                            • 回答は即座に分析<br>
+                            • 時間を無駄にしない
+                        </div>
+                    </div>
+
+                    <div style="border: 2px solid #ffaa00; border-radius: 10px; padding: 15px; margin: 15px 0; background: rgba(255, 170, 0, 0.05);">
+                        <strong>🎯 実践テクニック:</strong><br>
+                        AIの回答からキーワードを抽出し、次の質問の軸にする
+                    </div>
+                `,
+                highlight: "#ai-output",
+                icon: "🤖",
+                demo: 'ai',
+                demoText: 'これは戊辰戦争（1868-1869年）のことです。江戸幕府と新政府軍の間で起こった内戦で、明治維新の重要な出来事です。',
+                duration: 8000
+            },
+            {
+                title: "⏱️ タイマー管理の極意",
+                description: `
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <strong>⏱️ 制限時間:</strong> 各質問に25秒<br>
+                        <strong>🎨 色分け:</strong> 青(通常) → 赤(5秒以内)<br>
+                        <strong>⏸️ 一時停止:</strong> AI回答中は自動停止
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 15px 0;">
+                        <div style="background: rgba(0, 212, 255, 0.1); padding: 10px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 1.5rem;">🔵</div>
+                            <strong>通常</strong><br>
+                            落ち着いて質問
+                        </div>
+                        <div style="background: rgba(255, 170, 0, 0.1); padding: 10px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 1.5rem;">🟡</div>
+                            <strong>注意</strong><br>
+                            時間意識
+                        </div>
+                        <div style="background: rgba(255, 71, 87, 0.1); padding: 10px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 1.5rem;">🔴</div>
+                            <strong>緊急</strong><br>
+                            即判断
+                        </div>
+                    </div>
+
+                    <div style="border: 2px solid #00d4ff; border-radius: 10px; padding: 15px; margin: 15px 0;">
+                        <strong>⚡ 時間管理のコツ:</strong><br>
+                        • 最初の10秒で質問を考える<br>
+                        • 残り10秒で結論をまとめる<br>
+                        • 5秒以内は直感で判断
+                    </div>
+                `,
+                highlight: ".timer-section",
+                icon: "⏱️",
+                duration: 7000
+            },
+            {
+                title: "📈 スコアシステムの理解",
+                description: `
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <strong>🏆 スコア計算式:</strong><br>
+                        基礎点(100) + 時間ボーナス + 連続正解ボーナス
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+                        <div style="background: rgba(0, 255, 136, 0.1); padding: 12px; border-radius: 8px;">
+                            <strong>⚡ 時間ボーナス:</strong><br>
+                            • 20秒以内: +50点<br>
+                            • 15秒以内: +30点<br>
+                            • 10秒以内: +20点<br>
+                            • 5秒以内: +10点
+                        </div>
+                        <div style="background: rgba(255, 107, 53, 0.1); padding: 12px; border-radius: 8px;">
+                            <strong>🔥 連続ボーナス:</strong><br>
+                            • 3連続: +25点<br>
+                            • 5連続: +50点<br>
+                            • 10連続: +100点
+                        </div>
+                    </div>
+
+                    <div style="border: 2px solid #ffaa00; border-radius: 10px; padding: 15px; margin: 15px 0; background: rgba(255, 170, 0, 0.05);">
+                        <strong>🎯 スコアアップの秘訣:</strong><br>
+                        • 素早く正確に答える<br>
+                        • 連続正解を狙う<br>
+                        • 効率的な質問を心がける
+                    </div>
+
+                    <div style="color: #00ff88; font-weight: bold; text-align: center; margin-top: 15px;">
+                        💪 高スコアを目指して頑張りましょう！
+                    </div>
+                `,
+                highlight: ".progress-ring",
+                icon: "📈",
+                duration: 8000
+            },
+            {
+                title: "🎵 サウンドと環境設定",
+                description: `
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <strong>🎵 音声設定の重要性:</strong><br>
+                        BGMと効果音で集中力を高め、ゲーム体験を向上させる
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+                        <div style="background: rgba(0, 255, 136, 0.1); padding: 12px; border-radius: 8px;">
+                            <strong>🎼 BGM設定:</strong><br>
+                            • 集中できる曲を選択<br>
+                            • 適切な音量に調整<br>
+                            • 好みに合わせて変更
+                        </div>
+                        <div style="background: rgba(255, 107, 53, 0.1); padding: 12px; border-radius: 8px;">
+                            <strong>🔊 効果音:</strong><br>
+                            • 回答時の通知音<br>
+                            • 時間切れの警告音<br>
+                            • スコア獲得時の効果音
+                        </div>
+                    </div>
+
+                    <div style="border: 2px solid #00d4ff; border-radius: 10px; padding: 15px; margin: 15px 0;">
+                        <strong>⚙️ 設定のヒント:</strong><br>
+                        • 初めての方はBGMを小さめに<br>
+                        • 効果音は重要な通知として活用<br>
+                        • 環境に合わせて調整可能
+                    </div>
+                `,
+                highlight: ".sound-controls",
+                icon: "🎵",
+                duration: 6000
+            },
+            {
+                title: "🎨 テーマとレイアウトのカスタマイズ",
+                description: `
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <strong>🎨 テーマ選択の効果:</strong><br>
+                        見た目をカスタマイズして、より快適なゲーム環境を作る
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 15px 0;">
+                        <div style="background: linear-gradient(135deg, #f8faff, #fff0f5, #f0fff8, #fff8f0, #f5f0ff, #f0f8ff, #fff5f8, #f8fff0, #fafff8); padding: 10px; border-radius: 8px; text-align: center; border: 2px solid #00d4ff;">
+                            <strong>💎 Glassmorphism</strong><br>
+                            <small>モダンで美しい</small>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); color: white; padding: 10px; border-radius: 8px; text-align: center;">
+                            <strong>🎮 Gaming</strong><br>
+                            <small>ゲーミングスタイル</small>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #ffffff, #f8f9fa, #e9ecef); padding: 10px; border-radius: 8px; text-align: center;">
+                            <strong>☀️ Light</strong><br>
+                            <small>明るい配色</small>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #0a0a0a, #1a0a1e, #2a0a2e); color: #ff0080; padding: 10px; border-radius: 8px; text-align: center;">
+                            <strong>⚡ Cyberpunk</strong><br>
+                            <small>未来的デザイン</small>
+                        </div>
+                    </div>
+
+                    <div style="border: 2px solid #ffaa00; border-radius: 10px; padding: 15px; margin: 15px 0; background: rgba(255, 170, 0, 0.05);">
+                        <strong>📱 レイアウト調整:</strong><br>
+                        • 画面サイズに合わせて自動調整<br>
+                        • モバイルデバイス対応<br>
+                        • 読みやすいフォントサイズ
+                    </div>
+                `,
+                highlight: ".theme-selector",
+                icon: "🎨",
+                duration: 7000
+            },
+            {
+                title: "🏆 ゲームモードの選択",
+                description: `
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <strong>🎯 目的別モード選択:</strong><br>
+                        自分のレベルや目的に合わせて最適なモードを選ぼう
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+                        <div style="background: rgba(0, 255, 136, 0.1); padding: 12px; border-radius: 8px;">
+                            <strong>🎮 ソロプレイ</strong><br>
+                            <small>• 1人で練習<br>• 時間無制限<br>• じっくり考えられる</small>
+                        </div>
+                        <div style="background: rgba(255, 107, 53, 0.1); padding: 12px; border-radius: 8px;">
+                            <strong>⚡ RTAモード</strong><br>
+                            <small>• 時間制限付き<br>• 速さを競う<br>• 上級者向け</small>
+                        </div>
+                        <div style="background: rgba(0, 212, 255, 0.1); padding: 12px; border-radius: 8px;">
+                            <strong>🎯 ランダムマッチ</strong><br>
+                            <small>• 誰かと対戦<br>• 実戦練習<br>• ランキング対応</small>
+                        </div>
+                        <div style="background: rgba(255, 71, 87, 0.1); padding: 12px; border-radius: 8px;">
+                            <strong>👥 カスタムルーム</strong><br>
+                            <small>• 友達と遊ぶ<br>• ルールカスタム<br>• プライベート</small>
+                        </div>
+                    </div>
+
+                    <div style="border: 2px solid #00d4ff; border-radius: 10px; padding: 15px; margin: 15px 0;">
+                        <strong>🚀 始め方のオススメ:</strong><br>
+                        1. ソロモードで基本を練習<br>
+                        2. RTAモードで速度を養う<br>
+                        3. ランダムマッチで実戦経験
+                    </div>
+                `,
+                highlight: ".mode-cards",
+                icon: "🏆",
+                duration: 8000
+            },
+            {
+                title: "🎉 チュートリアル完了！準備は整いました",
+                description: `
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div style="font-size: 3rem; margin: 20px 0;">🎊🎉🏆</div>
+                        <h3 style="color: #00ff88; margin: 10px 0;">おめでとうございます！</h3>
+                        <p style="font-size: 1.1rem;">Rush Maximizerの基本操作をマスターしました</p>
+                    </div>
+
+                    <div style="background: rgba(0, 255, 136, 0.1); padding: 15px; border-radius: 10px; margin: 15px 0;">
+                        <strong>🎯 これからの目標:</strong><br>
+                        • AIよりも賢く、速く答える<br>
+                        • 効率的な質問テクニックを磨く<br>
+                        • 高スコアを狙って楽しむ
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+                        <div style="background: rgba(0, 212, 255, 0.1); padding: 12px; border-radius: 8px; text-align: center;">
+                            <strong>📚 学習のコツ</strong><br>
+                            <small>• 様々な分野の問題に挑戦<br>• 質問の質を高める<br>• 時間管理を意識する</small>
+                        </div>
+                        <div style="background: rgba(255, 107, 53, 0.1); padding: 12px; border-radius: 8px; text-align: center;">
+                            <strong>🎮 楽しみ方</strong><br>
+                            <small>• 友達とスコアを競う<br>• 新しいテーマに挑戦<br>• 毎日コツコツ上達</small>
+                        </div>
+                    </div>
+
+                    <div style="border: 2px solid #ffaa00; border-radius: 10px; padding: 15px; margin: 15px 0; background: rgba(255, 170, 0, 0.05); text-align: center;">
+                        <strong>💪 さあ、ゲームを始めましょう！</strong><br>
+                        <small>「ソロプレイ」から始めて、徐々にレベルアップしていきましょう</small>
+                    </div>
+
+                    <div style="color: #00d4ff; font-weight: bold; text-align: center; margin-top: 20px;">
+                        🚀 あなたの冒険が始まります！
+                    </div>
+                `,
+                highlight: null,
+                icon: "🎉",
+                duration: 10000
+            }
         ];
-        
+
         this.closeModal('tutorial-select-modal');
         this.showTutorialStep();
         localStorage.setItem('hasSeenTutorial', 'true');
     }
 
     showTutorialStep() {
+        console.log('[Tutorial] Showing tutorial step:', this.tutorialStep);
         const overlay = this.el.tutorialOverlay;
         const titleEl = document.getElementById('tutorial-title');
         const descEl = document.getElementById('tutorial-description');
@@ -2263,22 +3076,410 @@ class GameManager {
         const prevBtn = document.getElementById('tutorial-prev-btn');
         const nextBtn = document.getElementById('tutorial-next-btn');
         const skipBtn = document.getElementById('tutorial-skip-btn');
-        
-        if (!overlay || !this.tutorialSteps) return;
-        
+
+        if (!overlay || !this.tutorialSteps) {
+            console.error('[Tutorial] Missing overlay or tutorialSteps:', { overlay: !!overlay, tutorialSteps: !!this.tutorialSteps });
+            return;
+        }
+
         const step = this.tutorialSteps[this.tutorialStep];
         if (!step) return this.endTutorial();
-        
+
         overlay.classList.add('active');
-        
-        if (titleEl) titleEl.textContent = step.title;
-        if (descEl) descEl.textContent = step.description;
-        if (counterEl) counterEl.textContent = `${this.tutorialStep + 1} / ${this.tutorialSteps.length}`;
-        
-        if (prevBtn) prevBtn.style.display = this.tutorialStep > 0 ? 'block' : 'none';
-        if (nextBtn) nextBtn.textContent = this.tutorialStep < this.tutorialSteps.length - 1 ? '次へ' : '完了';
-        
+
+        // Enhanced title with icon and animation
+        if (titleEl) {
+            titleEl.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="font-size: 2rem; animation: bounceIn 0.6s ease-out;">${step.icon || '📖'}</div>
+                    <div>
+                        <h2 style="margin: 0; color: #00d4ff; font-size: 1.4rem;">${step.title}</h2>
+                    </div>
+                </div>
+            `;
+            titleEl.style.animation = 'fadeInUp 0.5s ease-out';
+        }
+
+        // Enhanced description with rich formatting
+        if (descEl) {
+            descEl.innerHTML = step.description;
+            descEl.style.animation = 'fadeIn 0.7s ease-out 0.2s both';
+        }
+
+        // Enhanced counter with progress visualization
+        if (counterEl) {
+            const progress = ((this.tutorialStep + 1) / this.tutorialSteps.length) * 100;
+            const currentStep = this.tutorialStep + 1;
+            const totalSteps = this.tutorialSteps.length;
+
+            counterEl.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-weight: bold; color: #00d4ff;">ステップ ${currentStep} / ${totalSteps}</span>
+                        <span style="color: #888;">${Math.round(progress)}% 完了</span>
+                    </div>
+                    <div style="position: relative; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
+                        <div style="height: 100%; background: linear-gradient(90deg, #00d4ff, #0099cc, #00ff88); border-radius: 4px; width: ${progress}%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);"></div>
+                        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: shimmer 2s infinite;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #888;">
+                        <span>開始</span>
+                        <span>完了</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Enhanced navigation buttons
+        if (prevBtn) {
+            prevBtn.style.display = this.tutorialStep > 0 ? 'block' : 'none';
+            if (this.tutorialStep > 0) {
+                prevBtn.innerHTML = '◀ 戻る';
+                prevBtn.style.animation = 'slideInLeft 0.3s ease-out';
+            }
+        }
+
+        if (nextBtn) {
+            const isLastStep = this.tutorialStep >= this.tutorialSteps.length - 1;
+            nextBtn.innerHTML = isLastStep ? '🎉 ゲーム開始！' : '次へ ▶';
+            nextBtn.style.animation = 'slideInRight 0.3s ease-out';
+            nextBtn.style.background = isLastStep ? 'linear-gradient(135deg, #00ff88, #00cc66)' : 'linear-gradient(135deg, #00d4ff, #0099cc)';
+        }
+
+        // Highlight target element with enhanced animation
         this.highlightElement(step.highlight);
+
+        // Add step transition animation
+        overlay.style.animation = 'tutorialStepTransition 0.5s ease-out';
+
+        // Add keyboard navigation
+        this.setupTutorialKeyboardNavigation();
+
+        // Auto-advance for steps with duration
+        if (step.duration) {
+            this.clearTutorialTimeout();
+            this.tutorialTimeout = setTimeout(() => {
+                if (this.tutorialStep < this.tutorialSteps.length - 1) {
+                    this.nextTutorialStep();
+                }
+            }, step.duration);
+        }
+
+        // Add interactive demo if specified
+        this.showTutorialDemo(step);
+    }
+
+    clearTutorialTimeout() {
+        if (this.tutorialTimeout) {
+            clearTimeout(this.tutorialTimeout);
+            this.tutorialTimeout = null;
+        }
+    }
+
+    showTutorialDemo(step) {
+        // Clear previous demo
+        const existingDemo = document.querySelector('.tutorial-demo');
+        if (existingDemo) {
+            existingDemo.remove();
+        }
+
+        if (!step.demo) return;
+
+        const demoElement = document.createElement('div');
+        demoElement.className = 'tutorial-demo';
+        demoElement.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00d4ff;
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 10001;
+            max-width: 80vw;
+            animation: demoPopup 0.5s ease-out;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        `;
+
+        switch (step.demo) {
+            case 'input':
+                demoElement.innerHTML = `
+                    <div style="text-align: center; color: #00d4ff; margin-bottom: 15px;">
+                        <strong>📝 質問入力の例</strong>
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 10px; font-family: monospace;">
+                        ${step.demoText || 'この出来事は何年に起こりましたか？'}
+                    </div>
+                    <div style="text-align: center; margin-top: 15px; color: #888; font-size: 0.9rem;">
+                        Ctrl+Enterで送信できます
+                    </div>
+                `;
+                break;
+
+            case 'ai':
+                demoElement.innerHTML = `
+                    <div style="text-align: center; color: #00ff88; margin-bottom: 15px;">
+                        <strong>🤖 AI回答の例</strong>
+                    </div>
+                    <div style="background: rgba(0, 255, 136, 0.1); padding: 15px; border-radius: 10px; border-left: 4px solid #00ff88;">
+                        ${step.demoText || 'AIの回答がここに表示されます'}
+                    </div>
+                    <div style="text-align: center; margin-top: 15px; color: #888; font-size: 0.9rem;">
+                        回答から次の質問のヒントを得ましょう
+                    </div>
+                `;
+                break;
+
+            case 'target':
+                demoElement.innerHTML = `
+                    <div style="text-align: center; color: #ffaa00; margin-bottom: 15px;">
+                        <strong>🎯 ターゲットの例</strong>
+                    </div>
+                    <div style="background: rgba(255, 170, 0, 0.1); padding: 15px; border-radius: 10px; border: 2px solid #ffaa00; text-align: center;">
+                        <div style="font-weight: bold; margin-bottom: 10px;">TARGET ANSWER</div>
+                        慶応4年（1868年）に起こった、日本史上最大級の内戦
+                    </div>
+                    <div style="text-align: center; margin-top: 15px; color: #888; font-size: 0.9rem;">
+                        これを特定するのがあなたの目標です
+                    </div>
+                `;
+                break;
+        }
+
+        document.body.appendChild(demoElement);
+
+        // Auto-remove demo after 4 seconds
+        setTimeout(() => {
+            if (demoElement.parentNode) {
+                demoElement.style.animation = 'demoFadeOut 0.3s ease-out';
+                setTimeout(() => {
+                    if (demoElement.parentNode) {
+                        demoElement.remove();
+                    }
+                }, 300);
+            }
+        }, 4000);
+    }
+
+    setupTutorialKeyboardNavigation() {
+        // Remove previous listener if exists
+        if (this.tutorialKeyHandler) {
+            document.removeEventListener('keydown', this.tutorialKeyHandler);
+        }
+
+        this.tutorialKeyHandler = (e) => {
+            if (!this.el.tutorialOverlay || !this.el.tutorialOverlay.classList.contains('active')) {
+                return;
+            }
+
+            // Prevent default behavior for tutorial navigation keys
+            const navigationKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' ', 'Enter', 'Escape', 'h', 'j', 'k', 'l'];
+            if (navigationKeys.includes(e.key)) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            switch (e.key) {
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                case 'h': // Vim-style navigation
+                case 'k': // Vim-style navigation
+                    if (this.tutorialStep > 0) {
+                        this.previousTutorialStep();
+                        this.showNotification('前のステップに戻りました', 'info');
+                    } else {
+                        this.showNotification('最初のステップです', 'warning');
+                    }
+                    break;
+
+                case 'ArrowRight':
+                case 'ArrowDown':
+                case ' ':
+                case 'Enter':
+                case 'l': // Vim-style navigation
+                case 'j': // Vim-style navigation
+                    if (this.tutorialStep < this.tutorialSteps.length - 1) {
+                        this.nextTutorialStep();
+                        this.showNotification('次のステップに進みました', 'info');
+                    } else {
+                        this.endTutorial();
+                        this.showNotification('チュートリアルが完了しました！', 'success');
+                    }
+                    break;
+
+                case 'Escape':
+                    // Show confirmation dialog for escape
+                    if (confirm('チュートリアルを終了しますか？')) {
+                        this.endTutorial();
+                        this.showNotification('チュートリアルをスキップしました', 'info');
+                    }
+                    break;
+
+                case '?':
+                    // Show keyboard shortcuts help
+                    this.showTutorialKeyboardHelp();
+                    break;
+
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                    // Jump to specific step (1-9)
+                    const targetStep = parseInt(e.key) - 1;
+                    if (targetStep >= 0 && targetStep < this.tutorialSteps.length) {
+                        this.tutorialStep = targetStep;
+                        this.showTutorialStep();
+                        this.showNotification(`ステップ ${targetStep + 1} にジャンプしました`, 'info');
+                    }
+                    break;
+            }
+        };
+
+        document.addEventListener('keydown', this.tutorialKeyHandler);
+    }
+
+    showTutorialKeyboardHelp() {
+        const helpModal = document.createElement('div');
+        helpModal.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid #00d4ff;
+            border-radius: 15px;
+            padding: 25px;
+            z-index: 10002;
+            max-width: 400px;
+            animation: demoPopup 0.3s ease-out;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        `;
+
+        helpModal.innerHTML = `
+            <div style="text-align: center; color: #00d4ff; margin-bottom: 20px;">
+                <strong>⌨️ キーボードショートカット</strong>
+            </div>
+            <div style="color: #fff; line-height: 1.6;">
+                <div><strong>← ↑ h k:</strong> 前のステップ</div>
+                <div><strong>→ ↓ j l スペース Enter:</strong> 次のステップ</div>
+                <div><strong>1-9:</strong> 指定のステップにジャンプ</div>
+                <div><strong>Esc:</strong> チュートリアル終了</div>
+                <div><strong>? :</strong> このヘルプを表示</div>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="this.parentElement.parentElement.remove()" style="background: #00d4ff; color: #000; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;">
+                    閉じる
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(helpModal);
+
+        // Auto-remove after 10 seconds
+        setTimeout(() => {
+            if (helpModal.parentNode) {
+                helpModal.remove();
+            }
+        }, 10000);
+    }
+
+    showTutorialStep(stepIndex) {
+        this.tutorialStep = stepIndex;
+        const step = this.tutorialSteps[stepIndex];
+        if (!step) return;
+
+        // Create or get overlay
+        let overlay = this.el.tutorialOverlay;
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'tutorial-overlay active';
+            overlay.innerHTML = `
+                <div class="tutorial-modal">
+                    <div class="tutorial-header">
+                        <div class="tutorial-progress">
+                            <div class="tutorial-progress-bar" id="tutorial-progress-bar"></div>
+                        </div>
+                        <button class="tutorial-close" id="tutorial-close">&times;</button>
+                    </div>
+                    <div class="tutorial-content">
+                        <div class="tutorial-icon" id="tutorial-icon"></div>
+                        <h3 id="tutorial-title"></h3>
+                        <p id="tutorial-description"></p>
+                    </div>
+                    <div class="tutorial-navigation">
+                        <button class="tutorial-btn tutorial-prev" id="tutorial-prev">前へ</button>
+                        <span class="tutorial-step-counter" id="tutorial-step-counter"></span>
+                        <button class="tutorial-btn tutorial-next" id="tutorial-next">次へ</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            this.el.tutorialOverlay = overlay;
+
+            // Add event listeners with error checking
+            const closeBtn = overlay.querySelector('#tutorial-close');
+            const prevBtn = overlay.querySelector('#tutorial-prev');
+            const nextBtn = overlay.querySelector('#tutorial-next');
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    console.log('[Tutorial] Close button clicked');
+                    this.endTutorial();
+                });
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    console.log('[Tutorial] Previous button clicked');
+                    if (this.tutorialSteps) {
+                        this.previousTutorialStep();
+                    } else {
+                        console.error('[Tutorial] Previous button clicked but tutorial not initialized');
+                        this.showNotification('チュートリアルが開始されていません', 'error');
+                    }
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    console.log('[Tutorial] Next button clicked');
+                    if (this.tutorialSteps) {
+                        this.nextTutorialStep();
+                    } else {
+                        console.error('[Tutorial] Next button clicked but tutorial not initialized');
+                        this.showNotification('チュートリアルが開始されていません', 'error');
+                    }
+                });
+            }
+        }
+
+        // Update content
+        overlay.querySelector('#tutorial-icon').innerHTML = step.icon;
+        overlay.querySelector('#tutorial-title').textContent = step.title;
+        overlay.querySelector('#tutorial-description').innerHTML = step.description;
+        overlay.querySelector('#tutorial-step-counter').textContent = `${stepIndex + 1} / ${this.tutorialSteps.length}`;
+
+        // Update progress bar
+        const progressBar = overlay.querySelector('#tutorial-progress-bar');
+        progressBar.style.width = `${((stepIndex + 1) / this.tutorialSteps.length) * 100}%`;
+
+        // Update navigation buttons
+        const prevBtn = overlay.querySelector('#tutorial-prev');
+        const nextBtn = overlay.querySelector('#tutorial-next');
+        prevBtn.style.display = stepIndex === 0 ? 'none' : 'inline-block';
+        nextBtn.textContent = stepIndex === this.tutorialSteps.length - 1 ? '完了' : '次へ';
+
+        // Add step transition animation
+        overlay.style.animation = 'tutorialStepTransition 0.5s ease-out';
+
+        // Add keyboard navigation
+        this.setupTutorialKeyboardNavigation();
 
         // If this step includes a demo action, run it
         if (step.demo === 'input') {
@@ -2308,12 +3509,15 @@ class GameManager {
             this.isLocked = true;
             targetEl.focus();
             targetEl.value = '';
+            targetEl.classList.add('demo-typing');
             let i = 0;
             const iv = setInterval(() => {
-                targetEl.value += text.charAt(i);
-                i++;
-                if (i >= text.length) {
+                if (i < text.length) {
+                    targetEl.value += text.charAt(i);
+                    i++;
+                } else {
                     clearInterval(iv);
+                    targetEl.classList.remove('demo-typing');
                     this.isLocked = false;
                     resolve();
                 }
@@ -2322,63 +3526,681 @@ class GameManager {
     }
 
     simulateAIResponse(text, delay = 30) {
-        const outEl = document.getElementById('ai-output');
-        if (!outEl) return;
-        outEl.textContent = '';
-        this.isLocked = true;
+        const aiOut = document.getElementById('ai-output');
+        if (!aiOut) return;
+
+        aiOut.textContent = '';
+        aiOut.classList.add('demo-typing');
         let i = 0;
         const iv = setInterval(() => {
-            outEl.textContent += text.charAt(i);
-            i++;
-            if (i >= text.length) {
+            if (i < text.length) {
+                aiOut.textContent += text.charAt(i);
+                i++;
+            } else {
                 clearInterval(iv);
-                this.isLocked = false;
+                aiOut.classList.remove('demo-typing');
+            }
+        }, delay);
+    }
+
+    simulateTyping(targetEl, text, delay = 50) {
+        return new Promise(resolve => {
+            if (!targetEl) return resolve();
+            this.isLocked = true;
+            targetEl.focus();
+            targetEl.value = '';
+            targetEl.classList.add('demo-typing');
+            let i = 0;
+            const iv = setInterval(() => {
+                if (i < text.length) {
+                    targetEl.value += text.charAt(i);
+                    i++;
+                } else {
+                    clearInterval(iv);
+                    targetEl.classList.remove('demo-typing');
+                    this.isLocked = false;
+                    resolve();
+                }
+            }, delay);
+        });
+    }
+
+    simulateAIResponse(text, delay = 30) {
+        const aiOut = document.getElementById('ai-output');
+        if (!aiOut) return;
+
+        aiOut.textContent = '';
+        aiOut.classList.add('demo-typing');
+        let i = 0;
+        const iv = setInterval(() => {
+            if (i < text.length) {
+                aiOut.textContent += text.charAt(i);
+                i++;
+            } else {
+                clearInterval(iv);
+                aiOut.classList.remove('demo-typing');
             }
         }, delay);
     }
 
     highlightElement(selector) {
-        // Remove existing highlights
-        document.querySelectorAll('.tutorial-highlight').forEach(el => el.remove());
-        
+        // Clear previous highlights
+        const existingHighlights = document.querySelectorAll('.tutorial-highlight');
+        existingHighlights.forEach(el => el.remove());
+
         if (!selector) return;
-        
+
         const element = document.querySelector(selector);
         if (!element) return;
-        
-        const rect = element.getBoundingClientRect();
+
+        // Create highlight overlay
         const highlight = document.createElement('div');
         highlight.className = 'tutorial-highlight';
-        highlight.style.position = 'fixed';
-        highlight.style.left = `${rect.left - 10}px`;
-        highlight.style.top = `${rect.top - 10}px`;
-        highlight.style.width = `${rect.width + 20}px`;
-        highlight.style.height = `${rect.height + 20}px`;
-        
+        highlight.style.cssText = `
+            position: absolute;
+            background: rgba(0, 212, 255, 0.3);
+            border: 3px solid #00d4ff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.6), inset 0 0 20px rgba(0, 212, 255, 0.2);
+            z-index: 9999;
+            pointer-events: none;
+            animation: highlightPulse 2s infinite ease-in-out;
+            transition: all 0.3s ease;
+        `;
+
+        // Position highlight
+        const rect = element.getBoundingClientRect();
+        highlight.style.left = rect.left - 10 + 'px';
+        highlight.style.top = rect.top - 10 + 'px';
+        highlight.style.width = rect.width + 20 + 'px';
+        highlight.style.height = rect.height + 20 + 'px';
+
         document.body.appendChild(highlight);
+
+        // Add pulsing animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes highlightPulse {
+                0%, 100% {
+                    box-shadow: 0 0 20px rgba(0, 212, 255, 0.6), inset 0 0 20px rgba(0, 212, 255, 0.2);
+                    transform: scale(1);
+                }
+                50% {
+                    box-shadow: 0 0 30px rgba(0, 212, 255, 0.9), inset 0 0 30px rgba(0, 212, 255, 0.4);
+                    transform: scale(1.02);
+                }
+            }
+            @keyframes tutorialStepTransition {
+                0% { opacity: 0; transform: translateY(-20px); }
+                100% { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes demoPopup {
+                0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            }
+            @keyframes demoFadeOut {
+                0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                100% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
+            }
+            @keyframes shimmer {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(100%); }
+            }
+            @keyframes bounceIn {
+                0% { transform: scale(0.3); opacity: 0; }
+                50% { transform: scale(1.05); }
+                70% { transform: scale(0.9); }
+                100% { transform: scale(1); opacity: 1; }
+            }
+            @keyframes fadeInUp {
+                0% { opacity: 0; transform: translateY(30px); }
+                100% { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes slideInLeft {
+                0% { opacity: 0; transform: translateX(-30px); }
+                100% { opacity: 1; transform: translateX(0); }
+            }
+            @keyframes slideInRight {
+                0% { opacity: 0; transform: translateX(30px); }
+                100% { opacity: 1; transform: translateX(0); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Add tooltip arrow pointing to element
+        const arrow = document.createElement('div');
+        arrow.style.cssText = `
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid #00d4ff;
+            left: 50%;
+            top: -10px;
+            transform: translateX(-50%);
+            z-index: 10000;
+            animation: arrowBounce 1s infinite ease-in-out;
+        `;
+        highlight.appendChild(arrow);
+
+        // Add arrow bounce animation
+        const arrowStyle = document.createElement('style');
+        arrowStyle.textContent = `
+            @keyframes arrowBounce {
+                0%, 100% { transform: translateX(-50%) translateY(0); }
+                50% { transform: translateX(-50%) translateY(-5px); }
+            }
+        `;
+        document.head.appendChild(arrowStyle);
+
+        // Scroll element into view if needed
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Store highlight for cleanup
+        this.currentHighlight = highlight;
+    }
+
+    startTutorial() {
+        console.log('[Tutorial] Starting tutorial...');
+
+        // Initialize tutorial steps
+        this.tutorialSteps = [
+            {
+                title: "ようこそ Rush-Maximizer へ！",
+                description: "AIを使った新感覚クイズゲームへようこそ！このチュートリアルで基本的な操作を学びましょう。",
+                highlight: null,
+                action: null
+            },
+            {
+                title: "ゲームモードの選択",
+                description: "メイン画面から4つのゲームモードを選択できます。各モードで異なるルールで遊べます。",
+                highlight: ".mode-grid",
+                action: () => {
+                    const modeGrid = document.querySelector('.mode-grid');
+                    if (modeGrid) {
+                        modeGrid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            },
+            {
+                title: "ソロモード",
+                description: "時間無制限でじっくり挑戦できます。17秒/問題の新ルールで戦略的にプレイしましょう。",
+                highlight: "#solo-mode-btn",
+                action: null
+            },
+            {
+                title: "対戦モード",
+                description: "オンラインで他プレイヤーとリアルタイム対戦できます。パス機能も使えます。",
+                highlight: "#vs-mode-btn",
+                action: null
+            },
+            {
+                title: "RTAモード",
+                description: "10問を3分以内で解くタイムアタックモード。時間でスコアが変動します。",
+                highlight: "#rta-mode-btn",
+                action: null
+            },
+            {
+                title: "練習モード",
+                description: "カテゴリーや難易度を指定して練習できます。スキルアップに最適です。",
+                highlight: "#practice-mode-btn",
+                action: null
+            },
+            {
+                title: "設定とその他の機能",
+                description: "右上のボタンから設定、ランキング、チュートリアルなどの機能にアクセスできます。",
+                highlight: ".quick-actions",
+                action: null
+            },
+            {
+                title: "サーバー接続情報",
+                description: "下部の接続情報でサーバーの状態を確認できます。音声認識機能も利用可能です。",
+                highlight: ".server-info-panel",
+                action: null
+            },
+            {
+                title: "ゲームプレイの準備",
+                description: "ゲームを開始するには、まずサーバーに接続する必要があります。準備ができたらモードを選択してください。",
+                highlight: null,
+                action: null
+            },
+            {
+                title: "チュートリアル完了！",
+                description: "基本的な操作を学びました。あとは実際にプレイして楽しんでください！",
+                highlight: null,
+                action: null
+            }
+        ];
+
+        // Reset tutorial state
+        this.tutorialStep = 0;
+
+        // Close tutorial select modal and show tutorial overlay
+        this.closeModal('tutorial-select-modal');
+        this.showModal('tutorial-overlay');
+
+        // Add keyboard event listener
+        this.tutorialKeyHandler = (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                this.nextTutorialStep();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                this.previousTutorialStep();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                this.endTutorial();
+            }
+        };
+        document.addEventListener('keydown', this.tutorialKeyHandler);
+
+        // Show first step
+        this.showTutorialStep();
+
+        console.log('[Tutorial] Tutorial started successfully');
     }
 
     nextTutorialStep() {
+        console.log('[Tutorial] Next step called, current step:', this.tutorialStep);
+
+        // Check if tutorial is properly initialized
+        if (!this.tutorialSteps) {
+            console.warn('[Tutorial] tutorialSteps is undefined, attempting to initialize and start tutorial');
+            try {
+                // Try to recover by starting the tutorial
+                this.startTutorial();
+            } catch (e) {
+                console.error('[Tutorial] Failed to start tutorial during recovery:', e);
+                this.showNotification('チュートリアルが正しく初期化されませんでした', 'error');
+                return;
+            }
+
+            // If startTutorial succeeded, tutorialSteps should be set. If still not, abort.
+            if (!this.tutorialSteps) {
+                console.error('[Tutorial] Recovery start did not initialize tutorialSteps');
+                this.showNotification('チュートリアルの初期化に失敗しました', 'error');
+                return;
+            }
+
+            // Continue to advance to next step after recovery
+            console.log('[Tutorial] Recovery successful, proceeding to advance step from', this.tutorialStep);
+        }
+
+        // Check if tutorialStep is properly initialized
+        if (this.tutorialStep === undefined || this.tutorialStep === null) {
+            console.error('[Tutorial] tutorialStep is undefined, resetting to 0');
+            this.tutorialStep = 0;
+        }
+
         if (this.tutorialStep < this.tutorialSteps.length - 1) {
             this.tutorialStep++;
+            console.log('[Tutorial] Moving to step:', this.tutorialStep);
             this.showTutorialStep();
         } else {
+            console.log('[Tutorial] Tutorial completed, ending');
             this.endTutorial();
         }
     }
 
+    showTutorialStep() {
+        console.log('[Tutorial] Showing step:', this.tutorialStep);
+
+        if (!this.tutorialSteps || this.tutorialStep >= this.tutorialSteps.length) {
+            console.error('[Tutorial] Invalid tutorial state');
+            this.endTutorial();
+            return;
+        }
+
+        const step = this.tutorialSteps[this.tutorialStep];
+
+        // Update tutorial content
+        const titleEl = document.getElementById('tutorial-title');
+        const descEl = document.getElementById('tutorial-description');
+        const counterEl = document.getElementById('tutorial-counter');
+        const prevBtn = document.getElementById('tutorial-prev-btn');
+        const nextBtn = document.getElementById('tutorial-next-btn');
+
+        if (titleEl) titleEl.textContent = step.title;
+        if (descEl) descEl.textContent = step.description;
+        if (counterEl) counterEl.textContent = `${this.tutorialStep + 1} / ${this.tutorialSteps.length}`;
+
+        // Update navigation buttons
+        if (prevBtn) {
+            prevBtn.style.display = this.tutorialStep > 0 ? 'inline-block' : 'none';
+        }
+        if (nextBtn) {
+            nextBtn.textContent = this.tutorialStep === this.tutorialSteps.length - 1 ? '完了 ✓' : '次へ →';
+        }
+
+        // Clear previous highlight
+        this.clearTutorialHighlight();
+
+        // Add new highlight if specified
+        if (step.highlight) {
+            this.highlightTutorialElement(step.highlight);
+        }
+
+        // Execute step action if specified
+        if (step.action) {
+            try {
+                step.action();
+            } catch (error) {
+                console.error('[Tutorial] Error executing step action:', error);
+            }
+        }
+
+        console.log('[Tutorial] Step shown successfully');
+    }
+
+    highlightTutorialElement(selector) {
+        console.log('[Tutorial] Highlighting element:', selector);
+
+        const element = document.querySelector(selector);
+        if (!element) {
+            console.warn('[Tutorial] Element not found for selector:', selector);
+            return;
+        }
+
+        // Create highlight overlay
+        const highlight = document.createElement('div');
+        highlight.className = 'tutorial-highlight';
+        highlight.style.cssText = `
+            position: absolute;
+            top: ${element.offsetTop - 8}px;
+            left: ${element.offsetLeft - 8}px;
+            width: ${element.offsetWidth + 16}px;
+            height: ${element.offsetHeight + 16}px;
+            background: rgba(0, 212, 255, 0.3);
+            border: 3px solid #00d4ff;
+            border-radius: 12px;
+            z-index: 9998;
+            pointer-events: none;
+            animation: tutorialPulse 2s ease-in-out infinite;
+        `;
+
+        // Add to tutorial overlay
+        const overlay = this.el.tutorialOverlay;
+        if (overlay) {
+            overlay.appendChild(highlight);
+            this.currentHighlight = highlight;
+        }
+
+        // Scroll element into view
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    clearTutorialHighlight() {
+        if (this.currentHighlight) {
+            this.currentHighlight.remove();
+            this.currentHighlight = null;
+        }
+
+        // Remove any existing highlights
+        document.querySelectorAll('.tutorial-highlight').forEach(el => el.remove());
+    }
+
     previousTutorialStep() {
+        console.log('[Tutorial] Previous step called, current step:', this.tutorialStep);
+
+        // Check if tutorial is properly initialized
+        if (!this.tutorialSteps) {
+            console.warn('[Tutorial] previousTutorialStep called but tutorial not initialized, attempting to start');
+            try {
+                this.startTutorial();
+            } catch (e) {
+                console.error('[Tutorial] Recovery start failed:', e);
+                this.showNotification('チュートリアルが開始されていません', 'error');
+                return;
+            }
+
+            if (!this.tutorialSteps) {
+                console.error('[Tutorial] Recovery did not initialize tutorialSteps');
+                this.showNotification('チュートリアルが開始されていません', 'error');
+                return;
+            }
+
+            console.log('[Tutorial] Recovery successful, ready to step previous from', this.tutorialStep);
+        }
+
         if (this.tutorialStep > 0) {
             this.tutorialStep--;
+            console.log('[Tutorial] Moving to previous step:', this.tutorialStep);
             this.showTutorialStep();
+        } else {
+            console.log('[Tutorial] Already at first step');
+            this.showNotification('最初のステップです', 'info');
         }
     }
 
     endTutorial() {
+        // Clear tutorial state
         this.closeModal('tutorial-overlay');
         document.querySelectorAll('.tutorial-highlight').forEach(el => el.remove());
+        document.querySelectorAll('.tutorial-demo').forEach(el => el.remove());
+
+        // Remove keyboard event listener
+        if (this.tutorialKeyHandler) {
+            document.removeEventListener('keydown', this.tutorialKeyHandler);
+            this.tutorialKeyHandler = null;
+        }
+
+        // Clear any pending timeouts
+        this.clearTutorialTimeout();
+
+        // Reset tutorial state
         this.tutorialStep = 0;
         this.tutorialSteps = null;
+        this.currentHighlight = null;
+
+        // Mark tutorial as completed
+        localStorage.setItem('hasSeenTutorial', 'true');
+        localStorage.setItem('tutorialCompletedAt', new Date().toISOString());
+
+        // Use the new flow controller
+        this.onTutorialCompleted();
+
+        console.log('[Tutorial] Tutorial completed successfully');
+    }
+
+    // Explicit navigation to main menu + startup overlay after tutorial
+    finishTutorialAndOpenStartup() {
+        try {
+            // Ensure tutorial is marked as completed and closed
+            localStorage.setItem('hasSeenTutorial', 'true');
+            this.closeModal('tutorial-overlay');
+            this.closeModal('tutorial-select-modal');
+
+            // Reset any tutorial state just in case
+            this.tutorialStep = 0;
+            this.tutorialSteps = null;
+            this.currentHighlight = null;
+            this.clearTutorialTimeout();
+            if (this.tutorialKeyHandler) {
+                document.removeEventListener('keydown', this.tutorialKeyHandler);
+                this.tutorialKeyHandler = null;
+            }
+
+            // Show main menu and the startup (server connect) modal
+            this.showScreen('main-menu');
+            this.showModal('startup-overlay');
+
+            // Re-enable all buttons just in case
+            document.querySelectorAll('button').forEach(btn => {
+                btn.disabled = false;
+                btn.style.pointerEvents = 'auto';
+            });
+
+            console.log('[Tutorial] Navigated to main menu with startup overlay');
+            return true;
+        } catch (e) {
+            console.error('[Tutorial] Failed to navigate to main menu/startup overlay:', e);
+            this.showNotification('メイン画面への遷移に失敗しました', 'error');
+            return false;
+        }
+    }
+
+    clearTutorialTimeout() {
+        if (this.tutorialTimeout) {
+            clearTimeout(this.tutorialTimeout);
+            this.tutorialTimeout = null;
+        }
+    }
+
+    showTutorialCompletionCelebration() {
+        const celebration = document.createElement('div');
+        celebration.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+            animation: fadeIn 0.5s ease-out;
+        `;
+
+        celebration.innerHTML = `
+            <div style="text-align: center; color: #fff; max-width: 500px; padding: 40px; background: rgba(0, 212, 255, 0.1); border-radius: 20px; border: 2px solid #00d4ff; box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);">
+                <div style="font-size: 4rem; margin-bottom: 20px; animation: bounceIn 1s ease-out;">🎉</div>
+                <h2 style="color: #00d4ff; margin-bottom: 20px; animation: fadeInUp 0.8s ease-out 0.3s both;">チュートリアル完了！</h2>
+                <p style="margin-bottom: 30px; line-height: 1.6; animation: fadeInUp 0.8s ease-out 0.5s both;">
+                    おめでとうございます！<br>
+                    これでゲームの基本をマスターしました。<br>
+                    さっそくゲームを始めましょう！
+                </p>
+                <div style="animation: fadeInUp 0.8s ease-out 0.7s both;">
+                    <button onclick="(function(btn){ try{ if(window.gameManager){ window.gameManager.finishTutorialAndOpenStartup(); } }catch(e){ console.error(e); } finally { try{ if(btn && btn.parentElement && btn.parentElement.parentElement && btn.parentElement.parentElement.parentElement) btn.parentElement.parentElement.parentElement.remove(); }catch(err){} } })(this);" style="background: linear-gradient(135deg, #00ff88, #00cc66); color: #000; border: none; padding: 15px 30px; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-right: 15px; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);">
+                        🚀 ゲーム開始
+                    </button>
+                    <button onclick="this.parentElement.parentElement.parentElement.remove();" style="background: rgba(255, 255, 255, 0.2); color: #fff; border: 1px solid #00d4ff; padding: 15px 30px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 212, 255, 0.2);">
+                        あとで
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(celebration);
+
+        // Auto-remove after 10 seconds if not clicked
+        setTimeout(() => {
+            if (celebration.parentNode) {
+                celebration.style.animation = 'fadeOut 0.5s ease-out';
+                setTimeout(() => celebration.remove(), 500);
+            }
+        }, 10000);
+    }
+
+    enablePostTutorialFeatures() {
+        // Enable any features that were disabled during tutorial
+        const gameElements = document.querySelectorAll('.game-element');
+        gameElements.forEach(el => {
+            el.classList.remove('tutorial-disabled');
+        });
+
+        // Show advanced options if they were hidden
+        const advancedOptions = document.querySelectorAll('.advanced-option');
+        advancedOptions.forEach(el => {
+            el.style.display = 'block';
+        });
+
+        // Update UI to reflect tutorial completion
+        const tutorialBtn = document.querySelector('.tutorial-btn');
+        if (tutorialBtn) {
+            tutorialBtn.innerHTML = '📖 チュートリアル (完了)';
+            tutorialBtn.style.background = 'linear-gradient(135deg, #00ff88, #00cc66)';
+        }
+    }
+
+    // Debug function to check tutorial state
+    debugTutorialState() {
+        console.log('=== Tutorial Debug Info ===');
+        console.log('tutorialStep:', this.tutorialStep);
+        console.log('tutorialSteps:', this.tutorialSteps ? this.tutorialSteps.length : 'null');
+        console.log('tutorialOverlay element:', this.el.tutorialOverlay);
+        console.log('tutorialSelectModal element:', this.el.tutorialSelectModal);
+
+        if (this.el.tutorialOverlay) {
+            console.log('tutorialOverlay classList:', this.el.tutorialOverlay.classList);
+            console.log('tutorialOverlay style.display:', this.el.tutorialOverlay.style.display);
+        }
+
+        if (this.el.tutorialSelectModal) {
+            console.log('tutorialSelectModal classList:', this.el.tutorialSelectModal.classList);
+            console.log('tutorialSelectModal style.display:', this.el.tutorialSelectModal.style.display);
+        }
+
+        console.log('hasSeenTutorial in localStorage:', localStorage.getItem('hasSeenTutorial'));
+        console.log('main-menu element:', document.getElementById('main-menu'));
+        console.log('===========================');
+    }
+
+    // Force show main menu (emergency fix)
+    forceShowMainMenu() {
+        console.log('Forcing main menu display...');
+
+        // Close all modals
+        this.closeModal('tutorial-select-modal');
+        this.closeModal('tutorial-overlay');
+        this.closeModal('startup-overlay');
+
+        // Reset tutorial state
+        this.tutorialStep = 0;
+        this.tutorialSteps = null;
+        localStorage.removeItem('hasSeenTutorial');
+
+        // Show main menu
+        this.showScreen('main-menu');
+
+        // Re-enable all buttons
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.pointerEvents = 'auto';
+        });
+
+        this.showNotification('メインコンテンツを表示しました', 'success');
+        console.log('Main menu forced to show');
+    }
+
+    // Reset tutorial completely
+    resetTutorial() {
+        console.log('Resetting tutorial completely...');
+
+        // Clear localStorage
+        localStorage.removeItem('hasSeenTutorial');
+        localStorage.removeItem('tutorialCompletedAt');
+
+        // Reset tutorial state
+        this.tutorialStep = 0;
+        this.tutorialSteps = null;
+        this.currentHighlight = null;
+
+        // Close all tutorial-related elements
+        this.closeModal('tutorial-select-modal');
+        this.closeModal('tutorial-overlay');
+
+        // Clear any tutorial timeouts
+        if (this.tutorialTimeout) {
+            clearTimeout(this.tutorialTimeout);
+            this.tutorialTimeout = null;
+        }
+
+        // Remove tutorial event listeners
+        if (this.tutorialKeyHandler) {
+            document.removeEventListener('keydown', this.tutorialKeyHandler);
+            this.tutorialKeyHandler = null;
+        }
+
+        // Remove tutorial highlights
+        document.querySelectorAll('.tutorial-highlight').forEach(el => el.remove());
+        document.querySelectorAll('.tutorial-demo').forEach(el => el.remove());
+
+        this.showNotification('チュートリアルをリセットしました', 'info');
+        console.log('Tutorial reset complete');
     }
 
     closeTutorialSelect() {
@@ -2388,17 +4210,56 @@ class GameManager {
 
     // Voice Recognition System
     initVoiceRecognition() {
+        // Check if we can use the local Vosk server, fallback to Web Speech API
+        this.voiceServerUrl = 'http://localhost:5000';
+
+        // First try to connect to local Vosk server
+        this.checkVoiceServerHealth().then(available => {
+            if (available) {
+                console.log('[Voice] Using local Vosk server for voice recognition');
+                this.voiceEnabled = true;
+                this.useVoskServer = true;
+            } else {
+                console.log('[Voice] Vosk server not available, falling back to Web Speech API');
+                this.initWebSpeechAPI();
+            }
+            this.updateVoiceUI();
+        }).catch(error => {
+            console.warn('[Voice] Health check failed:', error);
+            this.initWebSpeechAPI();
+            this.updateVoiceUI();
+        });
+    }
+
+    async checkVoiceServerHealth() {
+        try {
+            const response = await fetch(`${this.voiceServerUrl}/health`, {
+                method: 'GET',
+                signal: AbortSignal.timeout(5000) // 5 second timeout
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return data.status === 'healthy' && data.model_loaded === true;
+            }
+            return false;
+        } catch (error) {
+            console.warn('[Voice] Health check error:', error);
+            return false;
+        }
+    }
+
+    initWebSpeechAPI() {
         try {
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                console.warn('Speech recognition not supported');
+                console.warn('[Voice] Speech recognition not supported');
                 this.voiceEnabled = false;
-                this.updateVoiceUI();
                 return;
             }
 
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             this.recognition = new SpeechRecognition();
-            
+
             this.recognition.continuous = false;
             this.recognition.interimResults = false;
             this.recognition.lang = 'ja-JP';
@@ -2420,7 +4281,7 @@ class GameManager {
                         this.showNotification('音声が認識できませんでした', 'warning');
                         return;
                     }
-                    
+
                     const transcript = event.results[0][0].transcript;
                     if (transcript && transcript.trim()) {
                         const playerQuestion = document.getElementById('player-question');
@@ -2447,7 +4308,7 @@ class GameManager {
                     console.error('Speech recognition error:', event.error);
                     this.isVoiceActive = false;
                     this.updateVoiceUI();
-                    
+
                     let errorMessage = '音声認識エラーが発生しました';
                     switch (event.error) {
                         case 'no-speech':
@@ -2481,17 +4342,158 @@ class GameManager {
             };
 
             this.voiceEnabled = true;
-            console.log('Voice recognition initialized successfully');
+            console.log('[Voice] Web Speech API initialized successfully');
         } catch (error) {
-            console.error('Failed to initialize voice recognition:', error);
+            console.error('[Voice] Failed to initialize Web Speech API:', error);
             this.voiceEnabled = false;
-            this.updateVoiceUI();
         }
     }
 
     toggleVoiceRecognition() {
         try {
-            if (!this.voiceEnabled || !this.recognition) {
+            if (!this.voiceEnabled) {
+                this.showNotification('音声認識は利用できません', 'warning');
+                return false;
+            }
+
+            if (this.useVoskServer) {
+                return this.toggleVoskVoiceRecognition();
+            } else {
+                return this.toggleWebSpeechRecognition();
+            }
+        } catch (error) {
+            console.error('Voice recognition toggle failed:', error);
+            this.showNotification('音声認識の切り替えに失敗しました', 'error');
+            return false;
+        }
+    }
+
+    toggleVoskVoiceRecognition() {
+        if (this.isVoiceActive) {
+            // Stop recording
+            if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+                this.mediaRecorder.stop();
+            }
+            this.isVoiceActive = false;
+            this.updateVoiceUI();
+            this.showNotification('音声認識を停止しました', 'info');
+            return true;
+        } else {
+            // Start recording
+            return this.startVoskRecording();
+        }
+    }
+
+    async startVoskRecording() {
+        try {
+            // Check if already processing AI request
+            if (this.isProcessingAI) {
+                this.showNotification('AI処理中は音声認識を開始できません', 'warning');
+                return false;
+            }
+
+            // Request microphone access
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    sampleRate: 16000,
+                    channelCount: 1,
+                    echoCancellation: true,
+                    noiseSuppression: true
+                }
+            });
+
+            this.mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm;codecs=opus'
+            });
+
+            const audioChunks = [];
+
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
+
+            this.mediaRecorder.onstop = async () => {
+                try {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    await this.processVoskAudio(audioBlob);
+
+                    // Stop all tracks
+                    stream.getTracks().forEach(track => track.stop());
+                } catch (error) {
+                    console.error('Audio processing error:', error);
+                    this.showNotification('音声処理中にエラーが発生しました', 'error');
+                    stream.getTracks().forEach(track => track.stop());
+                }
+            };
+
+            this.mediaRecorder.start();
+            this.isVoiceActive = true;
+            this.updateVoiceUI();
+            this.showNotification('音声認識を開始しました（Vosk）', 'info');
+
+            // Auto-stop after 5 seconds
+            setTimeout(() => {
+                if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+                    this.mediaRecorder.stop();
+                }
+            }, 5000);
+
+            return true;
+        } catch (error) {
+            console.error('Failed to start Vosk recording:', error);
+            let errorMessage = '音声認識の開始に失敗しました';
+
+            if (error.name === 'NotAllowedError') {
+                errorMessage = 'マイクの使用が許可されていません';
+            } else if (error.name === 'NotFoundError') {
+                errorMessage = 'マイクが見つかりません';
+            }
+
+            this.showNotification(errorMessage, 'error');
+            return false;
+        }
+    }
+
+    async processVoskAudio(audioBlob) {
+        try {
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.webm');
+
+            const response = await fetch(`${this.voiceServerUrl}/recognize`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success && result.text) {
+                const playerQuestion = document.getElementById('player-question');
+                if (playerQuestion) {
+                    const cleanTranscript = result.text.trim().substring(0, 500);
+                    playerQuestion.value = cleanTranscript;
+                    playerQuestion.focus();
+                    this.showNotification(`音声入力（Vosk）: ${cleanTranscript}`, 'success');
+                } else {
+                    this.showNotification('入力フィールドが見つかりません', 'error');
+                }
+            } else {
+                this.showNotification('音声が認識できませんでした', 'warning');
+            }
+        } catch (error) {
+            console.error('Vosk processing error:', error);
+            this.showNotification('音声認識サーバーに接続できませんでした', 'error');
+        }
+    }
+
+    toggleWebSpeechRecognition() {
+        try {
+            if (!this.recognition) {
                 this.showNotification('音声認識はサポートされていません', 'warning');
                 return false;
             }
@@ -2512,7 +4514,7 @@ class GameManager {
                         this.showNotification('AI処理中は音声認識を開始できません', 'warning');
                         return false;
                     }
-                    
+
                     // Check microphone permissions
                     if (navigator.permissions) {
                         navigator.permissions.query({ name: 'microphone' }).then((result) => {
@@ -2524,25 +4526,25 @@ class GameManager {
                             // Permission API not supported, continue anyway
                         });
                     }
-                    
+
                     this.recognition.start();
                 } catch (error) {
                     console.error('Failed to start voice recognition:', error);
                     let errorMessage = '音声認識の開始に失敗しました';
-                    
+
                     if (error.name === 'InvalidStateError') {
                         errorMessage = '音声認識が既に実行中です';
                     } else if (error.name === 'NotAllowedError') {
                         errorMessage = 'マイクの使用が許可されていません';
                     }
-                    
+
                     this.showNotification(errorMessage, 'error');
                     return false;
                 }
             }
             return true;
         } catch (error) {
-            console.error('Voice recognition toggle failed:', error);
+            console.error('Web Speech recognition toggle failed:', error);
             this.showNotification('音声認識の切り替えに失敗しました', 'error');
             return false;
         }
@@ -2947,4 +4949,72 @@ document.addEventListener('DOMContentLoaded', () => {
             logo.classList.add('logo-pulse');
         }
     } catch (e) {}
+});
+
+// Debug functions for tutorial troubleshooting
+window.debugTutorial = () => {
+    if (window.gameManager) {
+        window.gameManager.debugTutorialState();
+    } else {
+        console.log('GameManager not found');
+    }
+};
+
+window.forceMainMenu = () => {
+    if (window.gameManager) {
+        window.gameManager.forceShowMainMenu();
+    } else {
+        console.log('GameManager not found');
+    }
+};
+
+window.resetTutorial = () => {
+    if (window.gameManager) {
+        window.gameManager.resetTutorial();
+    } else {
+        console.log('GameManager not found');
+    }
+};
+
+// Debug function to check app flow state
+window.debugAppFlow = () => {
+    if (window.gameManager) {
+        console.log('[Debug] App Flow State:');
+        console.log('- isFirstTimeUser:', window.gameManager.isFirstTimeUser);
+        console.log('- hasSeenTutorial (localStorage):', localStorage.getItem('hasSeenTutorial'));
+        console.log('- Current screen:', document.querySelector('.screen:not([style*="display: none"])')?.id || 'none');
+        console.log('- Active modals:', Array.from(document.querySelectorAll('.modal.active')).map(m => m.id));
+        console.log('- tutorialStep:', window.gameManager.tutorialStep);
+        console.log('- tutorialSteps:', window.gameManager.tutorialSteps ? window.gameManager.tutorialSteps.length : 'null');
+        console.log('- Server connected:', window.gameManager.gameServerUrl ? 'Yes' : 'No');
+    } else {
+        console.log('GameManager not found');
+    }
+};
+
+// Keyboard shortcuts for debugging
+document.addEventListener('keydown', (e) => {
+    // Ctrl+Shift+D: Debug tutorial state
+    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        window.debugTutorial();
+    }
+
+    // Ctrl+Shift+M: Force show main menu
+    if (e.ctrlKey && e.shiftKey && e.key === 'M') {
+        e.preventDefault();
+        window.forceMainMenu();
+    }
+
+    // Ctrl+Shift+R: Reset tutorial
+    if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+        e.preventDefault();
+        window.resetTutorial();
+    }
+
+    // Ctrl+Shift+F: Debug app flow state
+    if (e.ctrlKey && e.shiftKey && e.key === 'F') {
+        e.preventDefault();
+        window.debugAppFlow();
+    }
 });

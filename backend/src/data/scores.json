@@ -65,6 +65,28 @@
         "wrong": 10,
         "accuracy": 0.0
       }
+    },
+    {
+      "player": "koko",
+      "score": 820,
+      "time": 300,
+      "meta": {
+        "correct": 8,
+        "total": 10,
+        "wrong": 2,
+        "accuracy": 0.8
+      }
+    },
+    {
+      "player": "koko",
+      "score": 935,
+      "time": 300,
+      "meta": {
+        "correct": 9,
+        "total": 10,
+        "wrong": 1,
+        "accuracy": 0.9
+      }
     }
   ],
   "rta": []

@@ -15,3 +15,20 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  voice-recognition:
+    build:
+      context: .
+      dockerfile: Dockerfile.voice
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./voice_server.py:/app/voice_server.py:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
