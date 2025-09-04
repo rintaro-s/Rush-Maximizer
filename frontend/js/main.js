@@ -2087,7 +2087,27 @@ class GameManager {
         this.currentQuestionIndex = 0;
         if (this.el.questionHistory) this.el.questionHistory.innerHTML = '';
         if (this.el.playerQuestion) this.el.playerQuestion.value = '';
-        this.updateUI();
+    if (typeof this.updateUI === 'function') this.updateUI();
+    }
+
+    // Ensure updateUI exists so other methods can safely call it
+    updateUI() {
+        try {
+            if (this.el.currentScore) this.el.currentScore.textContent = String(this.score || 0);
+            if (this.el.correctCount) this.el.correctCount.textContent = String(this.correctAnswers || 0);
+            if (this.el.questionCount) this.el.questionCount.textContent = String(this.questionCount || 0);
+            if (this.el.totalQuestions) this.el.totalQuestions.textContent = String(this.questions ? this.questions.length : 0);
+            if (this.el.accuracy) {
+                const acc = (this.questions && this.questions.length) ? Math.round((this.correctAnswers / this.questions.length) * 100) : 0;
+                this.el.accuracy.textContent = `${acc}%`;
+            }
+            if (this.el.progressFill) {
+                const pct = (this.questions && this.questions.length) ? Math.round((this.currentQuestionIndex / this.questions.length) * 100) : 0;
+                try { this.el.progressFill.style.width = `${pct}%`; } catch (e) {}
+            }
+        } catch (e) {
+            console.warn('updateUI failed', e);
+        }
     }
 
     showQuestion() {
@@ -2156,7 +2176,7 @@ class GameManager {
         if (this.el.aiAnalysis) this.el.aiAnalysis.innerHTML = '';
         this.setAIStatus('待機中', '#ccc');
         this.updateGameHUD();
-        this.updateUI();
+    if (typeof this.updateUI === 'function') this.updateUI();
     }
 
     async submitQuestion() {
@@ -4710,7 +4730,10 @@ class GameManager {
             if (result.success && result.text) {
                 const playerQuestion = document.getElementById('player-question');
                 if (playerQuestion) {
-                    const cleanTranscript = result.text.trim().substring(0, 500);
+                    // Remove all whitespace (ASCII spaces, newlines, tabs) and full-width spaces
+                    let cleanTranscript = result.text.replace(/\s+/g, '');
+                    cleanTranscript = cleanTranscript.replace(/\u3000/g, '');
+                    cleanTranscript = cleanTranscript.trim().substring(0, 500);
                     playerQuestion.value = cleanTranscript;
                     playerQuestion.focus();
                     this.showNotification(`音声入力（Vosk）: ${cleanTranscript}`, 'success');

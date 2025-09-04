@@ -53,55 +53,13 @@ PLAYER_TIMEOUT_SECONDS = 30
 
 app = FastAPI()
 
-# Allow all origins for simple local development
-# Configure CORS from ALLOWED_ORIGINS env (comma-separated).
-# Supports exact origins, hostnames, and wildcard subdomains like "*.example.com".
-raw_allowed = os.getenv('ALLOWED_ORIGINS', '').strip()
-allow_credentials = False
-allow_origins = []
-allow_origin_regex = None
-if raw_allowed:
-    parts = [p.strip() for p in raw_allowed.split(',') if p.strip()]
-    regex_parts = []
-    for p in parts:
-        # try to normalize host (remove scheme/path)
-        m = re.match(r'^(https?://)?([^/]+)', p)
-        host = m.group(2) if m else p
-        # convert unicode domain to punycode when possible
-        try:
-            host_ascii = host.encode('idna').decode()
-        except Exception:
-            host_ascii = host
-
-        # wildcard subdomain like *.example.com
-        if host_ascii.startswith('*.'):
-            domain = re.escape(host_ascii[2:])
-            # allow one or more subdomain labels before domain
-            regex_parts.append(rf'^https?://([A-Za-z0-9_-]+\.)+{domain}(:\d+)?$')
-        else:
-            # if the input included scheme, preserve exact origin
-            if p.startswith('http://') or p.startswith('https://'):
-                allow_origins.append(p)
-            else:
-                # add both http and https origin variants
-                allow_origins.append(f'http://{host_ascii}')
-                allow_origins.append(f'https://{host_ascii}')
-    # enable credentials when explicit origins provided
-    allow_credentials = True
-    if regex_parts:
-        allow_origin_regex = '(' + '|'.join(regex_parts) + ')'
-
-if not raw_allowed:
-    # fallback to permissive (no credentials)
-    allow_origins = ['*']
-    allow_credentials = False
-
-print(f"CORS configured: allow_origins={allow_origins} allow_origin_regex={allow_origin_regex} credentials={'yes' if allow_credentials else 'no'}")
+# For development: allow all origins to avoid CORS blocking when frontend is served from
+# a different host/port. This is intentionally permissive; restrict in production.
+print('CORS configured: allow_origins=[*] (development permissive)')
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allow_origins,
-    allow_origin_regex=allow_origin_regex,
-    allow_credentials=allow_credentials,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
