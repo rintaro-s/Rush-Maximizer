@@ -77,13 +77,12 @@ except Exception as e:
     print(f"Failed to mount /bgm static files: {e}")
 
 # --- Mount Frontend ---
-# Serve the frontend directory as static files.
-# The `html=True` argument makes it serve `index.html` for root requests.
+# Serve frontend static files under a non-root path to avoid shadowing API routes.
 frontend_dir = os.path.abspath(os.path.join(HERE, '..', '..', 'frontend'))
 try:
     if os.path.isdir(frontend_dir):
-        app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
-        print(f"Serving frontend from: {frontend_dir}")
+        app.mount("/_frontend", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+        print(f"Serving frontend from: {frontend_dir} at /_frontend")
     else:
         print(f"Frontend directory not found at {frontend_dir}. Cannot serve frontend.")
 except Exception as e:
@@ -179,6 +178,7 @@ async def ask_ai(request: QuestionRequest):
     # {"answer": "...", "reasoning": "...", "valid": true|false, "invalid_reason": "..."}
     # "valid" should be false when the question is invalid (contains the answer, is off-topic, or requests disallowed content).
     system_instruction = (
+        "/no-think\n"
         "あなたはクイズの検証付き回答者です。必ず以下のJSON形式だけで出力してください。"
         "\n{\"answer\": \"...\", \"reasoning\": \"...\", \"valid\": true, \"invalid_reason\": \"...\"}"
         "\n- `answer`: 直接の答え（短く）"
@@ -539,12 +539,24 @@ def solo_question():
 
 
 @app.get('/solo/questions')
-def solo_questions(n: int = 10):
-    # return n random sanitized questions
+def solo_questions(n: int = 10, category: str = None, difficulty: str = None):
+    # return n random sanitized questions, optionally filtered by category and difficulty
     if not ALL_QUESTIONS:
         return { 'error': 'no_questions' }
-    count = max(1, min(len(ALL_QUESTIONS), n))
-    sampled = random.sample(ALL_QUESTIONS, count)
+    
+    # Apply filters
+    filtered_questions = ALL_QUESTIONS
+    if category and category != 'all':
+        filtered_questions = [q for q in filtered_questions if q.get('category') == category]
+    if difficulty and difficulty != 'all':
+        filtered_questions = [q for q in filtered_questions if q.get('difficulty') == difficulty]
+    
+    if not filtered_questions:
+        # If no questions match the filters, return unfiltered questions as fallback
+        filtered_questions = ALL_QUESTIONS
+    
+    count = max(1, min(len(filtered_questions), n))
+    sampled = random.sample(filtered_questions, count)
     sanitized = []
     for q in sampled:
         prompt = q.get('question') or q.get('prompt') or q.get('q') or q.get('text') or str(q.get('id'))

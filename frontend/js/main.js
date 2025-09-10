@@ -186,7 +186,6 @@ class GameManager {
         const btnMap = {
             solo: this.el.soloModeBtn,
             vs: this.el.vsModeBtn,
-            rta: this.el.rtaModeBtn,
             practice: this.el.practiceModeBtn
         };
 
@@ -214,10 +213,8 @@ class GameManager {
             case 'vs':
                 this.showModal('match-select-modal');
                 break;
-            case 'rta':
-                this.startRtaMode();
-                break;
             case 'practice':
+                this.initializePracticeModal();
                 this.showModal('practice-setup-modal');
                 break;
             default:
@@ -230,7 +227,6 @@ class GameManager {
         const buttons = [
             this.el.soloModeBtn,
             this.el.vsModeBtn,
-            this.el.rtaModeBtn,
             this.el.practiceModeBtn
         ];
 
@@ -248,7 +244,6 @@ class GameManager {
         const buttons = [
             this.el.soloModeBtn,
             this.el.vsModeBtn,
-            this.el.rtaModeBtn,
             this.el.practiceModeBtn
         ];
 
@@ -605,7 +600,6 @@ class GameManager {
             practiceSetupModal: document.getElementById('practice-setup-modal'),
             matchSelectModal: document.getElementById('match-select-modal'),
             randomMatchModal: document.getElementById('random-match-modal'),
-            roomModal: document.getElementById('room-modal'),
             startupServer: document.getElementById('startup-server'),
             startupLmserver: document.getElementById('startup-lmserver'),
             startupNickname: document.getElementById('startup-nickname'),
@@ -621,7 +615,6 @@ class GameManager {
             startupForceLm: document.getElementById('startup-force-lm'),
             soloModeBtn: document.getElementById('solo-mode-btn'),
             vsModeBtn: document.getElementById('vs-mode-btn'),
-            rtaModeBtn: document.getElementById('rta-mode-btn'),
             practiceModeBtn: document.getElementById('practice-mode-btn'),
             achievementsBtn: document.getElementById('achievements-btn'),
             settingsMainBtn: document.getElementById('settings-main-btn'),
@@ -654,23 +647,11 @@ class GameManager {
             backToMenuResultBtn: document.getElementById('back-to-menu-result-btn'),
             saveSettingsBtn: document.getElementById('save-settings-btn'),
             theme: document.getElementById('theme'),
-            gameServerAddress: document.getElementById('game-server-address'),
-            lmServerAddress: document.getElementById('lm-server-address'),
             // leaderboardList removed (ranking廃止)
             matchRandomBtn: document.getElementById('match-random-btn'),
-            matchCustomBtn: document.getElementById('match-custom-btn'),
             randomRuleSelect: document.getElementById('random-rule-select'),
             ruleDescription: document.getElementById('rule-description'),
             randomJoinBtn: document.getElementById('random-join-btn'),
-            createRoomBtn: document.getElementById('create-room-btn'),
-            joinRoomBtn: document.getElementById('join-room-btn'),
-            roomStatus: document.getElementById('room-status'),
-            roomName: document.getElementById('room-name'),
-            roomPassword: document.getElementById('room-password'),
-            roomMax: document.getElementById('room-max'),
-            roomRule: document.getElementById('room-rule'),
-            joinRoomId: document.getElementById('join-room-id'),
-            joinRoomPassword: document.getElementById('join-room-password'),
             practiceQuestions: document.getElementById('practice-questions'),
             practiceTime: document.getElementById('practice-time'),
             practiceStartBtn: document.getElementById('practice-start-btn'),
@@ -694,7 +675,6 @@ class GameManager {
         safeAdd(this.el.connectServerBtn, 'click', this.startupConnect);
         safeAdd(this.el.soloModeBtn, 'click', () => this.handleGameModeClick('solo'));
         safeAdd(this.el.vsModeBtn, 'click', () => this.handleGameModeClick('vs'));
-        safeAdd(this.el.rtaModeBtn, 'click', () => this.handleGameModeClick('rta'));
         safeAdd(this.el.practiceModeBtn, 'click', () => this.handleGameModeClick('practice'));
         safeAdd(this.el.settingsMainBtn, 'click', () => this.showModal('settings-modal'));
     // leaderboard button removed
@@ -802,11 +782,8 @@ class GameManager {
         safeAdd(this.el.backToMenuResultBtn, 'click', this.goBackToMenu);
         safeAdd(this.el.practiceStartBtn, 'click', this.startPracticeMode);
         safeAdd(this.el.matchRandomBtn, 'click', () => { this.showModal('random-match-modal'); this.closeModal('match-select-modal'); });
-        safeAdd(this.el.matchCustomBtn, 'click', () => { this.showModal('room-modal'); this.closeModal('match-select-modal'); });
         safeAdd(this.el.randomRuleSelect, 'change', this.updateRuleDescription);
         safeAdd(this.el.randomJoinBtn, 'click', this.joinRandomMatch);
-        safeAdd(this.el.createRoomBtn, 'click', this.createRoom);
-        safeAdd(this.el.joinRoomBtn, 'click', this.joinRoom);
         safeAdd(this.el.cancelMatchmakingBtn, 'click', this.cancelMatchmaking);
         console.log('[App] Cancel matchmaking button listener attached:', !!this.el.cancelMatchmakingBtn);
 
@@ -895,23 +872,11 @@ class GameManager {
             layoutSelect.value = savedLayout;
         }
         
-        // Load other settings
-        if (this.el.gameServerAddress) this.el.gameServerAddress.value = this.gameServerUrl;
-        if (this.el.lmServerAddress) this.el.lmServerAddress.value = this.lmServerUrl;
+        // Load other settings - server settings removed
     }
 
     saveSettings() {
         try {
-            // Validate and save LM server URL
-            if (this.el.lmServerAddress) {
-                const lmUrl = this.el.lmServerAddress.value.trim();
-                if (lmUrl) {
-                    this.lmServerUrl = this.validateUrl(lmUrl);
-                } else {
-                    this.lmServerUrl = '';
-                }
-            }
-            
             // Validate theme selection
             const theme = this.el.theme ? this.el.theme.value : 'glassmorphism';
             const validThemes = ['glassmorphism', 'gaming', 'light', 'cyberpunk'];
@@ -963,9 +928,7 @@ class GameManager {
             layoutSelect.value = savedLayout;
         }
         
-        // Load other settings
-        if (this.el.gameServerAddress) this.el.gameServerAddress.value = this.gameServerUrl;
-        if (this.el.lmServerAddress) this.el.lmServerAddress.value = this.lmServerUrl;
+        // Load other settings - server settings removed
     }
 
     async startupConnect() {
@@ -1117,7 +1080,7 @@ class GameManager {
     }
 
     disableMatchButtons(disabled) {
-        const ids = ['matchRandomBtn','matchCustomBtn','randomJoinBtn','createRoomBtn','joinRoomBtn'];
+        const ids = ['matchRandomBtn','randomJoinBtn'];
         ids.forEach(id => { const b = this.el[id]; if (b) b.disabled = disabled; });
     }
 
@@ -1137,24 +1100,8 @@ class GameManager {
         this.questionTimeLimit = 25; // 25 seconds per question
         this.questionStartTime = null;
         this.questionTimer = null;
-        if (this.el.timerWrapper) this.el.timerWrapper.style.display = 'none';
-        await this.fetchQuestionsAndStartGame();
-    }    async startRtaMode() {
-        // Check if server is connected before starting game
-        if (!this.isServerConnected) {
-            console.warn('[RTA] Cannot start RTA mode - server not connected');
-            this.showModal('connection-error-modal');
-            return;
-        }
-
-        this.cleanupMatchmakingBeforeLocalStart();
-        this.currentMode = 'rta';
-        this.timeLimit = 180;
-        this.questionsPerGame = 10;
-        this.questionTimeLimit = 25; // 25 seconds per question
-        this.questionStartTime = null;
-        this.questionTimer = null;
         if (this.el.timerWrapper) this.el.timerWrapper.style.display = 'block';
+        if (this.el.timerDisplay) this.el.timerDisplay.textContent = '∞';
         await this.fetchQuestionsAndStartGame();
     }
 
@@ -1205,23 +1152,37 @@ class GameManager {
                 settings.timeLimit = (parseInt(this.el.practiceTime.value, 10) || 5) * 60;
             }
             
-            // Read difficulty filter
+            // Read difficulty filter (radio buttons)
             const difficultyRadio = document.querySelector('input[name="difficulty"]:checked');
-            if (difficultyRadio) {
-                settings.filters.difficulty = difficultyRadio.value;
-            }
-            
-            // Read category filter
-            const categoryRadio = document.querySelector('input[name="category"]:checked');
-            if (categoryRadio) {
-                settings.filters.category = categoryRadio.value;
+            if (difficultyRadio) settings.filters.difficulty = difficultyRadio.value;
+
+            // Read category filter - prefer a select with id 'category-filter' when present
+            const categorySelect = document.getElementById('category-filter');
+            if (categorySelect) {
+                // multiple select possible - use first selected value for now
+                const selected = Array.from(categorySelect.selectedOptions || []).map(o => o.value).filter(Boolean);
+                settings.filters.category = (selected.length === 0) ? 'all' : selected[0];
+            } else {
+                const categoryRadio = document.querySelector('input[name="category"]:checked');
+                if (categoryRadio) settings.filters.category = categoryRadio.value;
             }
             
             // Read question length filter
             const lengthRadio = document.querySelector('input[name="questionLength"]:checked');
-            if (lengthRadio) {
-                settings.filters.questionLength = lengthRadio.value;
+            if (lengthRadio) settings.filters.questionLength = lengthRadio.value;
+
+            // Read tag filters (checkboxes inside .tag-options)
+            const tagCheckboxes = document.querySelectorAll('#filter-settings .tag-options input[type="checkbox"]');
+            if (tagCheckboxes && tagCheckboxes.length) {
+                const tags = Array.from(tagCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+                if (tags.length) settings.filters.tags = tags;
             }
+
+            // Read practice voice checkbox
+            const pv = document.getElementById('practice-voice');
+            if (pv) settings.filters.voice = !!pv.checked;
+            
+            console.log('[DEBUG] Practice settings read:', settings);
             
         } catch (error) {
             console.warn('[Practice] Error reading settings:', error);
@@ -1244,7 +1205,11 @@ class GameManager {
                 }
 
                 // Try to fetch from server with proper error handling
-                data = await window.GameAPI.fetchSoloQuestions(this.gameServerUrl, this.questionsPerGame);
+                let filters = {};
+                if (this.currentMode === 'practice' && this.practiceFilters) {
+                    filters = this.practiceFilters;
+                }
+                data = await window.GameAPI.fetchSoloQuestions(this.gameServerUrl, this.questionsPerGame, filters);
                 
                 if (data.error) {
                     throw new Error(data.error);
@@ -1625,65 +1590,9 @@ class GameManager {
         this.showScreen('main-menu');
     }
 
-    async createRoom() {
-        // Check if server is connected before creating room
-        if (!this.isServerConnected) {
-            console.warn('[Room] Cannot create room - server not connected');
-            this.showModal('connection-error-modal');
-            return;
-        }
 
-        if (this.isMatchmaking) return this.showNotification('すでにエントリー中です', 'warning');
-        const name = this.el.roomName ? this.el.roomName.value : '';
-        const password = this.el.roomPassword ? this.el.roomPassword.value : '';
-        const max_players = this.el.roomMax ? parseInt(this.el.roomMax.value, 10) : 3;
-        const rule = this.el.roomRule ? this.el.roomRule.value : 'classic';
-        try {
-            const res = await fetch(`${this.gameServerUrl}/room/create`, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ player_id: this.playerId, name, password, max_players, rule })
-            });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            this.isMatchmaking = true;
-            this.matchmakingStatus = { type: 'room', roomId: data.room_id };
-            this.disableMatchButtons(true);
-            this.showPersistentStatusUI();
-            const params = { roomId: data.room_id };
-            this.persistPendingMatch(params);
-            this.startLobbyPolling(params);
-            this.closeModal('room-modal');
-            this.showNotification('ルームを作成しました。プレイヤーを待っています。', 'info');
-            this.showScreen('main-menu');
-        } catch (e) {
-            this.showNotification(`ルーム作成失敗: ${e.message}`, 'error');
-        }
-    }
 
-    joinRoom() {
-        // Check if server is connected before joining room
-        if (!this.isServerConnected) {
-            console.warn('[Room] Cannot join room - server not connected');
-            this.showModal('connection-error-modal');
-            return;
-        }
 
-        if (this.isMatchmaking) return this.showNotification('すでにエントリー中です', 'warning');
-        const roomId = this.el.joinRoomId ? this.el.joinRoomId.value.trim() : '';
-        const password = this.el.joinRoomPassword ? this.el.joinRoomPassword.value.trim() : '';
-        if (!roomId) return this.showNotification('ルームIDを入力してください', 'error');
-        this.isMatchmaking = true;
-        this.matchmakingStatus = { type: 'room', roomId: roomId };
-        this.disableMatchButtons(true);
-        this.showPersistentStatusUI();
-        const params = { roomId, password };
-        this.persistPendingMatch(params);
-        this.startLobbyPolling(params);
-        this.closeModal('room-modal');
-        this.showNotification('ルームに参加しました。ゲーム開始をお待ちください。', 'info');
-        this.showScreen('main-menu');
-    }
 
     async cancelMatchmaking() {
         console.log('[Cancel] cancelMatchmaking called, isMatchmaking:', this.isMatchmaking);
@@ -2025,6 +1934,21 @@ class GameManager {
             this.el.matchmakingStatus.textContent = statusText;
         }
 
+        // Update waiting badge
+        const waitingBadge = document.querySelector('.waiting-badge');
+        if (waitingBadge) {
+            if (position === 1) {
+                waitingBadge.textContent = '先頭';
+                waitingBadge.style.background = '#00ff88';
+            } else if (position) {
+                waitingBadge.textContent = `${position}位`;
+                waitingBadge.style.background = '#00d4ff';
+            } else {
+                waitingBadge.textContent = '待機中';
+                waitingBadge.style.background = '#ffaa00';
+            }
+        }
+
         // update cancel button label when player is first in queue
         const cancel = document.getElementById('cancel-matchmaking-btn');
         if (cancel) {
@@ -2038,6 +1962,12 @@ class GameManager {
         // Show persistent status container
         if (this.el.persistentStatusContainer) {
             this.el.persistentStatusContainer.style.display = 'flex';
+        }
+
+        // Show quick cancel button
+        const quickCancel = document.getElementById('quick-cancel-btn');
+        if (quickCancel) {
+            quickCancel.style.display = 'flex';
         }
 
         // Update waiting badge
@@ -2070,13 +2000,40 @@ class GameManager {
     // Preserve provided answers from the server. Previously answers were being
     // cleared here which caused client-side answer checking to always fail
     // in VS mode (no answers => checkAnswer() never matches).
-    this.questions = gameData.questions.map(q => ({ ...q }));
-        // Use the shared countdown routine
-        this.startGameWithCountdown('vs', countdown);
-        // Start polling game state (server provides game_id)
-        if (gameData.game_id) {
-            try { this.startGameStatePolling(gameData.game_id); } catch(e) { console.warn('startGameStatePolling failed', e); }
+    this.questions = (gameData.questions && Array.isArray(gameData.questions)) ? gameData.questions.map(q => ({ ...q })) : this.questions;
+
+    // Record game id and attempt to initialize time limits from server if provided
+    if (gameData.game_id) {
+        this.currentGameId = gameData.game_id;
+        try { this.startGameStatePolling(gameData.game_id); } catch(e) { console.warn('startGameStatePolling failed', e); }
+    }
+
+    // The server may provide a per-game time limit under several keys; prefer explicit time_limit, then duration, then total_time
+    const serverTime = (gameData && (gameData.time_limit || gameData.duration || gameData.total_time || gameData.total_seconds));
+    if (serverTime) {
+        // server might send seconds or milliseconds
+        let t = Number(serverTime) || 0;
+        if (t > 1000) {
+            // likely milliseconds
+            t = Math.ceil(t / 1000);
         }
+        if (t > 0) {
+            this.timeLimit = t;
+            this.initialTimeLimit = this.initialTimeLimit || t;
+            console.log('[DEBUG] VS timeLimit set from server:', t, 'seconds');
+        }
+    } else {
+        console.log('[DEBUG] No server time_limit provided, using default');
+    }
+
+    // Ensure the timer UI is visible for VS games when a time limit exists
+    if (this.timeLimit > 0 && this.el.timerWrapper) {
+        this.el.timerWrapper.style.display = 'block';
+        console.log('[DEBUG] Timer wrapper shown for VS');
+    }
+
+    // Use the shared countdown routine
+    this.startGameWithCountdown('vs', countdown);
     }
 
     resetGameState() {
@@ -2098,8 +2055,12 @@ class GameManager {
             if (this.el.questionCount) this.el.questionCount.textContent = String(this.questionCount || 0);
             if (this.el.totalQuestions) this.el.totalQuestions.textContent = String(this.questions ? this.questions.length : 0);
             if (this.el.accuracy) {
-                const acc = (this.questions && this.questions.length) ? Math.round((this.correctAnswers / this.questions.length) * 100) : 0;
-                this.el.accuracy.textContent = `${acc}%`;
+                if (this.currentMode === 'solo') {
+                    this.el.accuracy.textContent = '-';
+                } else {
+                    const acc = (this.questions && this.questions.length) ? Math.round((this.correctAnswers / this.questions.length) * 100) : 0;
+                    this.el.accuracy.textContent = `${acc}%`;
+                }
             }
             if (this.el.progressFill) {
                 const pct = (this.questions && this.questions.length) ? Math.round((this.currentQuestionIndex / this.questions.length) * 100) : 0;
@@ -2128,8 +2089,8 @@ class GameManager {
 
         console.log('[GameManager] showQuestion index=', this.currentQuestionIndex, 'question=', q);
         
-        // Start question timer for solo/RTA/practice modes with 17-second limit
-        if (['solo', 'rta', 'practice'].includes(this.currentMode) && this.questionTimeLimit > 0) {
+        // Start question timer for solo/practice modes with 25-second limit
+        if (['solo', 'practice', 'vs'].includes(this.currentMode) && this.questionTimeLimit > 0) {
             this.startQuestionTimer();
         }
         
@@ -2312,33 +2273,49 @@ class GameManager {
             }
 
             // Update AI output safely
-            const aiResponse = data.ai_response || '(応答なし)';
+            let aiResponse = data.ai_response || '(応答なし)';
+            
+            // Remove <think> tags if present
+            aiResponse = aiResponse.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+            
+            // Try to parse JSON response if it looks like JSON
+            let parsedResponse = aiResponse;
+            if (typeof aiResponse === 'string' && aiResponse.trim().startsWith('{') && aiResponse.trim().endsWith('}')) {
+                try {
+                    const parsed = JSON.parse(aiResponse);
+                    if (parsed && typeof parsed === 'object' && parsed.answer) {
+                        parsedResponse = parsed.answer;
+                        // Update reasoning if available
+                        if (parsed.reasoning && this.el.aiAnalysis) {
+                            const safeReasoning = String(parsed.reasoning).substring(0, 1000);
+                            this.el.aiAnalysis.innerHTML = `<p><b>AIの思考:</b> ${safeReasoning}</p>`;
+                        }
+                        // Handle validation from parsed response
+                        if (parsed.valid === false) {
+                            const invalidReason = parsed.invalid_reason || 'ルール違反';
+                            this.showNotification(`不正な質問: ${invalidReason}`, 'error');
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Failed to parse AI response as JSON:', e);
+                    // Fall back to original response
+                }
+            }
+            
             if (this.el.aiOutput) {
-                this.el.aiOutput.textContent = aiResponse;
+                this.el.aiOutput.textContent = parsedResponse;
             }
             
             // Update new UI element
             const aiOutputModern = document.getElementById('ai-output-modern');
             if (aiOutputModern) {
-                aiOutputModern.textContent = aiResponse;
-            }
-            
-            // Handle reasoning
-            if (data.reasoning && this.el.aiAnalysis) {
-                const safeReasoning = String(data.reasoning).substring(0, 1000); // Limit length
-                this.el.aiAnalysis.innerHTML = `<p><b>AIの思考:</b> ${safeReasoning}</p>`;
-            }
-            
-            // Handle validation
-            if (data.valid === false) {
-                const invalidReason = data.invalid_reason || 'ルール違反';
-                this.showNotification(`不正な質問: ${invalidReason}`, 'error');
+                aiOutputModern.textContent = parsedResponse;
             }
 
             // Check answer
             let isCorrect = false;
             if (data.valid !== false && q.answers) {
-                isCorrect = this.checkAnswer(aiResponse, q.answers);
+                isCorrect = this.checkAnswer(parsedResponse, q.answers);
             }
             
             // Resume timer after AI response is received - only pause during processing
@@ -2377,7 +2354,19 @@ class GameManager {
     }
 
     handleAnswerResult(isCorrect) {
-        // Timer is already cleared in submitQuestion after AI response
+        console.log('Handling answer result, timer state before:', {
+            hasTimer: !!this.questionTimer,
+            startTime: this.questionStartTime,
+            pausedTime: this.pausedTime
+        });
+        // Prevent processing if timeout already handled
+        if (this._questionTimeoutHandled) {
+            return;
+        }
+
+        // Don't clear question timer here - let showQuestion handle it
+        // this.clearQuestionTimer();
+        this.stopTimer();
         
         if (isCorrect) {
             this.score += 100;
@@ -2407,29 +2396,75 @@ class GameManager {
     }
 
     nextQuestion() {
-        this.clearQuestionTimer();
+        console.log('Moving to next question, current timer state:', {
+            hasTimer: !!this.questionTimer,
+            startTime: this.questionStartTime,
+            pausedTime: this.pausedTime
+        });
+        // Reset timeout flag for next question
+        this._questionTimeoutHandled = false;
         this.currentQuestionIndex++;
         this.showQuestion();
     }
 
-    endGame() {
+    async endGame() {
         this.stopTimer();
         this.clearQuestionTimer();
-        // If in a multiplayer game and not yet submitted, send final done flag
-        if (this.currentMode === 'vs' && this.currentGameId && !this._hasSubmittedDone) {
-            try { this.submitGameDone({ correct: false, score_delta: 0, done: true }); } catch (e) { console.warn(e); }
-        }
         // stop gameplay BGM when game ends
         try { this.stopBGM(); } catch (e) {}
-    const timeTaken = this.initialTimeLimit - this.timeLimit;
-    // Show correct count instead of score
-    if (this.el.finalScore) this.el.finalScore.textContent = String(this.correctAnswers);
-        if (this.el.resultCorrect) this.el.resultCorrect.textContent = `${this.correctAnswers} / ${this.questions.length}`;
-        if (this.el.resultQuestions) this.el.resultQuestions.textContent = this.questionCount;
-        const accuracy = this.questions.length > 0 ? Math.round((this.correctAnswers / this.questions.length) * 100) : 0;
-        if (this.el.resultAccuracy) this.el.resultAccuracy.textContent = `${accuracy}%`;
-        if (this.el.resultTime) this.el.resultTime.textContent = this.formatTime(timeTaken);
-        this.showModal('result-modal');
+
+        const finalize = async () => {
+            // If in multiplayer VS, attempt to fetch final state from server for authoritative numbers
+            let finalState = null;
+            if (this.currentMode === 'vs' && this.currentGameId && this.gameServerUrl) {
+                try {
+                    const res = await fetch(`${this.gameServerUrl}/game/${encodeURIComponent(this.currentGameId)}/state`);
+                    if (res.ok) finalState = await res.json();
+                    console.log('[DEBUG] Final state fetched:', finalState);
+                } catch (e) {
+                    console.warn('Failed to fetch final game state:', e);
+                }
+            }
+
+            // Use server-provided counts when available, otherwise fall back to local counters
+            const finalCorrect = (finalState && finalState.correct_counts && finalState.correct_counts[this.playerId] !== undefined)
+                ? Number(finalState.correct_counts[this.playerId])
+                : this.correctAnswers;
+            const finalQuestions = (finalState && finalState.total_questions) ? Number(finalState.total_questions) : (this.questions ? this.questions.length : this.questionCount);
+            const finalQuestionCount = (finalState && finalState.question_count && finalState.question_count[this.playerId] !== undefined)
+                ? Number(finalState.question_count[this.playerId])
+                : this.questionCount;
+
+            console.log('[DEBUG] Final numbers - correct:', finalCorrect, 'questions:', finalQuestions, 'local correctAnswers:', this.correctAnswers);
+
+            const timeTaken = this.initialTimeLimit - this.timeLimit;
+
+            if (this.el.finalScore) this.el.finalScore.textContent = String(finalCorrect || 0);
+            if (this.el.resultCorrect) this.el.resultCorrect.textContent = `${finalCorrect || 0} / ${finalQuestions || 0}`;
+            if (this.el.resultQuestions) this.el.resultQuestions.textContent = String(finalQuestionCount || 0);
+            const accuracy = finalQuestions > 0 ? Math.round(((finalCorrect || 0) / finalQuestions) * 100) : 0;
+            if (this.el.resultAccuracy) this.el.resultAccuracy.textContent = `${accuracy}%`;
+            if (this.el.resultTime) this.el.resultTime.textContent = this.formatTime(timeTaken);
+
+            // Render VS per-player breakdown if server state is available
+            try { if (this.currentMode === 'vs' && finalState) this.renderVsResults(finalState); } catch (e) {}
+
+            this.showModal('result-modal');
+        };
+
+        // If player not yet submitted done in multiplayer, send final done then finalize after a short delay to let server update
+        if (this.currentMode === 'vs' && this.currentGameId && !this._hasSubmittedDone) {
+            try {
+                await this.submitGameDone({ correct: false, score_delta: 0, done: true });
+                // small delay to allow server to compute final state
+                await new Promise(r => setTimeout(r, 700));
+            } catch (e) {
+                console.warn('submitGameDone during endGame failed', e);
+            }
+            await finalize();
+        } else {
+            await finalize();
+        }
     // Do not submit scores anymore (ranking廃止)
 
         // start auto-return countdown (15s) and update UI element if present
@@ -2547,9 +2582,116 @@ class GameManager {
         }
 
         if (state.finished) {
+            try {
+                // Render VS results if available
+                if (this.currentMode === 'vs') {
+                    try { this.renderVsResults(state); } catch (e) { console.warn('renderVsResults failed', e); }
+                }
+            } catch (e) {}
             this.stopGameStatePolling();
             this.showModal('result-modal');
         }
+    }
+
+    // Render per-player results for VS mode into the result modal
+    renderVsResults(state) {
+        // state may include: scores {playerId: score}, correct_counts {playerId: correctCount}, players {playerId: {nickname}}
+        const container = document.getElementById('new-achievements') || document.querySelector('.new-achievements');
+        if (!container) return;
+
+        // Clear previous content
+        container.innerHTML = '';
+
+        // Create results container with improved styling
+        const resultsContainer = document.createElement('div');
+        resultsContainer.className = 'vs-results-container';
+
+        const title = document.createElement('h4');
+        title.className = 'vs-results-title';
+        title.textContent = '対戦結果';
+        resultsContainer.appendChild(title);
+
+        const scores = (state && state.scores) ? state.scores : {};
+        const corrects = (state && state.correct_counts) ? state.correct_counts : {};
+        const players = (state && state.players) ? state.players : {};
+
+        // Collect player entries
+        const entries = Object.keys(scores || {}).map(pid => {
+            const rawScore = Number(scores[pid]) || 0;
+            // If server provides explicit correct counts, prefer them
+            const correct = (corrects && corrects[pid] !== undefined) ? Number(corrects[pid]) : Math.round(rawScore / 100);
+            const nick = (players && players[pid] && players[pid].nickname) ? players[pid].nickname : (state.player_names && state.player_names[pid]) || pid;
+            return { pid, nick, score: rawScore, correct };
+        });
+
+        // If no scores object, try to build from state.players list
+        if (entries.length === 0 && state.player_list && Array.isArray(state.player_list)) {
+            state.player_list.forEach(p => {
+                const pid = p.player_id || p.id || p;
+                const rawScore = (p.score !== undefined) ? Number(p.score) : 0;
+                const correct = (p.correct_count !== undefined) ? Number(p.correct_count) : Math.round(rawScore / 100);
+                const nick = p.nickname || pid;
+                entries.push({ pid, nick, score: rawScore, correct });
+            });
+        }
+
+        if (entries.length === 0) {
+            const msg = document.createElement('div');
+            msg.className = 'vs-results-empty';
+            msg.textContent = '対戦の結果情報がありません。';
+            resultsContainer.appendChild(msg);
+            container.appendChild(resultsContainer);
+            return;
+        }
+
+        // Sort by correct descending, then score
+        entries.sort((a, b) => (b.correct - a.correct) || (b.score - a.score));
+
+        const list = document.createElement('div');
+        list.className = 'vs-results-list';
+
+        entries.forEach((e, idx) => {
+            const row = document.createElement('div');
+            const rank = idx + 1;
+            row.className = `vs-result-row ${e.pid === this.playerId ? 'current-player' : ''} rank-${rank <= 3 ? rank : ''}`;
+
+            const left = document.createElement('div');
+            left.className = 'vs-result-left';
+
+            // Rank badge
+            const rankBadge = document.createElement('div');
+            rankBadge.className = 'vs-rank-badge';
+            rankBadge.textContent = rank;
+            left.appendChild(rankBadge);
+
+            // Player name
+            const playerName = document.createElement('div');
+            playerName.className = 'vs-player-name';
+            playerName.textContent = e.nick;
+            left.appendChild(playerName);
+
+            const right = document.createElement('div');
+            right.className = 'vs-result-right';
+
+            // Correct count
+            const correctCount = document.createElement('div');
+            correctCount.className = 'vs-correct-count';
+            correctCount.textContent = `${e.correct}問`;
+            right.appendChild(correctCount);
+
+            // Score points (smaller text)
+            const scorePoints = document.createElement('div');
+            scorePoints.className = 'vs-score-points';
+            scorePoints.textContent = `${e.score}pt`;
+            right.appendChild(scorePoints);
+
+            row.appendChild(left);
+            row.appendChild(right);
+            list.appendChild(row);
+        });
+
+        resultsContainer.appendChild(list);
+        container.appendChild(resultsContainer);
     }
 
     async submitScore(timeInSeconds) {
@@ -2621,6 +2763,51 @@ class GameManager {
             this.se.currentTime = 0;
             this.se.play().catch(() => {});
         } catch (e) {}
+    }
+
+    startTimer() {
+        // Ensure any existing timer is cleared first
+        try {
+            if (this.timer) clearInterval(this.timer);
+        } catch (e) {}
+
+        // Record initial time for result calculations
+        if (!this.initialTimeLimit || this.initialTimeLimit <= 0) {
+            this.initialTimeLimit = this.timeLimit || 0;
+        } else {
+            // keep the recorded initialTimeLimit only if we haven't already set it
+            // but allow explicit resets by assigning this.initialTimeLimit elsewhere
+            this.initialTimeLimit = this.initialTimeLimit || this.timeLimit;
+        }
+
+        // Immediately update display
+        if (this.el && this.el.timerDisplay) {
+            try { this.el.timerDisplay.textContent = this.formatTime(this.timeLimit); } catch (e) {}
+        }
+
+        // Tick every second
+        this.timer = setInterval(() => {
+            try {
+                if (typeof this.timeLimit !== 'number') this.timeLimit = Number(this.timeLimit) || 0;
+                if (this.timeLimit <= 0) {
+                    // ensure display shows 00:00
+                    if (this.el && this.el.timerDisplay) this.el.timerDisplay.textContent = this.formatTime(0);
+                    clearInterval(this.timer);
+                    this.timer = null;
+                    // End game on timeout
+                    try { this.showNotification('時間切れです', 'warning'); } catch (e) {}
+                    try { this.endGame(); } catch (e) {}
+                    return;
+                }
+
+                this.timeLimit -= 1;
+                if (this.el && this.el.timerDisplay) {
+                    try { this.el.timerDisplay.textContent = this.formatTime(this.timeLimit); } catch (e) {}
+                }
+            } catch (e) {
+                console.warn('startTimer tick failed', e);
+            }
+        }, 1000);
     }
 
     stopTimer() {
@@ -2711,7 +2898,7 @@ class GameManager {
     }
 
     getModeName(m) {
-        return ({ solo: 'ソロモード', vs: '対戦モード', rta: 'RTAモード', practice: '練習モード', classic: 'クラシック', speed: 'スピード', challenge: 'チャレンジ' })[m] || m;
+        return ({ solo: 'ソロモード', vs: '対戦モード', practice: '練習モード', classic: 'クラシック', speed: 'スピード', challenge: 'チャレンジ' })[m] || m;
     }
 
     setAIStatus(text, color) {
@@ -2780,6 +2967,12 @@ class GameManager {
             this.handlePracticeTabSwitch(btn);
         }
         
+        // Handle settings modal tabs
+        if (parent.closest('#settings-modal')) {
+            // Settings modal now only has display tab, no need for special handling
+            return;
+        }
+        
     // Leaderboard tabs removed
     }
 
@@ -2792,16 +2985,45 @@ class GameManager {
         
         // Show/hide tab content based on selection
         modal.querySelectorAll('.tab-content').forEach(content => {
-            content.style.display = 'none';
+            content.classList.remove('active');
         });
         
-        const activeContent = modal.querySelector(`[data-tab-content="${selectedTab}"]`);
+        const activeContent = modal.querySelector(`#${selectedTab}`);
         if (activeContent) {
-            activeContent.style.display = 'block';
+            activeContent.classList.add('active');
         }
         
         // Initialize default settings if needed
-        this.initializePracticeSettings(selectedTab);
+        if (selectedTab === 'filter-settings') {
+            this.initializeFilterSettings();
+        } else if (selectedTab === 'custom-questions') {
+            this.initializeCustomQuestionsSettings();
+        }
+    }
+
+    initializePracticeModal() {
+        const modal = document.getElementById('practice-setup-modal');
+        if (!modal) return;
+        
+        // Set default active tab (basic-settings)
+        modal.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        const defaultTab = modal.querySelector('.tab-btn[data-tab="basic-settings"]');
+        if (defaultTab) {
+            defaultTab.classList.add('active');
+        }
+        
+        // Show default tab content
+        modal.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        const defaultContent = modal.querySelector('#basic-settings');
+        if (defaultContent) {
+            defaultContent.classList.add('active');
+        }
+        
+        console.log('[Practice] Modal initialized with basic-settings tab');
     }
 
     initializePracticeSettings(tabType) {
@@ -2831,6 +3053,60 @@ class GameManager {
             }
         } catch (error) {
             console.warn('[Practice] Error initializing settings:', error);
+        }
+    }
+
+    initializeFilterSettings() {
+        try {
+            // Set default difficulty if none selected
+            const difficultyRadios = document.querySelectorAll('input[name="difficulty"]');
+            if (difficultyRadios.length > 0 && !Array.from(difficultyRadios).some(r => r.checked)) {
+                difficultyRadios[0].checked = true;
+            }
+            
+            // Set default category selection (all selected by default in HTML)
+            const categorySelect = document.getElementById('category-filter');
+            if (categorySelect && categorySelect.selectedOptions.length === 0) {
+                const allOption = categorySelect.querySelector('option[value="all"]');
+                if (allOption) {
+                    allOption.selected = true;
+                }
+            }
+            
+            console.log('[Practice] Filter settings initialized');
+        } catch (error) {
+            console.warn('[Practice] Error initializing filter settings:', error);
+        }
+    }
+
+    initializeCustomQuestionsSettings() {
+        try {
+            // Initialize file upload functionality
+            const jsonUpload = document.getElementById('json-upload');
+            const fileName = document.getElementById('file-name');
+            
+            if (jsonUpload && fileName) {
+                jsonUpload.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        fileName.textContent = file.name;
+                    } else {
+                        fileName.textContent = '';
+                    }
+                });
+            }
+            
+            // Initialize create custom button
+            const createCustomBtn = document.getElementById('create-custom-btn');
+            if (createCustomBtn) {
+                createCustomBtn.addEventListener('click', () => {
+                    this.showNotification('カスタム問題作成機能は開発中です', 'info');
+                });
+            }
+            
+            console.log('[Practice] Custom questions settings initialized');
+        } catch (error) {
+            console.warn('[Practice] Error initializing custom questions settings:', error);
         }
     }
 
@@ -2994,73 +3270,51 @@ class GameManager {
                 duration: 10000
             },
             {
-                title: "🤖 AI回答の分析方法",
+                title: "🤖 AI回答の見方",
                 description: `
                     <div style="background: rgba(0, 212, 255, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                        <strong>🔍 AI回答の読み方:</strong><br>
-                        • 事実に基づいた正確な情報<br>
-                        • 文脈を考慮した詳細な説明<br>
-                        • 関連する背景情報も含む
+                        <strong>� AIの回答は:</strong><br>
+                        • あなたの質問に対する正確な答え<br>
+                        • 背景情報や関連知識も教えてくれる<br>
+                        • ヒントになるキーワードがたくさん入っている
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
-                        <div style="background: rgba(0, 255, 136, 0.1); padding: 12px; border-radius: 8px;">
-                            <strong>📊 回答の活用:</strong><br>
-                            • 新しい手がかりを得る<br>
-                            • 誤った仮説を排除<br>
-                            • 次の質問の方向性を決める
+                    <div style="border: 2px solid #00d4ff; border-radius: 10px; padding: 15px; margin: 15px 0; background: rgba(0, 212, 255, 0.05);">
+                        <strong>� 回答例:</strong><br>
+                        <div style="background: rgba(0, 212, 255, 0.1); padding: 10px; border-radius: 5px; margin: 10px 0; font-style: italic;">
+                            「これは戊辰戦争（1868-1869年）のことです。江戸幕府と新政府軍の間で起こった内戦で、明治維新の重要な出来事です。」
                         </div>
-                        <div style="background: rgba(255, 170, 0, 0.1); padding: 12px; border-radius: 8px;">
-                            <strong>⚠️ 注意点:</strong><br>
-                            • 回答中はタイマーが停止<br>
-                            • 回答は即座に分析<br>
-                            • 時間を無駄にしない
-                        </div>
+                        <strong>🔍 ポイント:</strong> 「戊辰戦争」「1868-1869年」「江戸幕府」「新政府軍」「明治維新」などのキーワードから次の質問を考えよう！
                     </div>
 
-                    <div style="border: 2px solid #ffaa00; border-radius: 10px; padding: 15px; margin: 15px 0; background: rgba(255, 170, 0, 0.05);">
-                        <strong>🎯 実践テクニック:</strong><br>
-                        AIの回答からキーワードを抽出し、次の質問の軸にする
+                    <div style="color: #ffaa00; font-weight: bold;">
+                        ⚠️ 注意: AIの回答中はタイマーが止まるので、すぐに次の質問を考えよう！
                     </div>
                 `,
                 highlight: "#ai-output",
                 icon: "🤖",
-                demo: 'ai',
-                demoText: 'これは戊辰戦争（1868-1869年）のことです。江戸幕府と新政府軍の間で起こった内戦で、明治維新の重要な出来事です。',
                 duration: 8000
             },
             {
-                title: "⏱️ タイマー管理の極意",
+                title: "⏱️ 時間管理のコツ",
                 description: `
                     <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                        <strong>⏱️ 制限時間:</strong> 各質問に25秒<br>
-                        <strong>🎨 色分け:</strong> 青(通常) → 赤(5秒以内)<br>
-                        <strong>⏸️ 一時停止:</strong> AI回答中は自動停止
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 15px 0;">
-                        <div style="background: rgba(0, 212, 255, 0.1); padding: 10px; border-radius: 8px; text-align: center;">
-                            <div style="font-size: 1.5rem;">🔵</div>
-                            <strong>通常</strong><br>
-                            落ち着いて質問
-                        </div>
-                        <div style="background: rgba(255, 170, 0, 0.1); padding: 10px; border-radius: 8px; text-align: center;">
-                            <div style="font-size: 1.5rem;">🟡</div>
-                            <strong>注意</strong><br>
-                            時間意識
-                        </div>
-                        <div style="background: rgba(255, 71, 87, 0.1); padding: 10px; border-radius: 8px; text-align: center;">
-                            <div style="font-size: 1.5rem;">🔴</div>
-                            <strong>緊急</strong><br>
-                            即判断
-                        </div>
+                        <strong>⏱️ 各質問の制限時間:</strong> 25秒<br>
+                        <strong>🎨 タイマーの色:</strong> 青(通常) → 黄色(10秒) → 赤(5秒)<br>
+                        <strong>⏸️ 特別ルール:</strong> AI回答中はタイマーが止まる
                     </div>
 
                     <div style="border: 2px solid #00d4ff; border-radius: 10px; padding: 15px; margin: 15px 0;">
-                        <strong>⚡ 時間管理のコツ:</strong><br>
-                        • 最初の10秒で質問を考える<br>
-                        • 残り10秒で結論をまとめる<br>
-                        • 5秒以内は直感で判断
+                        <strong>⚡ 効率的な時間使い方:</strong><br>
+                        • 最初の15秒: 質問の内容を考える<br>
+                        • 次の8秒: 質問を入力する<br>
+                        • 最後の2秒: 送信ボタンを押す<br>
+                        <br>
+                        <strong>💡 ポイント:</strong> 赤いタイマーになったら、考えている質問をそのまま送る！
+                    </div>
+
+                    <div style="color: #ffaa00; font-weight: bold;">
+                        🎯 目標: 1分間に3-4回の質問を心がけよう！
                     </div>
                 `,
                 highlight: ".timer-section",
@@ -3179,42 +3433,37 @@ class GameManager {
                 duration: 7000
             },
             {
-                title: "🏆 ゲームモードの選択",
+                title: "� ゲームモードの選択",
                 description: `
                     <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                        <strong>🎯 目的別モード選択:</strong><br>
-                        自分のレベルや目的に合わせて最適なモードを選ぼう
+                        <strong>🎯 3つのゲームモード:</strong><br>
+                        目的に合わせて最適なモードを選ぼう
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
                         <div style="background: rgba(0, 255, 136, 0.1); padding: 12px; border-radius: 8px;">
-                            <strong>🎮 ソロプレイ</strong><br>
-                            <small>• 1人で練習<br>• 時間無制限<br>• じっくり考えられる</small>
+                            <strong>🎮 ソロモード</strong><br>
+                            <small>• 1人でじっくり練習<br>• 時間無制限<br>• 初心者におすすめ</small>
                         </div>
                         <div style="background: rgba(255, 107, 53, 0.1); padding: 12px; border-radius: 8px;">
-                            <strong>⚡ RTAモード</strong><br>
-                            <small>• 時間制限付き<br>• 速さを競う<br>• 上級者向け</small>
+                            <strong>🎯 対戦モード</strong><br>
+                            <small>• 世界中の人と対戦<br>• 時間制限あり<br>• 本格的なチャレンジ</small>
                         </div>
                         <div style="background: rgba(0, 212, 255, 0.1); padding: 12px; border-radius: 8px;">
-                            <strong>🎯 ランダムマッチ</strong><br>
-                            <small>• 誰かと対戦<br>• 実戦練習<br>• ランキング対応</small>
-                        </div>
-                        <div style="background: rgba(255, 71, 87, 0.1); padding: 12px; border-radius: 8px;">
-                            <strong>👥 カスタムルーム</strong><br>
-                            <small>• 友達と遊ぶ<br>• ルールカスタム<br>• プライベート</small>
+                            <strong>📚 練習モード</strong><br>
+                            <small>• 特定の分野を練習<br>• カテゴリ別問題<br>• スキルアップ向け</small>
                         </div>
                     </div>
 
                     <div style="border: 2px solid #00d4ff; border-radius: 10px; padding: 15px; margin: 15px 0;">
-                        <strong>🚀 始め方のオススメ:</strong><br>
-                        1. ソロモードで基本を練習<br>
-                        2. RTAモードで速度を養う<br>
-                        3. ランダムマッチで実戦経験
+                        <strong>� 始め方のオススメ:</strong><br>
+                        まずは「ソロモード」でゲームに慣れよう！<br>
+                        慣れてきたら「対戦モード」で腕試し！
                     </div>
                 `,
-                highlight: ".mode-cards",
-                icon: "🏆",
-                duration: 8000
+                highlight: ".mode-grid",
+                icon: "🎮",
+                duration: 6000
             },
             {
                 title: "🎉 チュートリアル完了！準備は整いました",
@@ -3921,7 +4170,7 @@ class GameManager {
             },
             {
                 title: "ソロモード",
-                description: "時間無制限でじっくり挑戦できます。17秒/問題の新ルールで戦略的にプレイしましょう。",
+                description: "時間無制限でじっくり挑戦できます。25秒/問題の新ルールで戦略的にプレイしましょう。",
                 highlight: "#solo-mode-btn",
                 action: null
             },
@@ -3929,12 +4178,6 @@ class GameManager {
                 title: "対戦モード",
                 description: "オンラインで他プレイヤーとリアルタイム対戦できます。パス機能も使えます。",
                 highlight: "#vs-mode-btn",
-                action: null
-            },
-            {
-                title: "RTAモード",
-                description: "10問を3分以内で解くタイムアタックモード。時間でスコアが変動します。",
-                highlight: "#rta-mode-btn",
                 action: null
             },
             {
@@ -3975,6 +4218,20 @@ class GameManager {
         // Close tutorial select modal and show tutorial overlay
         this.closeModal('tutorial-select-modal');
         this.showModal('tutorial-overlay');
+        
+        // Force show tutorial overlay for debugging
+        const tutorialOverlay = document.getElementById('tutorial-overlay');
+        if (tutorialOverlay) {
+            tutorialOverlay.style.display = 'flex';
+            tutorialOverlay.style.position = 'fixed';
+            tutorialOverlay.style.top = '0';
+            tutorialOverlay.style.left = '0';
+            tutorialOverlay.style.width = '100%';
+            tutorialOverlay.style.height = '100%';
+            tutorialOverlay.style.zIndex = '9999';
+            tutorialOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+            console.log('[Tutorial] Forced tutorial overlay display');
+        }
 
         // Add keyboard event listener
         this.tutorialKeyHandler = (e) => {
@@ -4170,6 +4427,16 @@ class GameManager {
     }
 
     endTutorial() {
+        console.log('[Tutorial] Ending tutorial...');
+        
+        // Force hide tutorial overlay
+        const tutorialOverlay = document.getElementById('tutorial-overlay');
+        if (tutorialOverlay) {
+            tutorialOverlay.style.display = 'none';
+            tutorialOverlay.classList.remove('active');
+            console.log('[Tutorial] Tutorial overlay hidden');
+        }
+        
         // Clear tutorial state
         this.closeModal('tutorial-overlay');
         document.querySelectorAll('.tutorial-highlight').forEach(el => el.remove());
@@ -4929,12 +5196,14 @@ class GameManager {
         this.endGame();
     }
 
-    // Question timer functions for 17-second limit
+    // Question timer functions for 25-second limit
     startQuestionTimer() {
+        console.log(`Starting question timer for mode: ${this.currentMode}, time limit: ${this.questionTimeLimit}s`);
         this.clearQuestionTimer();
         this.questionStartTime = Date.now();
         
         this.questionTimer = setTimeout(() => {
+            console.log('Question timer expired');
             this.handleQuestionTimeout();
         }, this.questionTimeLimit * 1000);
         
@@ -4943,6 +5212,7 @@ class GameManager {
     }
 
     clearQuestionTimer() {
+        console.log('Clearing question timer');
         if (this.questionTimer) {
             clearTimeout(this.questionTimer);
             this.questionTimer = null;
@@ -4983,7 +5253,10 @@ class GameManager {
     }
 
     updateQuestionTimerDisplay() {
-        if (!this.questionStartTime || !this.questionTimeLimit) return;
+        if (!this.questionStartTime || !this.questionTimeLimit) {
+            console.log('Timer display update skipped: no start time or time limit');
+            return;
+        }
         
         // Check if timer is paused
         if (this.pausedTime !== null) {
@@ -5044,11 +5317,20 @@ class GameManager {
         
         // Continue updating if timer is still running (not paused)
         if (remaining > 0 && this.questionTimer && this.pausedTime === null) {
+            console.log(`Timer updating: ${Math.ceil(remaining)}s remaining`);
             setTimeout(() => this.updateQuestionTimerDisplay(), 100);
+        } else {
+            console.log(`Timer update stopped: remaining=${remaining}, timer=${!!this.questionTimer}, paused=${this.pausedTime}`);
         }
     }
 
     handleQuestionTimeout() {
+        // Prevent multiple timeout executions
+        if (this._questionTimeoutHandled) {
+            return;
+        }
+        this._questionTimeoutHandled = true;
+        
         this.clearQuestionTimer();
         this.showNotification('時間切れです！問題のヒントが表示されます。', 'warning');
         

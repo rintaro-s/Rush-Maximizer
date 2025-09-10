@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/rinta/Documents/Rush-Maximizer/voice_server.py", line 14, in <module>
+    import vosk
+ModuleNotFoundError: No module named 'vosk'

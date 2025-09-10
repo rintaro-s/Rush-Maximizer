@@ -66,7 +66,7 @@
         "id": 10,
         "prompt": "日本の国花",
         "answers": ["桜"],
-        "category": "文化",
+        "category": "情報",
         "difficulty": "easy"
     },
     {
@@ -345,7 +345,7 @@
     {
         "id": 72,
         "prompt": "アフリカ大陸の最も南にある国",
-        "answers": ["南アフリカ共和国"],
+        "answers": ["南アフリカ共和国", "南アフリカ"],
         "category": "地理",
         "difficulty": "normal"
     },
@@ -401,7 +401,7 @@
     {
         "id": 80,
         "prompt": "日本の排他的経済水域内で最も面積が大きい都道府県",
-        "answers": ["東京都"],
+        "answers": ["東京都","東京"],
         "category": "地理",
         "difficulty": "hard"
     },

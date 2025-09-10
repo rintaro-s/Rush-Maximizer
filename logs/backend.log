@@ -1,0 +1,82 @@
+INFO:     Will watch for changes in these directories: ['/home/rinta/Documents/Rush-Maximizer']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [203578] using WatchFiles
+INFO:     Started server process [203581]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+Successfully loaded 88 questions from /home/rinta/Documents/Rush-Maximizer/backend/src/data/questions.json
+CORS configured: allow_origins=[*] (development permissive)
+Serving BGM files from: /home/rinta/Documents/Rush-Maximizer/bgm
+Serving frontend from: /home/rinta/Documents/Rush-Maximizer/frontend at /_frontend
+INFO:     127.0.0.1:33196 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33200 - "GET /status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "POST /lobby/join HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "GET /status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "OPTIONS /probe_lm HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "POST /probe_lm HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "OPTIONS /register HTTP/1.1" 200 OK
+player registered: 9cd05732-b2ed-4aa9-90ea-1f294d055610 -> koko (token=0341f29f)
+INFO:     127.0.0.1:33196 - "POST /register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "GET /server/stats HTTP/1.1" 200 OK
+player 9cd05732-b2ed-4aa9-90ea-1f294d055610 in lobby for rule=classic, total waiting: 1
+INFO:     127.0.0.1:33196 - "POST /lobby/join HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "POST /lobby/join HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "POST /lobby/join HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "POST /lobby/join HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "OPTIONS /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54314 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "OPTIONS /lobby/join HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "POST /lobby/join HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "OPTIONS /lobby/join HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "POST /lobby/join HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "OPTIONS /lobby/join HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "POST /lobby/join HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "POST /lobby/join HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "OPTIONS /lobby/leave HTTP/1.1" 200 OK
+Player 9cd05732-b2ed-4aa9-90ea-1f294d055610 left the lobby.
+INFO:     127.0.0.1:33196 - "POST /lobby/leave HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "GET /solo/questions?n=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33196 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37398 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37398 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50014 - "GET /solo/questions?n=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35520 - "OPTIONS /ask_ai HTTP/1.1" 200 OK
+Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "徳川家康", "reasoning": "問題文から直接答えが導かれます。", "valid": true, "invalid_reason": ""}
+INFO:     127.0.0.1:35520 - "POST /ask_ai HTTP/1.1" 200 OK
+Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "明石海峡大橋", "reasoning": "「瀬戸を結ぶ大きな橋」という表現から、日本で知られる有名な橋である「明石海峡大橋」が連想されます。", "valid": true, "invalid_reason": ""}
+INFO:     127.0.0.1:55568 - "POST /ask_ai HTTP/1.1" 200 OK
+Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "明石海峡大橋", "reasoning": "「瀬戸」は日本海と瀬戸内海を結ぶ地域であり、その中に位置する大きな橋として知られているのが「明石海峡大橋」です。", "valid": true, "invalid_reason": ""}
+INFO:     127.0.0.1:40314 - "POST /ask_ai HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "瀨戶大橋", "reasoning": "問題文の「瀬戸の大橋」は、正式名称である「瀨戶大橋」に該当するため、答えは「瀨戶大橋」となる。", "valid": true, "invalid_reason": ""}
+INFO:     127.0.0.1:40314 - "POST /ask_ai HTTP/1.1" 200 OK

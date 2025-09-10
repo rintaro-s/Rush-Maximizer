@@ -38,9 +38,19 @@
             return await safeFetchJson(`${base}/register`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ nickname }) });
         },
 
-        async fetchSoloQuestions(server, n) {
+        async fetchSoloQuestions(server, n, filters = {}) {
             const base = server.replace(/\/$/, '');
-            return await safeFetchJson(`${base}/solo/questions?n=${encodeURIComponent(n)}`);
+            let url = `${base}/solo/questions?n=${encodeURIComponent(n)}`;
+            
+            // Add filter parameters
+            if (filters.category && filters.category !== 'all') {
+                url += `&category=${encodeURIComponent(filters.category)}`;
+            }
+            if (filters.difficulty && filters.difficulty !== 'all') {
+                url += `&difficulty=${encodeURIComponent(filters.difficulty)}`;
+            }
+            
+            return await safeFetchJson(url);
         }
     };
 })();

@@ -1,0 +1,8 @@
+127.0.0.1 - - [11/Sep/2025 02:52:15] "GET / HTTP/1.1" 304 -
+127.0.0.1 - - [11/Sep/2025 02:52:15] "GET /css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [11/Sep/2025 02:52:15] "GET /js/main.js?v=2.1&t=1694300000000 HTTP/1.1" 200 -
+127.0.0.1 - - [11/Sep/2025 02:52:15] code 404, message File not found
+127.0.0.1 - - [11/Sep/2025 02:52:15] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [11/Sep/2025 02:52:36] "GET /css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [11/Sep/2025 02:52:36] code 404, message File not found
+127.0.0.1 - - [11/Sep/2025 02:52:36] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -

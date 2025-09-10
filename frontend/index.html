@@ -117,7 +117,7 @@
                             <span class="mode-icon">🎯</span>
                             <h3 class="mode-title">ソロモード</h3>
                         </div>
-                        <p class="mode-description">時間無制限でじっくり挑戦<br>17秒/問題の新ルール</p>
+                        <p class="mode-description">時間無制限でじっくり挑戦<br>25秒/問題の新ルール</p>
                         <div class="mode-stats">
                             <span class="stat-badge">制限時間なし</span>
                             <span class="stat-badge">10問</span>
@@ -133,18 +133,6 @@
                         <div class="mode-stats">
                             <span class="stat-badge">リアルタイム</span>
                             <span class="stat-badge">マルチプレイ</span>
-                        </div>
-                    </div>
-
-                    <div class="mode-card" id="rta-mode-btn">
-                        <div class="card-header">
-                            <span class="mode-icon">⏱️</span>
-                            <h3 class="mode-title">RTAモード</h3>
-                        </div>
-                        <p class="mode-description">10問 / 3分のタイムアタック<br>時間で点数が変動</p>
-                        <div class="mode-stats">
-                            <span class="stat-badge">3分</span>
-                            <span class="stat-badge">高速</span>
                         </div>
                     </div>
 
@@ -208,7 +196,7 @@
                                             stroke-dasharray="157" stroke-dashoffset="0" id="question-progress-circle"
                                             transform="rotate(-90 30 30)"/>
                                 </svg>
-                                <span id="question-timer" class="timer-value overlay">17s</span>
+                                <span id="question-timer" class="timer-value overlay">25s</span>
                             </div>
                         </div>
                     </div>
@@ -391,14 +379,14 @@
             <h2>設定</h2>
             <div class="settings-tabs">
                 <button class="tab-btn active" data-tab="display">表示</button>
-                <button class="tab-btn" data-tab="server">サーバー</button>
             </div>
+            
             <div class="tab-content active" id="display-tab">
                 <div class="form-group">
                     <label for="theme">テーマ:</label>
                     <select id="theme">
-                        <option value="glassmorphism">グラスモーフィズム</option>
                         <option value="gaming">ゲーミング</option>
+                        <option value="glassmorphism">グラスモーフィズム</option>
                         <option value="light">ライト</option>
                         <option value="cyberpunk">サイバーパンク</option>
                     </select>
@@ -412,26 +400,20 @@
                         <option value="minimal">ミニマル</option>
                     </select>
                 </div>
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="sound-effects" checked>
-                    <label for="sound-effects">効果音</label>
-                </div>
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="animations" checked>
-                    <label for="animations">アニメーション</label>
+                <div class="form-group">
+                    <label for="font-scale">フォントサイズ:</label>
+                    <select id="font-scale">
+                        <option value="small">小</option>
+                        <option value="normal">標準</option>
+                        <option value="large">大</option>
+                    </select>
                 </div>
             </div>
-            <div class="tab-content" id="server-tab">
-                <div class="form-group">
-                    <label for="game-server-address">ゲームサーバーアドレス:</label>
-                    <input type="text" id="game-server-address" placeholder="http://localhost:8000">
-                </div>
-                <div class="form-group">
-                    <label for="lm-server-address">LMStudioサーバーアドレス:</label>
-                    <input type="text" id="lm-server-address" placeholder="http://localhost:1234">
-                </div>
+            
+            <div class="settings-actions">
+                <button id="save-settings-btn" class="btn btn-primary">設定を保存</button>
+                <button id="reset-settings-btn" class="btn btn-secondary">デフォルトに戻す</button>
             </div>
-            <button id="save-settings-btn" class="btn btn-primary">設定を保存</button>
         </div>
     </div>
 
@@ -480,7 +462,6 @@
             <div class="practice-tabs">
                 <button class="tab-btn active" data-tab="basic-settings">基本設定</button>
                 <button class="tab-btn" data-tab="filter-settings">フィルター</button>
-                <button class="tab-btn" data-tab="custom-questions">カスタム問題</button>
             </div>
 
             <div class="tab-content active" id="basic-settings">
@@ -498,18 +479,15 @@
                 </div>
             </div>
 
-            <div class="tab-content" id="filter-settings" style="display: none;">
+            <div class="tab-content" id="filter-settings">
                 <div class="form-group">
                     <label for="category-filter">カテゴリー:</label>
-                    <select id="category-filter" multiple>
+                    <select id="category-filter">
                         <option value="all" selected>すべて</option>
-                        <option value="history">歴史</option>
-                        <option value="science">科学</option>
-                        <option value="literature">文学</option>
-                        <option value="geography">地理</option>
-                        <option value="culture">文化</option>
-                        <option value="sports">スポーツ</option>
-                        <option value="entertainment">エンターテイメント</option>
+                        <option value="歴史">歴史</option>
+                        <option value="地理">地理</option>
+                        <option value="理科">理科</option>
+                        <option value="情報">情報</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -524,7 +502,7 @@
                             <span>初級</span>
                         </label>
                         <label class="radio-option">
-                            <input type="radio" name="difficulty" value="medium">
+                            <input type="radio" name="difficulty" value="normal">
                             <span>中級</span>
                         </label>
                         <label class="radio-option">
@@ -533,58 +511,9 @@
                         </label>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="tag-filter">タグ:</label>
-                    <div class="tag-options">
-                        <label class="checkbox-option">
-                            <input type="checkbox" value="famous">
-                            <span>有名人</span>
-                        </label>
-                        <label class="checkbox-option">
-                            <input type="checkbox" value="places">
-                            <span>地名</span>
-                        </label>
-                        <label class="checkbox-option">
-                            <input type="checkbox" value="events">
-                            <span>出来事</span>
-                        </label>
-                        <label class="checkbox-option">
-                            <input type="checkbox" value="objects">
-                            <span>物</span>
-                        </label>
-                        <label class="checkbox-option">
-                            <input type="checkbox" value="concepts">
-                            <span>概念</span>
-                        </label>
-                    </div>
-                </div>
             </div>
 
-            <div class="tab-content" id="custom-questions" style="display: none;">
-                <div class="custom-options">
-                    <div class="custom-option-card">
-                        <h3>ゲーム内で作成</h3>
-                        <p>問題と答えを入力して、オリジナル問題集を作成</p>
-                        <button class="btn btn-secondary" id="create-custom-btn">問題を作成</button>
-                    </div>
-                    <div class="custom-option-card">
-                        <h3>JSONファイル読み込み</h3>
-                        <p>JSONファイルをアップロードして問題集を読み込み</p>
-                        <div class="file-upload">
-                            <input type="file" id="json-upload" accept=".json" style="display: none;">
-                            <button class="btn btn-secondary" onclick="document.getElementById('json-upload').click()">
-                                ファイルを選択
-                            </button>
-                            <span id="file-name"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <div class="question-preview">
-                    <span id="filtered-count">利用可能な問題: 計算中...</span>
-                </div>
+            <div class="practice-modal-footer">
                 <div class="result-actions">
                     <button class="btn btn-secondary" onclick="gameManager.closeModal('practice-setup-modal')">キャンセル</button>
                     <button class="btn btn-primary" id="practice-start-btn">練習を開始</button>
@@ -603,11 +532,6 @@
                     <span class="btn-icon">🎲</span>
                     <span class="btn-text">ランダムマッチ</span>
                     <span class="btn-desc">世界中のプレイヤーと自動で対戦</span>
-                </button>
-                <button class="menu-btn" id="match-custom-btn">
-                    <span class="btn-icon">🤝</span>
-                    <span class="btn-text">カスタムルーム</span>
-                    <span class="btn-desc">友達と合言葉を決めて対戦</span>
                 </button>
             </div>
         </div>
@@ -635,52 +559,7 @@
         </div>
     </div>
 
-    <!-- Room modal for creating/joining custom rooms -->
-    <div id="room-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h2>カスタムルーム</h2>
-            <div class="room-container">
-                <div class="room-section">
-                    <h3>ルームを作成</h3>
-                    <div class="form-group">
-                        <label>ルーム名</label>
-                        <input type="text" id="room-name" placeholder="任意のルーム名">
-                    </div>
-                    <div class="form-group">
-                        <label>パスワード（任意）</label>
-                        <input type="password" id="room-password" placeholder="パスワード">
-                    </div>
-                    <div class="form-group">
-                        <label>最大プレイヤー数</label>
-                        <input type="number" id="room-max" min="2" max="50" value="3">
-                    </div>
-                    <div class="form-group">
-                        <label>ルール</label>
-                        <select id="room-rule">
-                            <option value="classic">クラシック (標準)</option>
-                            <option value="speed">スピード (短め)</option>
-                            <option value="challenge">チャレンジ (問題多め)</option>
-                        </select>
-                    </div>
-                    <div><button class="btn btn-primary" id="create-room-btn">ルームを作成</button></div>
-                </div>
-                <div class="room-section">
-                    <h3>ルームに参加</h3>
-                    <div class="form-group">
-                        <label>ルームID</label>
-                        <input type="text" id="join-room-id" placeholder="ルームIDを入力">
-                    </div>
-                    <div class="form-group">
-                        <label>パスワード（必要なら）</label>
-                        <input type="password" id="join-room-password" placeholder="パスワード">
-                    </div>
-                    <div><button class="btn btn-primary" id="join-room-btn">参加する</button></div>
-                </div>
-            </div>
-            <div id="room-status" class="room-status"></div>
-        </div>
-    </div>
+
 
     <!-- Connection Error Modal -->
     <div id="connection-error-modal" class="modal">
@@ -697,7 +576,7 @@
     <script src="js/config.js"></script>
     <script src="js/debugger.js"></script>
     <script src="js/api.js"></script>
-    <script src="js/main.js?v=2.0"></script>
+    <script src="js/main.js?v=2.1&t=1694300000000"></script>
 
     <!-- Persistent Status Indicators -->
     <div id="persistent-status-container" style="display:none;">
