@@ -11,6 +11,7 @@ AI を知識で誘導してモノにする新感覚クイズ
 ## 3. 目的・アイデア（めっちゃ大事！）
 - プレイヤーが“問題”を考えて、AI を「正解」に導く逆クイズ。
 - AIが正解するまで、問題を考える。
+- **プログラミングモード**では、お題にそってコードを書き、AIが採点する。
 
 [例]
 
@@ -54,7 +55,41 @@ AI「1860年（万延元年）3月には大老の井伊直弼が江戸城桜田�
 
 インストールしたら、好きなモデル（LlamaやGemma等。私のおすすめは"Qwen3 30B a3b[q4_k_m]"、VRAM(GPU)15GB+RAM(CPU)10GBで動かしてる）をダウンロードして、**AI Inference Server** を起動しよう。サーバーが起動すると、準備OK！
 
-### 2. ゲームサーバーの起動
+### 2. Python環境の準備
+
+このゲームのバックエンドはPythonで動いてるよ。まずはPythonがインストールされてるか確認してね。
+
+1. **Pythonのインストール確認**
+   ```bash
+   python3 --version
+   ```
+   もしインストールされてなかったら、[Python公式サイト](https://www.python.org/)からダウンロードしてインストールしてね。
+
+2. **仮想環境の作成**
+   ```bash
+   # プロジェクトのルートディレクトリに移動
+   cd /path/to/Rush-Maximizer
+   
+   # Python仮想環境を作成
+   python3 -m venv .venv
+   ```
+
+3. **仮想環境のアクティベーション**
+   ```bash
+   # Linux/macOSの場合
+   source .venv/bin/activate
+   
+   # Windowsの場合
+   .venv\Scripts\activate
+   ```
+
+4. **依存関係のインストール**
+   ```bash
+   # 仮想環境がアクティブな状態で
+   pip install -r backend/requirements.txt
+   ```
+
+### 3. ゲームサーバーの起動
 
 AIと通信するためのゲームサーバーを起動するよ。Dockerっていうのを使うから、持ってない人はインストールしといてね。
 
@@ -62,12 +97,29 @@ AIと通信するためのゲームサーバーを起動するよ。Dockerって
 2.  ターミナル（コマンドプロンプトとか）で、下のコマンドを叩く！
 
     ```bash
-    docker-compose up --build
+    ./reboot.sh
     ```
 
-3.  なんか色々文字が流れるけど、`Uvicorn running on http://0.0.0.0:8000` みたいのが出たら成功！
+3.  なんか色々文字が流れるけど、`Access app at: http://127.0.0.1:9000 (frontend) and API at http://127.0.0.1:8000` みたいのが出たら成功！
 
-### 3. ゲームをプレイ！
+4. ブラウザでhttp://localhost:9000 を叩き、サーバーに「http://localhost:8000 」LMstudioアドレスに「http://localhost:1234 」と書いて接続。
 
-1.  `frontend` フォルダの中にある `index.html` をブラウザで開く。(動かなかったらhttpサーバー適当に立てる)
-2.  これだけで遊べるはず！
+5. これで遊べるよ！
+
+
+
+## 使用楽曲
+SE：
+- https://maou.audio/se_system44/
+- https://maou.audio/se_system46/
+- https://maou.audio/se_system42/
+- https://maou.audio/se_system38/
+
+BGM：
+- https://dova-s.jp/bgm/play22581.html
+- https://dova-s.jp/bgm/play427.html
+
+Music : Anonyment様,魔王魂様
+
+ライセンス(使用条件)：https://maou.audio/rule/ , https://dova-s.jp/_contents/author/profile028.html
+

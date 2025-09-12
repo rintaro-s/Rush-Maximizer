@@ -138,6 +138,7 @@ class QuestionRequest(BaseModel):
     question: str
     target_answer: str
     lm_server: Optional[str] = None
+    mode: Optional[str] = None
 
 
 class ProbeRequest(BaseModel):
@@ -149,15 +150,13 @@ async def ask_ai(request: QuestionRequest):
     def is_obfuscated(text: str) -> bool:
         if not text or len(text.strip()) == 0:
             return True
+        # Relaxed pattern: only check for very short text after removing separators
         sep_pattern = r'[\+＋\-\|・/\\_\s]+'
-        cjk = r'[\u4E00-\u9FFF\u3040-\u30FF]'
-        pattern = re.compile(cjk + sep_pattern + cjk)
-        if pattern.search(text):
-            clean = re.sub(sep_pattern, '', text)
-            if len(clean) <= 10:
-                return True
+        clean = re.sub(sep_pattern, '', text)
+        if len(clean) <= 5:  # Reduced from 10
+            return True
         punct_count = len(re.findall(r'[^\w\s\u4E00-\u9FFF\u3040-\u30FF]', text))
-        if punct_count > max(3, len(text) // 10):
+        if punct_count > max(5, len(text) // 8):  # Relaxed punctuation check
             return True
         return False
 
@@ -170,27 +169,33 @@ async def ask_ai(request: QuestionRequest):
         return False
 
     qtxt = request.question or ''
-    if is_obfuscated(qtxt):
+    # Skip obfuscation check for programming mode
+    if request.mode != 'programming' and is_obfuscated(qtxt):
         return {"ai_response": "", "valid": False, "is_correct": False, "invalid_reason": "input_looks_obfuscated", "invalid_message": "入力が難読化されているようです。普通の日本語で再入力してください。"}
-    if contains_dangerous(qtxt):
+    if request.mode != 'programming' and contains_dangerous(qtxt):
         return {"ai_response": "", "valid": False, "is_correct": False, "invalid_reason": "disallowed_content", "invalid_message": "危険または違法な行為を示唆する内容には回答できません。"}
-    # Instruct the model to return a JSON object only with the following schema:
-    # {"answer": "...", "reasoning": "...", "valid": true|false, "invalid_reason": "..."}
-    # "valid" should be false when the question is invalid (contains the answer, is off-topic, or requests disallowed content).
+    # Instruct the model to return a strict JSON object with score/feedback so frontend can display a 0-100 score and textual feedback.
+    # Expected JSON schema the model should return exactly (no extra text outside JSON):
+    # {
+    #   "answer": "...",
+    #   "reasoning": "...",
+    #   "valid": true|false,
+    #   "invalid_reason": "...",
+    #   "score": 0-100,
+    #   "feedback": "..."
+    # }
+    # `score` should be an integer between 0 and 100. `feedback` should contain human-readable, actionable suggestions.
     system_instruction = (
         "/no-think\n"
-        "あなたはクイズの検証付き回答者です。必ず以下のJSON形式だけで出力してください。"
-        "\n{\"answer\": \"...\", \"reasoning\": \"...\", \"valid\": true, \"invalid_reason\": \"...\"}"
-        "\n- `answer`: 直接の答え（短く）"
-        "\n- `reasoning`: どのように答えに到達したか簡潔に説明"
-        "\n- `valid`: trueなら有効なクイズ、falseなら不正や無効な入力"
-        "\n- `invalid_reason`: validがfalseの場合は理由を日本語で記載"
-        "\n【重要なルール】"
-        "\n- ここでは、「質問文・問題分・説明文」から単語を回答してもらいます。「単語」から答えを連想させる(ほんのうじノ変→本能寺の変)のは不正です。"
-        "\n- 問題文や回答において、問題の単語をそのまま返答や表記ゆれ（例: ひらがな・カタカナ・分割・当て字・意図的な誤字・類似音・記号混ぜ・英語表記・ローマ字・略語・隠語・俗称・伏せ字・一部だけの記載・分割記載など）を使って本来の答えを直接または間接的に誘導する入力はすべて不正です。"
-        "\n- 例:『鎌倉ばくふ』『織田おぶなが』『本能寺ノ変』『たいか＋の＋かいしん』『おだ・のぶなが』『ほんのうじのへん』『Tokugawa』『bakuhu』『Oda Nobunaga』『Honnouji』など、正答をひらがな・カタカナ・ローマ字・分割・記号・当て字・略語・隠語・俗称・一部のみ・伏せ字・誤字等で表現したものも全て不正です。"
-        "\n- これらの不正入力やルール違反があった場合は、必ず `valid`: false とし、`invalid_reason` に「表記ゆれや難読化・不正入力」など理由を日本語で明記してください。"
-        "\n- 危険・違法な行為や倫理的に不適切な内容も同様に `valid`: false で理由を明記してください。"
+        "あなたはクイズ/コード添削の評価者です。出力は必ず以下のJSON形式だけを返してください。"
+        "\n{\"answer\": \"...\", \"reasoning\": \"...\", \"valid\": true, \"invalid_reason\": \"...\", \"score\": 0, \"feedback\": \"...\"}"
+        "\n- `answer`: 問題に対する簡潔な答え（必要な場合）"
+        "\n- `reasoning`: 解答に至った簡潔な説明（技術的ポイントや考え方）"
+        "\n- `valid`: 入力が有効で評価可能な場合は true、難読化・不正・単語のみ等で無効なら false"
+        "\n- `invalid_reason`: valid が false の場合に理由を日本語で記載"
+        "\n- `score`: 0 から 100 の整数で、提出コードの品質（正確さ・効率・堅牢性・スタイル等）を総合的に評価してください。構文エラーがある場合は大幅に減点して。"
+        "\n- `feedback`: 具体的な改善点、バグ、入力/出力の注意、テスト不足などの指摘を日本語で記載してください"
+        "\n重要: モデルは必ず純粋なJSONのみを出力し、本文や注釈をJSONの外に書かないでください。"
     )
     payload = {
         "model": "local-model",
@@ -255,10 +260,20 @@ async def ask_ai(request: QuestionRequest):
             reasoning = parsed.get('reasoning')
             valid = parsed.get('valid', True)
             invalid_reason = parsed.get('invalid_reason')
-            # valid: false の場合は必ず is_correct: false を返す
+            score = parsed.get('score') if isinstance(parsed.get('score'), (int, float)) else None
+            feedback = parsed.get('feedback')
+            # valid: false の場合は is_correct を false にして返す
+            resp = {"ai_response": ai_response_text, "reasoning": reasoning, "valid": bool(valid), "invalid_reason": invalid_reason}
+            if score is not None:
+                try:
+                    resp['score'] = int(score)
+                except Exception:
+                    resp['score'] = None
+            if feedback is not None:
+                resp['feedback'] = feedback
             if valid is False:
-                return {"ai_response": ai_response_text, "reasoning": reasoning, "valid": False, "is_correct": False, "invalid_reason": invalid_reason}
-            return {"ai_response": ai_response_text, "reasoning": reasoning, "valid": valid, "invalid_reason": invalid_reason}
+                resp['is_correct'] = False
+            return resp
         except Exception as ex:
             print(f"Failed to parse model JSON output: {ex}\nraw:{raw}")
             ai_response_text = raw

@@ -147,6 +147,18 @@
                             <span class="stat-badge">自由設定</span>
                         </div>
                     </div>
+
+                    <div class="mode-card" id="programming-mode-btn">
+                        <div class="card-header">
+                            <span class="mode-icon">💻</span>
+                            <h3 class="mode-title">プログラミングモード</h3>
+                        </div>
+                        <p class="mode-description">指定されたお題に沿ってコードを作成し、AIに添削・採点してもらいます。<br>制限時間: 10分</p>
+                        <div class="mode-stats">
+                            <span class="stat-badge">10分</span>
+                            <span class="stat-badge">添削・採点</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="server-info-panel">
@@ -338,7 +350,7 @@
                 <span class="close-btn">&times;</span>
             </div>
             <div class="result-body">
-                <div class="final-score">
+                                <div class="final-score">
                     <span class="score-label">正解数</span>
                     <span class="score-number" id="final-score">0</span>
                 </div>
@@ -359,6 +371,14 @@
                         <span class="stat-label">所要時間</span>
                         <span class="stat-value" id="result-time">00:00</span>
                     </div>
+                </div>
+                <div class="vs-ranking" id="vs-ranking" style="display:none;margin-top:16px;">
+                    <h3 style="margin:0 0 12px 0;color:var(--primary-color);">対戦結果</h3>
+                    <div id="vs-ranking-list"></div>
+                </div>
+                <div class="result-feedback" id="result-feedback" style="display:none;margin-top:16px;padding:12px;background:var(--background-secondary);border-radius:8px;">
+                    <h4 style="margin:0 0 8px 0;color:var(--primary-color);">AI フィードバック</h4>
+                    <div id="result-feedback-content"></div>
                 </div>
                 <div class="new-achievements" id="new-achievements"></div>
                 <!-- Ranking removed -->
@@ -556,6 +576,59 @@
             <div class="result-actions">
                 <button class="btn btn-primary" id="random-join-btn">このルールでマッチング開始</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Programming mode modal (select language & start) -->
+    <div id="programming-mode-modal" class="modal">
+        <div class="modal-content programming-modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>プログラミングモード</h2>
+            <div class="form-group">
+                <label for="prog-lang">言語を選択:</label>
+                <select id="prog-lang">
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="java">Java</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="prog-question">お題（任意、指定しないとランダム）:</label>
+                <select id="prog-question"></select>
+                <div id="prog-question-preview" style="margin-top:8px;color:var(--text-secondary);font-size:14px;">選択したお題の説明がここに表示されます。</div>
+                <button class="btn btn-secondary" id="show-template-btn" style="margin-top:8px;">回答例を表示</button>
+                <div id="prog-template-display" style="margin-top:8px;color:var(--text-secondary);font-size:12px;display:none;"></div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+                <button class="btn btn-secondary" id="prog-cancel-btn">キャンセル</button>
+                <button class="btn btn-primary" id="prog-start-btn">開始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Programming screen: dedicated UI during coding session -->
+    <div id="programming-screen" class="screen" style="display:none;">
+        <div class="glassmorphism-container">
+            <div class="prog-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+                <div>
+                    <h2 style="margin:0;font-family:var(--title-font);">プログラミングチャレンジ</h2>
+                    <div id="prog-question-display" style="color:var(--text-secondary);margin-top:6px;">問題が読み込まれています...</div>
+                </div>
+                <div style="text-align:right;">
+                    <div class="prog-timer">時間: <span id="prog-timer-display">10:00</span></div>
+                    <button class="btn btn-secondary" id="prog-exit-btn" style="margin-top:8px;">終了してメニューへ</button>
+                </div>
+            </div>
+
+            <div style="margin-top:16px;">
+                <textarea id="code-editor" spellcheck="false" placeholder="ここにコードを書いてください..."></textarea>
+            </div>
+
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+                <button class="btn btn-primary" id="prog-submit-btn">提出して添削</button>
+            </div>
+
+            <div id="prog-result" class="prog-result" style="display:none;margin-top:12px;"></div>
         </div>
     </div>
 

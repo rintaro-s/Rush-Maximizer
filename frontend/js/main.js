@@ -1,3 +1,13 @@
+// sanitize text for safe HTML insertion
+function escapeHtml(unsafe) {
+    return String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 class GameManager {
     constructor() {
         this.gameServerUrl = localStorage.getItem('gameServerUrl') || (typeof config !== 'undefined' ? config.backendUrl : '');
@@ -74,6 +84,18 @@ class GameManager {
 
         // Initialize application flow
         this.initializeAppFlow();
+    // Initialize programming mode UI (menu button, modal handlers)
+    try { this.initializeProgrammingMode(); } catch (e) { console.warn('initializeProgrammingMode failed', e); }
+
+        // helper: sanitize text for HTML insertion
+        this.escapeHtml = function (unsafe) {
+            return String(unsafe)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
 
         // Debug: Check if cancel button is properly cached
         console.log('[Debug] cancelMatchmakingBtn cached:', !!this.el.cancelMatchmakingBtn);
@@ -85,6 +107,29 @@ class GameManager {
                 this.cancelMatchmakingOnUnload();
             }
         });
+    }
+
+    // Centralized result layout toggling used by endGame and state-based finish
+    setResultLayout(mode) {
+        const vsRankingEl = document.getElementById('vs-ranking');
+        const finalScoreEl = document.querySelector('.final-score');
+        const resultStatsEl = document.querySelector('.result-stats');
+        const resultFeedbackEl = document.getElementById('result-feedback');
+        const newAchievementsEl = document.getElementById('new-achievements');
+
+        if (mode === 'vs') {
+            if (finalScoreEl) finalScoreEl.style.display = 'none';
+            if (resultStatsEl) resultStatsEl.style.display = 'none';
+            if (resultFeedbackEl) resultFeedbackEl.style.display = 'none';
+            if (newAchievementsEl) newAchievementsEl.style.display = 'none';
+            if (vsRankingEl) vsRankingEl.style.display = 'block';
+        } else {
+            if (finalScoreEl) finalScoreEl.style.display = '';
+            if (resultStatsEl) resultStatsEl.style.display = '';
+            if (resultFeedbackEl) resultFeedbackEl.style.display = '';
+            if (newAchievementsEl) newAchievementsEl.style.display = '';
+            if (vsRankingEl) vsRankingEl.style.display = 'none';
+        }
     }
 
     initUI() {
@@ -775,7 +820,15 @@ class GameManager {
         } catch (e) {}
 
         document.querySelectorAll('.modal .close-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => this.closeParentModal(e.target));
+            btn.addEventListener('click', (e) => {
+                const modal = e.target.closest('.modal');
+                if (modal && modal.id === 'result-modal' && this.currentMode === 'vs') {
+                    // For VS mode, just close the modal and continue the game
+                    this.closeModal('result-modal');
+                } else {
+                    this.closeParentModal(e.target);
+                }
+            });
         });
         safeAdd(this.el.saveSettingsBtn, 'click', this.saveSettings);
         safeAdd(this.el.playAgainBtn, 'click', () => this.startGame(this.currentMode));
@@ -1380,8 +1433,12 @@ class GameManager {
     }
 
     startGame(mode) {
-        // Start the game after a short countdown to prevent accidental inputs
-        this.startGameWithCountdown(mode, 3);
+        if (mode === 'programming') {
+            this.showModal('programming-mode-modal');
+        } else {
+            // Start the game after a short countdown to prevent accidental inputs
+            this.startGameWithCountdown(mode, 3);
+        }
     }
 
     // Begin actual game logic immediately (called after countdown)
@@ -2023,7 +2080,10 @@ class GameManager {
             console.log('[DEBUG] VS timeLimit set from server:', t, 'seconds');
         }
     } else {
-        console.log('[DEBUG] No server time_limit provided, using default');
+        // For VS mode, set default to 2 minutes (120 seconds)
+        this.timeLimit = 120;
+        this.initialTimeLimit = 120;
+        console.log('[DEBUG] VS timeLimit set to default 2 minutes');
     }
 
     // Ensure the timer UI is visible for VS games when a time limit exists
@@ -2366,7 +2426,10 @@ class GameManager {
 
         // Don't clear question timer here - let showQuestion handle it
         // this.clearQuestionTimer();
-        this.stopTimer();
+        // Don't stop game timer in VS mode - continue until time runs out
+        if (this.currentMode !== 'vs') {
+            this.stopTimer();
+        }
         
         if (isCorrect) {
             this.score += 100;
@@ -2448,6 +2511,9 @@ class GameManager {
 
             // Render VS per-player breakdown if server state is available
             try { if (this.currentMode === 'vs' && finalState) this.renderVsResults(finalState); } catch (e) {}
+
+            // Apply centralized result layout based on mode
+            try { this.setResultLayout(this.currentMode); } catch (e) { console.warn('setResultLayout failed', e); }
 
             this.showModal('result-modal');
         };
@@ -2581,7 +2647,7 @@ class GameManager {
             }
         }
 
-        if (state.finished) {
+        if (state.finished && this.currentMode !== 'vs') {
             try {
                 // Render VS results if available
                 if (this.currentMode === 'vs') {
@@ -2589,27 +2655,28 @@ class GameManager {
                 }
             } catch (e) {}
             this.stopGameStatePolling();
+            try { this.setResultLayout(this.currentMode); } catch (e) {}
             this.showModal('result-modal');
+        } else if (state.finished && this.currentMode === 'vs') {
+            // For VS mode, just render results but don't end the game or stop polling
+            try {
+                this.renderVsResults(state);
+                this.setResultLayout('vs');
+                this.showModal('result-modal');
+            } catch (e) {
+                console.warn('VS finished rendering failed', e);
+            }
         }
     }
 
     // Render per-player results for VS mode into the result modal
     renderVsResults(state) {
         // state may include: scores {playerId: score}, correct_counts {playerId: correctCount}, players {playerId: {nickname}}
-        const container = document.getElementById('new-achievements') || document.querySelector('.new-achievements');
+        const container = document.getElementById('vs-ranking-list');
         if (!container) return;
 
         // Clear previous content
         container.innerHTML = '';
-
-        // Create results container with improved styling
-        const resultsContainer = document.createElement('div');
-        resultsContainer.className = 'vs-results-container';
-
-        const title = document.createElement('h4');
-        title.className = 'vs-results-title';
-        title.textContent = '対戦結果';
-        resultsContainer.appendChild(title);
 
         const scores = (state && state.scores) ? state.scores : {};
         const corrects = (state && state.correct_counts) ? state.correct_counts : {};
@@ -2636,62 +2703,31 @@ class GameManager {
         }
 
         if (entries.length === 0) {
-            const msg = document.createElement('div');
-            msg.className = 'vs-results-empty';
-            msg.textContent = '対戦の結果情報がありません。';
-            resultsContainer.appendChild(msg);
-            container.appendChild(resultsContainer);
+            container.textContent = '対戦の結果情報がありません。';
             return;
         }
 
         // Sort by correct descending, then score
         entries.sort((a, b) => (b.correct - a.correct) || (b.score - a.score));
 
-        const list = document.createElement('div');
-        list.className = 'vs-results-list';
-
         entries.forEach((e, idx) => {
-            const row = document.createElement('div');
             const rank = idx + 1;
-            row.className = `vs-result-row ${e.pid === this.playerId ? 'current-player' : ''} rank-${rank <= 3 ? rank : ''}`;
+            const rankDiv = document.createElement('div');
+            rankDiv.textContent = rank;
+            container.appendChild(rankDiv);
 
-            const left = document.createElement('div');
-            left.className = 'vs-result-left';
+            const pidDiv = document.createElement('div');
+            pidDiv.textContent = e.pid;
+            container.appendChild(pidDiv);
 
-            // Rank badge
-            const rankBadge = document.createElement('div');
-            rankBadge.className = 'vs-rank-badge';
-            rankBadge.textContent = rank;
-            left.appendChild(rankBadge);
+            const correctDiv = document.createElement('div');
+            correctDiv.textContent = `${e.correct}問`;
+            container.appendChild(correctDiv);
 
-            // Player name
-            const playerName = document.createElement('div');
-            playerName.className = 'vs-player-name';
-            playerName.textContent = e.nick;
-            left.appendChild(playerName);
-
-            const right = document.createElement('div');
-            right.className = 'vs-result-right';
-
-            // Correct count
-            const correctCount = document.createElement('div');
-            correctCount.className = 'vs-correct-count';
-            correctCount.textContent = `${e.correct}問`;
-            right.appendChild(correctCount);
-
-            // Score points (smaller text)
-            const scorePoints = document.createElement('div');
-            scorePoints.className = 'vs-score-points';
-            scorePoints.textContent = `${e.score}pt`;
-            right.appendChild(scorePoints);
-
-            row.appendChild(left);
-            row.appendChild(right);
-            list.appendChild(row);
+            const scoreDiv = document.createElement('div');
+            scoreDiv.textContent = `${e.score}pt`;
+            container.appendChild(scoreDiv);
         });
-
-        resultsContainer.appendChild(list);
-        container.appendChild(resultsContainer);
     }
 
     async submitScore(timeInSeconds) {
@@ -3024,6 +3060,338 @@ class GameManager {
         }
         
         console.log('[Practice] Modal initialized with basic-settings tab');
+    }
+
+    initializeProgrammingMode() {
+    const btn = document.getElementById('programming-mode-btn');
+    const modal = document.getElementById('programming-mode-modal');
+    const startBtn = document.getElementById('prog-start-btn');
+    const cancelBtn = document.getElementById('prog-cancel-btn');
+    const progScreen = document.getElementById('programming-screen');
+    if (!btn || !modal || !startBtn || !progScreen) return;
+
+    btn.addEventListener('click', () => {
+        this.showModal('programming-mode-modal');
+        // Ensure questions are loaded when modal opens
+        if (!this.programmingQuestions || this.programmingQuestions.length === 0) {
+            console.log('Reloading programming questions on modal open');
+            this.loadProgrammingQuestions();
+        }
+    });
+    modal.querySelector('.close-btn').addEventListener('click', () => this.closeModal('programming-mode-modal'));
+    if (cancelBtn) cancelBtn.addEventListener('click', () => this.closeModal('programming-mode-modal'));
+
+        // Load programming questions
+        this.loadProgrammingQuestions();
+
+        // Submit button: send code + problem to AI (simulated here)
+        const submitBtn = document.getElementById('run-submit-btn');
+        if (submitBtn) submitBtn.addEventListener('click', async () => {
+            const lang = document.getElementById('prog-lang').value;
+            const qSel = document.getElementById('prog-question');
+            const editor = document.getElementById('code-editor');
+            const resultEl = document.getElementById('prog-result');
+            if (!qSel || !editor || !resultEl) return;
+            const q = this.programmingQuestions[qSel.value];
+            resultEl.textContent = '送信中...';
+            // Simulated AI call: echo back with basic checks
+            setTimeout(() => {
+                const code = editor.value;
+                const issues = [];
+                if (!code || code.trim().length < 10) issues.push('コードが短すぎます。');
+                if (lang === 'python' && /console\.log\(/.test(code)) issues.push('Pythonコードに console.log が混ざっています。');
+                // Score heuristics
+                let score = 60 + Math.min(40, Math.floor(code.length / 10));
+                if (issues.length) score = Math.max(20, score - issues.length * 15);
+                resultEl.innerHTML = `<b>AI添削結果</b><br>スコア: ${score}/100<br>指摘:<ul>${issues.map(i=>`<li>${i}</li>`).join('')}</ul>`;
+            }, 900);
+        });
+
+        // Programming session flow and timer: RTA style, count up until 90+ score
+        const timerDisplay = document.getElementById('prog-timer-display');
+        this.progTimeElapsed = 0; // seconds
+        this.progTimerInterval = null;
+        const startProgTimer = () => {
+            if (this.progTimerInterval) clearInterval(this.progTimerInterval);
+            this.progTimeElapsed = 0;
+            if (timerDisplay) timerDisplay.textContent = formatTime(this.progTimeElapsed);
+            this.progTimerInterval = setInterval(() => {
+                this.progTimeElapsed += 1;
+                if (timerDisplay) timerDisplay.textContent = formatTime(this.progTimeElapsed);
+            }, 1000);
+        };
+
+        // Start the session when user clicks start: show a short countdown, then close modal, load question, show screen and start timer
+        startBtn.addEventListener('click', () => {
+            const modalContent = modal.querySelector('.modal-content') || modal;
+            // create countdown overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'prog-countdown-overlay';
+            overlay.style.position = 'absolute';
+            overlay.style.inset = '0';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.background = 'rgba(0,0,0,0.6)';
+            overlay.style.color = 'white';
+            overlay.style.fontSize = '64px';
+            overlay.style.zIndex = '9999';
+            overlay.style.borderRadius = getComputedStyle(modalContent).borderRadius || '8px';
+            modalContent.appendChild(overlay);
+
+            let count = 3;
+            overlay.textContent = count;
+            const cd = setInterval(() => {
+                count -= 1;
+                if (count > 0) {
+                    overlay.textContent = count;
+                } else {
+                    clearInterval(cd);
+                    overlay.remove();
+                    // proceed to start session
+                    const lang = document.getElementById('prog-lang').value;
+                    const qSel = document.getElementById('prog-question');
+                    const qIndex = qSel && qSel.value ? qSel.value : null;
+                    this.closeModal('programming-mode-modal');
+                    // pick question
+                    let question = null;
+                    if (qIndex !== null && this.programmingQuestions && this.programmingQuestions[qIndex]) question = this.programmingQuestions[qIndex];
+                    if (!question && this.programmingQuestions && this.programmingQuestions.length) {
+                        question = this.programmingQuestions[Math.floor(Math.random()*this.programmingQuestions.length)];
+                    }
+                    const qDisplay = document.getElementById('prog-question-display');
+                    const editor = document.getElementById('code-editor');
+                    const resultEl = document.getElementById('prog-result');
+                    if (qDisplay) qDisplay.textContent = question ? `${question.id} — ${question.title}: ${question.description}` : '問題を取得できませんでした。';
+                    if (editor) {
+                        const lang = document.getElementById('prog-lang').value;
+                        const template = question && question.template && question.template[lang] ? question.template[lang] : `// ${question ? question.title : '問題なし'}\n`;
+                        editor.value = ''; // Start with empty editor
+                    }
+                    if (resultEl) { resultEl.style.display = 'none'; resultEl.innerHTML = ''; }
+                    // ensure programming screen visible and start timer
+                    this.showScreen('programming-screen');
+                    startProgTimer();
+                }
+            }, 1000);
+        });
+
+        // Exit button
+        const exitBtn = document.getElementById('prog-exit-btn');
+        if (exitBtn) exitBtn.addEventListener('click', () => {
+            // stop timer
+            if (this.progTimerInterval) { clearInterval(this.progTimerInterval); this.progTimerInterval = null; }
+            this.showScreen('main-menu');
+        });
+
+        // Submit from programming screen: send code+prompt to backend /ask_ai which proxies to LMStudio
+        const progSubmitBtn = document.getElementById('prog-submit-btn');
+        if (progSubmitBtn) progSubmitBtn.addEventListener('click', async () => {
+            const editor = document.getElementById('code-editor');
+            const resultEl = document.getElementById('prog-result');
+            const qDisplay = document.getElementById('prog-question-display');
+            if (!editor || !resultEl || !qDisplay) return;
+            resultEl.style.display = 'block'; resultEl.textContent = 'AI に送信中...';
+
+            // Build prompt: include problem description and the user's code
+            const problemText = qDisplay.textContent || '';
+            const codeText = editor.value || '';
+
+            // Validate that server URLs are set
+            if (!this.gameServerUrl || !this.lmServerUrl) {
+                resultEl.textContent = 'サーバー設定が不十分です（ゲームサーバー / LMServer を確認してください）';
+                return;
+            }
+
+            const payload = {
+                question: `以下のプログラミング問題に対する解答コードを評価してください。
+
+問題内容:
+${problemText}
+
+ユーザーが提出したコード:
+${codeText}
+
+このコードについて、以下の観点から評価をお願いします:
+1. 正確性: 問題の要件を満たしているかどうか
+2. 効率性: アルゴリズムの効率は適切か
+3. 堅牢性: エラー処理やエッジケースへの対応
+4. スタイル: コードの読みやすさとベストプラクティス
+
+0から100点の範囲でスコアをつけ、具体的なフィードバックを提供してください。`,
+                target_answer: '',
+                lm_server: this.lmServerUrl,
+                mode: 'programming'
+            };
+
+            try {
+                const res = await fetch(`${this.gameServerUrl}/ask_ai`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) {
+                    const et = await res.text().catch(()=>res.statusText);
+                    throw new Error(`サーバーエラー ${res.status}: ${et}`);
+                }
+                const data = await res.json();
+                // prefer structured fields from /ask_ai
+                let aiText = data.ai_response || data.answer || data.message || JSON.stringify(data);
+                // Remove <think> tags if present
+                if (aiText.includes('<think>')) {
+                    aiText = aiText.split('</think>')[1] || aiText;
+                }
+                aiText = aiText.trim();
+                let parsed = null;
+                try {
+                    parsed = JSON.parse(aiText);
+                } catch (e) {
+                    console.warn('Failed to parse AI response as JSON:', aiText);
+                }
+                let score = parsed && parsed.score !== undefined ? parsed.score : 0;
+                let feedback = parsed && parsed.feedback ? parsed.feedback : aiText;
+                let reasoning = parsed && parsed.reasoning ? parsed.reasoning : '';
+                let valid = parsed ? parsed.valid !== false : true;
+                let invalidReason = parsed && parsed.invalid_reason ? parsed.invalid_reason : '';
+                // Save feedback for result modal
+                this.progFeedback = feedback;
+                this.progReasoning = reasoning;
+                this.progScore = score;
+                // Display
+                let displayHtml = '<b>AI 添削結果</b><br>';
+                if (score > 0) displayHtml += `<div><b>スコア:</b> ${score}/100</div>`;
+                if (reasoning) displayHtml += `<div><b>評価理由:</b> ${this.escapeHtml(reasoning)}</div>`;
+                displayHtml += `<div><b>フィードバック:</b><br>${this.escapeHtml(feedback)}</div>`;
+                if (!valid) displayHtml += `<div><b>無効理由:</b> ${this.escapeHtml(invalidReason)}</div>`;
+                resultEl.innerHTML = displayHtml;
+                // Check for clear
+                if (score >= 90) {
+                    this.currentMode = 'programming';
+                    // Stop timer
+                    if (this.progTimerInterval) {
+                        clearInterval(this.progTimerInterval);
+                        this.progTimerInterval = null;
+                    }
+                    // Show result modal
+                    document.getElementById('result-title').textContent = 'プログラミングクリア！';
+                    document.getElementById('final-score').textContent = score;
+                    document.getElementById('result-correct').textContent = '1'; // Assuming 1 problem
+                    document.getElementById('result-questions').textContent = '1';
+                    document.getElementById('result-accuracy').textContent = '100%';
+                    document.getElementById('result-time').textContent = formatTime(this.progTimeElapsed);
+                    // Show AI feedback in result modal
+                    const feedbackEl = document.getElementById('result-feedback');
+                    const feedbackContentEl = document.getElementById('result-feedback-content');
+                    if (feedbackEl && feedbackContentEl && this.progFeedback) {
+                        let feedbackHtml = '';
+                        if (this.progReasoning) feedbackHtml += `<div><b>評価理由:</b> ${this.escapeHtml(this.progReasoning)}</div>`;
+                        feedbackHtml += `<div><b>フィードバック:</b><br>${this.escapeHtml(this.progFeedback)}</div>`;
+                        feedbackContentEl.innerHTML = feedbackHtml;
+                        feedbackEl.style.display = 'block';
+                    }
+                    // Hide unnecessary stats for programming mode
+                    document.querySelectorAll('.stat-item').forEach(el => {
+                        if (!el.querySelector('#result-time')) el.style.display = 'none';
+                    });
+                    // Apply centralized layout for programming mode
+                    try { this.setResultLayout('programming'); } catch (e) { console.warn('setResultLayout failed', e); }
+                    this.showModal('result-modal');
+                    // Auto return to menu
+                    let countdown = 15;
+                    const countdownEl = document.getElementById('auto-return-countdown');
+                    if (countdownEl) countdownEl.textContent = countdown;
+                    const autoReturn = setInterval(() => {
+                        countdown -= 1;
+                        if (countdownEl) countdownEl.textContent = countdown;
+                        if (countdown <= 0) {
+                            clearInterval(autoReturn);
+                            this.closeModal('result-modal');
+                            this.showScreen('main-menu');
+                        }
+                    }, 1000);
+                }
+            } catch (err) {
+                console.error('AI submit failed', err);
+                resultEl.textContent = 'AI 送信エラー: ' + (err.message || String(err));
+            }
+        });
+
+        function formatTime(sec) {
+            const m = Math.floor(sec/60).toString().padStart(2,'0');
+            const s = Math.floor(sec%60).toString().padStart(2,'0');
+            return `${m}:${s}`;
+        }
+    }
+
+    loadProgrammingQuestions() {
+        fetch('data/programming_questions.json').then(r => r.json()).then(data => {
+            console.log('Programming questions loaded:', data);
+            this.programmingQuestions = data.questions || [];
+            console.log('Programming questions array:', this.programmingQuestions);
+            const sel = document.getElementById('prog-question');
+            if (sel) {
+                sel.innerHTML = '';
+                this.programmingQuestions.forEach((q, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.textContent = `${q.id} — ${q.title}`;
+                    sel.appendChild(opt);
+                });
+                // show preview for current selection
+                const preview = document.getElementById('prog-question-preview');
+                const showPreview = () => {
+                    const idx = sel.value;
+                    console.log('Selected index:', idx);
+                    const q = (this.programmingQuestions && this.programmingQuestions[idx]) ? this.programmingQuestions[idx] : null;
+                    console.log('Selected question:', q);
+                    if (preview) {
+                        preview.textContent = q ? `${q.description}` : '選択したお題の説明がここに表示されます。';
+                        console.log('Preview updated to:', preview.textContent);
+                    } else {
+                        console.warn('Preview element not found');
+                    }
+                };
+                sel.addEventListener('change', showPreview);
+                // initial preview
+                showPreview();
+
+                // Template display button
+                const templateBtn = document.getElementById('show-template-btn');
+                const templateDisplay = document.getElementById('prog-template-display');
+                if (templateBtn && templateDisplay) {
+                    templateBtn.addEventListener('click', () => {
+                        console.log('Template button clicked');
+                        const idx = sel.value;
+                        const lang = document.getElementById('prog-lang').value;
+                        console.log('Selected idx:', idx, 'lang:', lang);
+                        const q = (this.programmingQuestions && this.programmingQuestions[idx]) ? this.programmingQuestions[idx] : null;
+                        console.log('Selected question:', q);
+                        if (q && q.template && q.template[lang]) {
+                            console.log('Template found:', q.template[lang]);
+                            if (templateDisplay.style.display === 'block') {
+                                templateDisplay.style.display = 'none';
+                                templateBtn.textContent = 'テンプレートを表示';
+                            } else {
+                                templateDisplay.style.display = 'block';
+                                templateDisplay.innerHTML = `<pre style="background:#1a1a2e;padding:8px;border-radius:4px;overflow-x:auto;">${this.escapeHtml(q.template[lang])}</pre>`;
+                                templateBtn.textContent = 'テンプレートを隠す';
+                            }
+                        } else {
+                            console.log('Template not found');
+                            templateDisplay.style.display = 'block';
+                            templateDisplay.textContent = 'テンプレートが見つかりません。';
+                        }
+                    });
+                }
+            } else {
+                console.warn('prog-question select not found');
+            }
+        }).catch(e => {
+            console.warn('Failed to load programming questions', e);
+            // Fallback: show error in preview
+            const preview = document.getElementById('prog-question-preview');
+            if (preview) preview.textContent = 'お題の読み込みに失敗しました。';
+        });
     }
 
     initializePracticeSettings(tabType) {
@@ -3440,7 +3808,7 @@ class GameManager {
                         目的に合わせて最適なモードを選ぼう
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 15px 0;">
                         <div style="background: rgba(0, 255, 136, 0.1); padding: 12px; border-radius: 8px;">
                             <strong>🎮 ソロモード</strong><br>
                             <small>• 1人でじっくり練習<br>• 時間無制限<br>• 初心者におすすめ</small>
@@ -3453,12 +3821,17 @@ class GameManager {
                             <strong>📚 練習モード</strong><br>
                             <small>• 特定の分野を練習<br>• カテゴリ別問題<br>• スキルアップ向け</small>
                         </div>
+                        <div style="background: rgba(255, 170, 0, 0.1); padding: 12px; border-radius: 8px;">
+                            <strong>💻 プログラミングモード</strong><br>
+                            <small>• コードを書いてAI評価<br>• 10分以内に90点以上<br>• プログラミングスキルアップ</small>
+                        </div>
                     </div>
 
                     <div style="border: 2px solid #00d4ff; border-radius: 10px; padding: 15px; margin: 15px 0;">
-                        <strong>� 始め方のオススメ:</strong><br>
+                        <strong>🎯 始め方のオススメ:</strong><br>
                         まずは「ソロモード」でゲームに慣れよう！<br>
-                        慣れてきたら「対戦モード」で腕試し！
+                        慣れてきたら「対戦モード」で腕試し！<br>
+                        プログラミングが得意なら「プログラミングモード」で挑戦！
                     </div>
                 `,
                 highlight: ".mode-grid",
@@ -4188,7 +4561,7 @@ class GameManager {
             },
             {
                 title: "設定とその他の機能",
-                description: "右上のボタンから設定、ランキング、チュートリアルなどの機能にアクセスできます。",
+                description: "右上のボタンからテーマやレイアウト設定機能にアクセスできます。",
                 highlight: ".quick-actions",
                 action: null
             },

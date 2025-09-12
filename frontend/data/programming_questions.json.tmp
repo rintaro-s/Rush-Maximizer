@@ -1,0 +1,246 @@
+{
+  "questions": [
+    {
+      "id": "P001",
+      "title": "2つの整数の和",
+      "description": "スペース区切りの2つの整数が与えられる。これらの和を出力せよ。",
+      "difficulty": "easy",
+      "languages": ["python","javascript","java"],
+      "template": {
+        "python": "# 入力例\n# 3 5\n# 出力例\n# 8\n\nif __name__ == \"__main__\":\n    a, b = map(int, input().split())\n    print(a + b)\n",
+        "javascript": "// Node.js 用テンプレート\n// 入力: \"3 5\"\nconst fs = require(\"fs\");\nconst data = fs.readFileSync(0,\"utf8\").trim().split(/\\s+/).map(Number);\nconsole.log(data[0] + data[1]);\n",
+        "java": "// Java テンプレート\nimport java.util.*;\npublic class Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    int a = sc.nextInt();\n    int b = sc.nextInt();\n    System.out.println(a + b);\n  }\n}\n"
+      },
+      "tests": [
+        {"input": "3 5\n", "output": "8\n"},
+        {"input": "-2 7\n", "output": "5\n"}
+      ],
+      "referenceSolution": {
+        "python": "a,b=map(int,input().split());print(a+b)",
+        "javascript": "const fs=require(\"fs\");const d=fs.readFileSync(0,\"utf8\").trim().split(/\\\\s+/).map(Number);console.log(d[0]+d[1]);",
+        "java": "import java.util.*;class Main{public static void main(String[]args){Scanner s=new Scanner(System.in);int a=s.nextInt(),b=s.nextInt();System.out.println(a+b);}}"
+      }
+    },
+
+    {
+      "id": "P002",
+      "title": "文字列の反転",
+      "description": "1 行の文字列が与えられる。文字列を逆順にして出力せよ。（空白や記号もそのまま扱う）",
+      "difficulty": "easy",
+      "languages": ["python","javascript","java"],
+      "template": {
+        "python": "s = input().rstrip(\"\\n\")\nprint(s[::-1])\n",
+        "javascript": "const fs = require(\"fs\");\nconst s = fs.readFileSync(0,\"utf8\").replace(/\\r?\\n$/, \"\");\nconsole.log(s.split(\"\").reverse().join(\"\"));",
+        "java": "import java.util.*;\npublic class Main{public static void main(String[]args){Scanner sc=new Scanner(System.in);String s=sc.nextLine();System.out.println(new StringBuilder(s).reverse().toString());}}"
+      },
+      "tests": [
+        {"input": "abcde\n", "output": "edcba\n"},
+        {"input": "Hello, 世界\n", "output": "界世 ,olleH\n"}
+      ],
+      "referenceSolution": {
+        "python": "print(input().rstrip(\"\\n\")[::-1])",
+        "javascript": "console.log(require(\"fs\").readFileSync(0,\"utf8\").replace(/\\r?\\n$/,\"\").split(\"\").reverse().join(\"\"))",
+        "java": "import java.util.*;class Main{public static void main(String[]a){Scanner s=new Scanner(System.in);String t=s.nextLine();System.out.println(new StringBuilder(t).reverse());}}"
+      }
+    },
+
+    {
+      "id": "P003",
+      "title": "階乗 (小さめ)",
+      "description": "非負整数 n (0 ≤ n ≤ 12) が与えられる。n の階乗を出力せよ（オーバーフローを避けるため上限を限定）。",
+      "difficulty": "easy",
+      "languages": ["python","javascript","java"],
+      "template": {
+        "python": "n = int(input().strip())\nres = 1\nfor i in range(2,n+1):\n    res *= i\nprint(res)\n",
+        "javascript": "const fs = require(\"fs\");\nconst n = Number(fs.readFileSync(0,\"utf8\").trim());\nlet r=1;for(let i=2;i<=n;i++) r*=i;console.log(r);\n",
+        "java": "import java.util.*;public class Main{public static void main(String[]args){Scanner sc=new Scanner(System.in);int n=sc.nextInt();long r=1;for(int i=2;i<=n;i++) r*=i;System.out.println(r);}}"
+      },
+      "tests": [
+        {"input": "5\n", "output": "120\n"},
+        {"input": "0\n", "output": "1\n"}
+      ],
+      "referenceSolution": {
+        "python": "n=int(input());r=1\nfor i in range(2,n+1):r*=i\nprint(r)",
+        "javascript": "const n=Number(require(\"fs\").readFileSync(0,\"utf8\").trim());let r=1;for(let i=2;i<=n;i++)r*=i;console.log(r);",
+        "java": "import java.util.*;class Main{public static void main(String[]args){Scanner s=new Scanner(System.in);int n=s.nextInt();long r=1;for(int i=2;i<=n;i++)r*=i;System.out.println(r);}}"
+      }
+    },
+
+    {
+      "id": "P004",
+      "title": "FizzBuzz（1..N 出力）",
+      "description": "整数 N が与えられる。1 から N までの各整数について、3 の倍数なら \"Fizz\"、5 の倍数なら \"Buzz\"、両方なら \"FizzBuzz\"、それ以外はその数を出力せよ。各要素は改行で区切る。",
+      "difficulty": "easy",
+      "languages": ["python","javascript","java"],
+      "template": {
+        "python": "n=int(input().strip())\nfor i in range(1,n+1):\n    out = \"\"\n    if i%3==0: out += \"Fizz\"\n    if i%5==0: out += \"Buzz\"\n    print(out or i)\n",
+        "javascript": "const n=Number(require(\"fs\").readFileSync(0,\"utf8\").trim());for(let i=1;i<=n;i++){let s=\"\";if(i%3==0)s+=\"Fizz\";if(i%5==0)s+=\"Buzz\";console.log(s||i);}",
+        "java": "import java.util.*;public class Main{public static void main(String[]args){Scanner s=new Scanner(System.in);int n=s.nextInt();for(int i=1;i<=n;i++){String out=\"\";if(i%3==0)out+=\"Fizz\";if(i%5==0)out+=\"Buzz\";System.out.println(out.length()>0?out:i);}}}"
+      },
+      "tests": [
+        {"input": "15\n", "output": "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz\n"}
+      ],
+      "referenceSolution": {
+        "python": "n=int(input());\nfor i in range(1,n+1):print((\"Fizz\"*(i%3==0)+ \"Buzz\"*(i%5==0)) or i)",
+        "javascript": "const n=Number(require(\"fs\").readFileSync(0,\"utf8\").trim());for(let i=1;i<=n;i++){let s=\"\";if(i%3==0)s+=\"Fizz\";if(i%5==0)s+=\"Buzz\";console.log(s||i);}",
+        "java": "import java.util.*;public class Main{public static void main(String[]args){Scanner s=new Scanner(System.in);int n=s.nextInt();for(int i=1;i<=n;i++){String out=\"\";if(i%3==0)out+=\"Fizz\";if(i%5==0)out+=\"Buzz\";System.out.println(out.length()>0?out:i);}}}"
+      }
+    },
+
+    {
+      "id": "P005",
+      "title": "素数判定",
+      "description": "整数 n (2 ≤ n ≤ 10^6) が与えられる。n が素数なら \"YES\"、そうでなければ \"NO\" を出力せよ（効率的な判定）。",
+      "difficulty": "medium",
+      "languages": ["python","javascript","java"],
+      "template": {
+        "python": "n = int(input().strip())\nif n < 2:\n    print(\"NO\")\nelse:\n    import math\n    ok = True\n    r = int(math.isqrt(n))\n    for i in range(2, r+1):\n        if n % i == 0:\n            ok = False\n            break\n    print(\"YES\" if ok else \"NO\")\n",
+        "javascript": "const n=Number(require(\"fs\").readFileSync(0,\"utf8\").trim());if(n<2){console.log(\"NO\");process.exit(0);}let r=Math.floor(Math.sqrt(n));let ok=true;for(let i=2;i<=r;i++){if(n%i===0){ok=false;break;}}console.log(ok?\"YES\":\"NO\");",
+        "java": "import java.util.*;public class Main{public static void main(String[]args){Scanner sc=new Scanner(System.in);int n=sc.nextInt();if(n<2){System.out.println(\"NO\");return;}int r=(int)Math.sqrt(n);for(int i=2;i<=r;i++){if(n%i==0){System.out.println(\"NO\");return;}}System.out.println(\"YES\");}}"
+      },
+      "tests": [
+        {"input": "7\n", "output": "YES\n"},
+        {"input": "12\n", "output": "NO\n"}
+      ],
+      "referenceSolution": {
+        "python": "n=int(input());import math\nr=int(math.isqrt(n));print(\"YES\" if n>1 and all(n%i for i in range(2,r+1)) else \"NO\")",
+        "javascript": "const n=Number(require(\"fs\").readFileSync(0,\"utf8\").trim());let r=Math.floor(Math.sqrt(n));console.log(n>1 && (()=>{for(let i=2;i<=r;i++) if(n%i===0) return false; return true;})() ? \"YES\" : \"NO\");",
+        "java": "import java.util.*;class Main{public static void main(String[]args){Scanner s=new Scanner(System.in);int n=s.nextInt();int r=(int)Math.sqrt(n);for(int i=2;i<=r;i++)if(n%i==0){System.out.println(\"NO\");return;}System.out.println(n>1?\"YES\":\"NO\");}}"
+      }
+    },
+
+    {
+      "id": "P006",
+      "title": "母音の数を数える",
+      "description": "英語アルファベットのみからなる小文字文字列が与えられる。母音 (a,e,i,o,u) の個数を数えて出力せよ。",
+      "difficulty": "easy",
+      "languages": ["python","javascript","java"],
+      "template": {
+        "python": "s=input().strip()\nprint(sum(1 for c in s if c in \"aeiou\"))\n",
+        "javascript": "const s=require(\"fs\").readFileSync(0,\"utf8\").trim();console.log((s.match(/[aeiou]/g)||[]).length);",
+        "java": "import java.util.*;public class Main{public static void main(String[]a){Scanner s=new Scanner(System.in);String t=s.nextLine();int c=0;for(char ch:t.toCharArray()) if(\"aeiou\".indexOf(ch)>=0) c++; System.out.println(c);}}"
+      },
+      "tests": [
+        {"input": "hello\n", "output": "2\n"},
+        {"input": "bcdfg\n", "output": "0\n"}
+      ],
+      "referenceSolution": {
+        "python": "print(sum(1 for c in input().strip() if c in \"aeiou\"))",
+        "javascript": "console.log((require(\"fs\").readFileSync(0,\"utf8\").trim().match(/[aeiou]/g)||[]).length);",
+        "java": "import java.util.*;class Main{public static void main(String[]a){Scanner s=new Scanner(System.in);String t=s.nextLine();int c=0;for(char ch:t.toCharArray())if(\"aeiou\".indexOf(ch)>=0)c++;System.out.println(c);}}"
+      }
+    }
+    ,
+    {
+      "id": "P007",
+      "title": "最長増加部分列 (LIS)",
+      "description": "整数列が与えられる。増加する部分列の長さの最大値を出力せよ。入力サイズは最大 2000 とする。",
+      "difficulty": "medium",
+      "languages": ["python","javascript","java"],
+      "template": {
+        "python": "n = int(input().strip())\na = list(map(int, input().split()))\n# O(n log n) 解法の雛形\nimport bisect\nseq = []\nfor x in a:\n    i = bisect.bisect_left(seq, x)\n    if i == len(seq):\n        seq.append(x)\n    else:\n        seq[i] = x\nprint(len(seq))\n",
+        "javascript": "// Node.js テンプレート: O(n log n) で解く雛形\nconst fs = require('fs');\nconst data = fs.readFileSync(0,'utf8').trim().split(/\s+/).map(Number);\nconst n = data[0];\nconst a = data.slice(1);\nlet seq = [];
+function lowerBound(arr, x){let l=0,r=arr.length;while(l<r){let m=(l+r)>>1;if(arr[m]<x)l=m+1;else r=m;}return l;}\nfor(const x of a){const i = lowerBound(seq,x); if(i===seq.length) seq.push(x); else seq[i]=x;}\nconsole.log(seq.length);\n",
+        "java": "import java.util.*;public class Main{public static void main(String[]args){Scanner sc=new Scanner(System.in);int n=sc.nextInt();int[] a=new int[n];for(int i=0;i<n;i++)a[i]=sc.nextInt();ArrayList<Integer> seq=new ArrayList<>();for(int x:a){int i=Collections.binarySearch(seq,x); if(i<0)i=-(i+1); if(i==seq.size())seq.add(x); else seq.set(i,x);}System.out.println(seq.size());}}"
+      },
+      "tests": [
+        {"input": "5\n1 2 1 3 2\n", "output": "3\n"},
+        {"input": "6\n5 4 3 2 1 0\n", "output": "1\n"}
+      ],
+      "referenceSolution": {
+        "python": "import bisect;n=int(input());a=list(map(int,input().split()));s=[]
+for x in a:
+    i=bisect.bisect_left(s,x)
+    if i==len(s): s.append(x)
+    else: s[i]=x
+print(len(s))",
+        "javascript": "const fs=require('fs');const data=fs.readFileSync(0,'utf8').trim().split(/\\s+/).map(Number);const n=data[0],a=data.slice(1);let s=[];function lb(arr,x){let l=0,r=arr.length;while(l<r){let m=(l+r)>>1; if(arr[m]<x) l=m+1; else r=m;}return l;}for(const x of a){let i=lb(s,x); if(i===s.length) s.push(x); else s[i]=x;}console.log(s.length);",
+        "java": "import java.util.*;class Main{public static void main(String[]a){Scanner sc=new Scanner(System.in);int n=sc.nextInt();int[] arr=new int[n];for(int i=0;i<n;i++)arr[i]=sc.nextInt();ArrayList<Integer> s=new ArrayList<>();for(int x:arr){int i=Collections.binarySearch(s,x); if(i<0)i=-(i+1); if(i==s.size())s.add(x); else s.set(i,x);}System.out.println(s.size());}}"
+      }
+    },
+
+    {
+      "id": "P008",
+      "title": "0-1 ナップサック（重さと価値）",
+      "description": "品物 n 個 (n ≤ 100)、各品物は重さ w_i と価値 v_i を持つ。容量 W の中で得られる最大の価値を求めよ（W ≤ 100000）。",
+      "difficulty": "medium",
+      "languages": ["python","javascript","java"],
+      "template": {
+        "python": "n, W = map(int, input().split())\nitems = [tuple(map(int, input().split())) for _ in range(n)]\n# DP (重さ方向) の基本形\ndp = [0] * (W+1)\nfor w, v in items:\n    for cap in range(W, w-1, -1):\n        dp[cap] = max(dp[cap], dp[cap-w] + v)\nprint(dp[W])\n",
+        "javascript": "// Node.js テンプレート\nconst fs=require('fs');const lines=fs.readFileSync(0,'utf8').trim().split(/\n/);let [n,W]=lines[0].trim().split(/\s+/).map(Number);let items=[];for(let i=1;i<=n;i++){items.push(lines[i].trim().split(/\s+/).map(Number));}let dp=new Array(W+1).fill(0);for(const it of items){let w=it[0],v=it[1];for(let cap=W;cap>=w;cap--){dp[cap]=Math.max(dp[cap], dp[cap-w]+v);}}console.log(dp[W]);",
+        "java": "import java.util.*;public class Main{public static void main(String[]args){Scanner sc=new Scanner(System.in);int n=sc.nextInt(),W=sc.nextInt();int[] dp=new int[W+1];for(int i=0;i<n;i++){int w=sc.nextInt(),v=sc.nextInt();for(int cap=W;cap>=w;cap--) dp[cap]=Math.max(dp[cap], dp[cap-w]+v);}System.out.println(dp[W]);}}"
+      },
+      "tests": [
+        {"input": "3 50\n10 60\n20 100\n30 120\n", "output": "220\n"},
+        {"input": "1 10\n11 100\n", "output": "0\n"}
+      ],
+      "referenceSolution": {
+        "python": "n,W=map(int,input().split());items=[tuple(map(int,input().split())) for _ in range(n)];dp=[0]*(W+1);\nfor w,v in items:\n    for c in range(W,w-1,-1): dp[c]=max(dp[c],dp[c-w]+v)\nprint(dp[W])",
+        "javascript": "const fs=require('fs');const lines=fs.readFileSync(0,'utf8').trim().split(/\n/);let [n,W]=lines[0].split(/\s+/).map(Number);let items=[];for(let i=1;i<=n;i++)items.push(lines[i].split(/\s+/).map(Number));let dp=new Array(W+1).fill(0);for(const it of items){let w=it[0],v=it[1];for(let c=W;c>=w;c--) dp[c]=Math.max(dp[c], dp[c-w]+v);}console.log(dp[W]);",
+        "java": "import java.util.*;class Main{public static void main(String[]a){Scanner sc=new Scanner(System.in);int n=sc.nextInt(),W=sc.nextInt();int[] dp=new int[W+1];for(int i=0;i<n;i++){int w=sc.nextInt(),v=sc.nextInt();for(int c=W;c>=w;c--) dp[c]=Math.max(dp[c], dp[c-w]+v);}System.out.println(dp[W]);}}"
+      }
+    },
+
+    {
+      "id": "P009",
+      "title": "ダイクストラによる最短経路（単一始点）",
+      "description": "有向重みつきグラフが与えられる。始点 s から各頂点への最短距離を出力せよ（負辺は存在しない）。制約: 頂点数 n ≤ 10000, 辺 m ≤ 100000。",
+      "difficulty": "hard",
+      "languages": ["python","javascript","java"],
+      "template": {
+        "python": "import sys, heapq\ninput = sys.stdin.readline\nN,M = map(int, input().split())\nG=[[] for _ in range(N)]\nfor _ in range(M):\n    u,v,w = map(int, input().split())\n    G[u].append((v,w))\ns = int(input().strip())\nINF=10**18\nd=[INF]*N\nd[s]=0\nq=[(0,s)]\nwhile q:\n    dist,u = heapq.heappop(q)\n    if dist!=d[u]: continue\n    for v,w in G[u]:\n        nd = dist + w\n        if nd < d[v]:\n            d[v]=nd\n            heapq.heappush(q,(nd,v))\nfor x in d:\n    print(x if x<INF else -1)\n",
+        "javascript": "// Node.js テンプレート: 注意して高速化する\nconst fs=require('fs');const it=fs.readFileSync(0,'utf8').trim().split(/\s+/).map(Number);let p=0;const N=it[p++],M=it[p++];const G=Array.from({length:N},()=>[]);for(let i=0;i<M;i++){const u=it[p++],v=it[p++],w=it[p++];G[u].push([v,w]);}const s=it[p++];const INF=1e18;let dist=new Array(N).fill(INF);dist[s]=0;const pq=new MinHeap();pq.push([0,s]);while(pq.size()){let [d,u]=pq.pop(); if(d!==dist[u]) continue; for(const [v,w] of G[u]){const nd=d+w; if(nd<dist[v]){dist[v]=nd;pq.push([nd,v]);}}}console.log(dist.map(x=>x<INF?x:-1).join('\n'));
+        "java": "import java.util.*;class Main{static class P implements Comparable<P>{int v;long d;P(int v,long d){this.v=v;this.d=d;}public int compareTo(P o){return Long.compare(d,o.d);} }public static void main(String[]a){Scanner sc=new Scanner(System.in);int n=sc.nextInt(),m=sc.nextInt();ArrayList<int[]>[] g=new ArrayList[n];for(int i=0;i<n;i++)g[i]=new ArrayList<>();for(int i=0;i<m;i++){int u=sc.nextInt(),v=sc.nextInt(),w=sc.nextInt();g[u].add(new int[]{v,w});}int s=sc.nextInt();long INF=Long.MAX_VALUE/4;long[] dist=new long[n];Arrays.fill(dist,INF);dist[s]=0;PriorityQueue<P>pq=new PriorityQueue<>();pq.add(new P(s,0));while(!pq.isEmpty()){P cur=pq.poll();if(cur.d!=dist[cur.v])continue;for(int[] e:g[cur.v]){int v=e[0],w=e[1];long nd=cur.d+w; if(nd<dist[v]){dist[v]=nd;pq.add(new P(v,nd));}}}StringBuilder sb=new StringBuilder();for(long x:dist) sb.append(x==INF?-1:x).append('\n');System.out.print(sb.toString());}}"
+      },
+      "tests": [
+        {"input": "4 4\n0 1 5\n0 2 2\n2 1 1\n1 3 3\n0\n", "output": "0\n3\n2\n6\n"},
+        {"input": "3 1\n1 2 7\n0\n", "output": "0\n-1\n-1\n"}
+      ],
+      "referenceSolution": {
+        "python": "import sys,heapq;input=sys.stdin.readline;N,M=map(int,input().split());G=[[] for _ in range(N)];
+for _ in range(M):u,v,w=map(int,input().split());G[u].append((v,w));s=int(input().strip());INF=10**18;d=[INF]*N;d[s]=0;q=[(0,s)];
+while q:
+    dist,u=heapq.heappop(q)
+    if dist!=d[u]: continue
+    for v,w in G[u]:
+        nd=dist+w
+        if nd<d[v]: d[v]=nd; heapq.heappush(q,(nd,v))
+print('\n'.join(str(x if x<INF else -1) for x in d))",
+        "javascript": "// 省略: 上のテンプレートに準ずる高速実装を参照",
+        "java": "// 省略: 上のテンプレートに準ずる高速実装を参照"
+      }
+    },
+
+    {
+      "id": "P010",
+      "title": "文字列照合 (KMP)",
+      "description": "テキスト T とパターン P が与えられる。P が T の何番目に出現するかを 0-index で返せ（見つからなければ -1）。文字列長は最大 10^6。",
+      "difficulty": "medium",
+      "languages": ["python","javascript","java"],
+      "template": {
+        "python": "T = input().rstrip('\n')\nP = input().rstrip('\n')\n# KMP の雛形\ndef build_pi(p):\n    n=len(p);pi=[0]*n; j=0\n    for i in range(1,n):\n        while j>0 and p[i]!=p[j]: j=pi[j-1]\n        if p[i]==p[j]: j+=1; pi[i]=j\n    return pi\npi=build_pi(P)\nj=0\nfor i,ch in enumerate(T):\n    while j>0 and ch!=P[j]: j=pi[j-1]\n    if ch==P[j]: j+=1\n    if j==len(P):\n        print(i-len(P)+1)\n        break\nelse:\n    print(-1)\n",
+        "javascript": "const fs=require('fs');const data=fs.readFileSync(0,'utf8').split(/\n/);const T=data[0].trim(),P=data[1].trim();function buildPi(p){const n=p.length,pi=new Array(n).fill(0);let j=0;for(let i=1;i<n;i++){while(j>0&&p[i]!=p[j]) j=pi[j-1]; if(p[i]==p[j]) j++; pi[i]=j;}return pi;}const pi=buildPi(P);let j=0;for(let i=0;i<T.length;i++){while(j>0&&T[i]!=P[j]) j=pi[j-1]; if(T[i]==P[j]) j++; if(j==P.length){console.log(i-P.length+1);process.exit(0);} }console.log(-1);",
+        "java": "import java.util.*;class Main{public static void main(String[]a){Scanner sc=new Scanner(System.in);String T=sc.nextLine(),P=sc.nextLine();int n=P.length();int[] pi=new int[n];for(int i=1,j=0;i<n;i++){while(j>0&&P.charAt(i)!=P.charAt(j)) j=pi[j-1]; if(P.charAt(i)==P.charAt(j)) pi[i]=++j;}for(int i=0,j=0;i<T.length();i++){while(j>0&&T.charAt(i)!=P.charAt(j)) j=pi[j-1]; if(T.charAt(i)==P.charAt(j)) j++; if(j==n){System.out.println(i-n+1);return;}}System.out.println(-1);}}"
+      },
+      "tests": [
+        {"input": "abracadabra\ncada\n", "output": "4\n"},
+        {"input": "hello\nworld\n", "output": "-1\n"}
+      ],
+      "referenceSolution": {
+        "python": "def pi_build(p):n=len(p);pi=[0]*n;j=0
+for i in range(1,n):
+    while j>0 and p[i]!=p[j]: j=pi[j-1]
+    if p[i]==p[j]: j+=1;pi[i]=j
+return pi
+T=input().rstrip();P=input().rstrip();pi=pi_build(P);j=0
+for i,ch in enumerate(T):
+    while j>0 and ch!=P[j]: j=pi[j-1]
+    if ch==P[j]: j+=1
+    if j==len(P):print(i-len(P)+1);break
+else:print(-1)",
+        "javascript": "// 参照: テンプレート実装を利用",
+        "java": "// 参照: テンプレート実装を利用"
+      }
+    }
+  ]
+}

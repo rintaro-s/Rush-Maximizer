@@ -1,0 +1,32 @@
+{
+  "questions": [
+    {
+      "id": "P001",
+      "title": "Fibonacci数列の出力",
+      "description": "指定された n に対して n 項目までの Fibonacci 数列を返す関数を実装してください。時間計算量は O(n) を目指してください。",
+      "difficulty": "easy",
+      "tags": ["sequence", "dynamic" ]
+    },
+    {
+      "id": "P002",
+      "title": "配列の重複除去（安定）",
+      "description": "入力配列から最初に出現した順序を保持して重複を除去する関数を作成してください。",
+      "difficulty": "normal",
+      "tags": ["array", "hash" ]
+    },
+    {
+      "id": "P003",
+      "title": "括弧のバランスチェック",
+      "description": "文字列に含まれる ()、[]、{} の括弧が正しく対応しているかを判定する関数を実装してください。",
+      "difficulty": "normal",
+      "tags": ["stack", "string" ]
+    },
+    {
+      "id": "P004",
+      "title": "最長増加部分列（LIS）",
+      "description": "与えられた配列の最長増加部分列の長さを求めてください。時間計算量 O(n log n) を目指してください。",
+      "difficulty": "hard",
+      "tags": ["dp", "binary-search" ]
+    }
+  ]
+}
