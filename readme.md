@@ -30,9 +30,8 @@ AI「1860年（万延元年）3月には大老の井伊直弼が江戸城桜田�
 →不正解
 
 
-- AI が間違えると減点！
 - 正確な出題や誘導が求められるから、自然に覚えちゃう。
-- 3 人でオンライン対戦 or BOT対戦 or RTAモード。「AI に一番早く正解させた人」が勝ち！
+- 普通モード or 3 人でオンライン対戦 or 練習モード or プログラミングモード。「AI に一番早く正確に正解させれる」ようにしよう！
 <img width="1620" height="915" alt="Screenshot from 2025-08-28 15-25-34" src="https://github.com/user-attachments/assets/4166fc72-a6f1-4f14-890d-bf039d3d8b0c" />
 
 
@@ -106,6 +105,15 @@ AIと通信するためのゲームサーバーを起動するよ。Dockerって
 
 5. これで遊べるよ！
 
+音声入力を使用したかったらマイクを許可して使ってね。
+
+### その他
+backend/src/data/questions.json
+と
+frontend/data/programming_questions.json
+を編集することで簡単に問題を作成可能。
+
+特定の教科に特化させてホストするのもあり。
 
 
 ## 使用楽曲

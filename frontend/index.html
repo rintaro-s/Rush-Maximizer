@@ -669,57 +669,5 @@
         </div>
     </div>
 
-    <!-- Debug panel (only visible in development) -->
-    <div id="debug-panel" style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px; z-index: 10000; display: none;">
-        <strong>Debug Panel</strong><br>
-        <button onclick="debugTutorial()" style="margin: 2px; padding: 5px;">Debug Tutorial</button>
-        <button onclick="forceMainMenu()" style="margin: 2px; padding: 5px;">Force Main Menu</button>
-        <button onclick="resetTutorial()" style="margin: 2px; padding: 5px;">Reset Tutorial</button>
-        <button onclick="localStorage.clear(); location.reload()" style="margin: 2px; padding: 5px;">Clear Storage</button>
-        <button onclick="emergencyFix()" style="margin: 2px; padding: 5px; background: red; color: white;">EMERGENCY FIX</button>
-    </div>
-
-    <script>
-        // Show debug panel in development
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            document.getElementById('debug-panel').style.display = 'block';
-        }
-
-        // Emergency fix function
-        function emergencyFix() {
-            console.log('=== EMERGENCY FIX ACTIVATED ===');
-
-            // Close all modals
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => modal.classList.remove('active'));
-
-            // Hide tutorial overlay
-            const tutorialOverlay = document.getElementById('tutorial-overlay');
-            if (tutorialOverlay) {
-                tutorialOverlay.classList.remove('active');
-                tutorialOverlay.style.display = 'none';
-            }
-
-            // Show main menu
-            const mainMenu = document.getElementById('main-menu');
-            if (mainMenu) {
-                mainMenu.style.display = 'block';
-            }
-
-            // Reset tutorial state
-            if (window.gameManager) {
-                window.gameManager.tutorialStep = 0;
-                window.gameManager.tutorialSteps = null;
-                localStorage.setItem('hasSeenTutorial', 'true');
-            }
-
-            // Remove tutorial highlights
-            document.querySelectorAll('.tutorial-highlight').forEach(el => el.remove());
-
-            console.log('Emergency fix completed - main menu should be visible now');
-            alert('緊急修正が完了しました！メインコンテンツが表示されるはずです。');
-        }
-    </script>
-
 </body>
 </html>
